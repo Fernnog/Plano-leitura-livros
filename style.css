@@ -32,6 +32,7 @@ section {
 
 h2 {
     margin-top: 0;
+    font-size: 1.5em; /* Aumentado para melhor hierarquia visual */
 }
 
 .form-group {
@@ -52,7 +53,7 @@ h2 {
     padding: 10px;
     border: 1px solid #ddd;
     border-radius: 4px;
-    box-sizing: border-box; /* Para que padding não aumente o tamanho total */
+    box-sizing: border-box;
     margin-right: 5px;
 }
 
@@ -63,7 +64,6 @@ h2 {
     width: 100%;
 }
 
-
 .form-group button {
     background-color: #5cb85c;
     color: white;
@@ -72,16 +72,17 @@ h2 {
     border-radius: 4px;
     cursor: pointer;
     font-size: 1em;
+    transition: background-color 0.3s; /* Efeito suave ao passar o mouse */
 }
 
 .form-group button:hover {
-    background-color: #4cae4c;
+    background-color: #4cae4c; /* Cor mais escura no hover */
 }
 
 #lista-planos {
     display: flex;
     flex-direction: column;
-    gap: 15px; /* Espaçamento entre os planos */
+    gap: 15px;
 }
 
 .plano-leitura {
@@ -102,15 +103,15 @@ h2 {
     background-color: #eee;
     border-radius: 4px;
     height: 20px;
-    overflow: hidden; /* Garante que a barra de progresso não vaze */
+    overflow: hidden;
 }
 
 .barra-progresso {
     background-color: #5cb85c;
     height: 100%;
-    width: 0%; /* Inicialmente 0%, será atualizado por JS */
+    width: 0%; /* Ajustado dinamicamente via JavaScript */
     border-radius: 4px;
-    transition: width 0.3s ease; /* Animação suave na mudança de largura */
+    transition: width 0.3s ease; /* Animação suave na barra de progresso */
 }
 
 .dias-leitura {
@@ -126,7 +127,7 @@ h2 {
 }
 
 .dia-leitura:last-child {
-    border-bottom: none; /* Remove a borda do último dia */
+    border-bottom: none;
 }
 
 .dia-leitura label {
@@ -138,7 +139,7 @@ footer {
     padding: 20px 0;
     background-color: #333;
     color: #fff;
-    position: fixed; /* Fixa o rodapé na parte inferior */
+    position: fixed; /* Rodapé sempre visível na parte inferior */
     bottom: 0;
     width: 100%;
 }
@@ -146,8 +147,8 @@ footer {
 .acoes-dados {
     display: flex;
     gap: 10px;
-    justify-content: center; /* Centraliza os botões horizontalmente */
-    margin-top: 10px; /* Espaçamento do título */
+    justify-content: center;
+    margin-top: 10px;
 }
 
 .acoes-dados button {
@@ -158,25 +159,26 @@ footer {
     color: #333;
     cursor: pointer;
     font-size: 0.9em;
+    transition: background-color 0.3s; /* Efeito suave ao passar o mouse */
 }
 
 .acoes-dados button:hover {
-    background-color: #ddd;
+    background-color: #ddd; /* Cor mais escura no hover */
 }
 
 .dias-semana-lista > div {
     display: flex;
     align-items: center;
-    margin-bottom: 5px; /* Espaçamento entre as linhas de dias */
+    margin-bottom: 5px;
 }
 
 .dias-semana-lista label {
-    margin-left: 5px; /* Espaço entre o checkbox e o label */
+    margin-left: 5px;
 }
 
 .aviso-atraso {
-    background-color: #ffcccc; /* Fundo vermelho claro */
-    border: 1px solid #cc0000; /* Borda vermelha */
+    background-color: #ffcccc;
+    border: 1px solid #cc0000;
     padding: 10px;
     border-radius: 4px;
     margin-bottom: 10px;
@@ -185,11 +187,11 @@ footer {
 .aviso-atraso p {
     margin: 0;
     font-weight: bold;
-    color: #cc0000; /* Texto vermelho */
+    color: #cc0000;
 }
 
 .aviso-atraso button {
-    background-color: #f44336; /* Botão vermelho */
+    background-color: #f44336;
     color: white;
     border: none;
     padding: 8px 12px;
@@ -200,5 +202,77 @@ footer {
 }
 
 .aviso-atraso button:hover {
-    background-color: #da190b; /* Vermelho mais escuro no hover */
+    background-color: #da190b; /* Cor mais escura no hover */
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+    section {
+        width: 90%; /* Maior largura em telas menores */
+        padding: 15px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select {
+        width: 100%;
+    }
+
+    .acoes-dados {
+        flex-direction: column; /* Botões empilhados verticalmente */
+        align-items: center;
+    }
+
+    .acoes-dados button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5em; /* Reduzido para telas pequenas */
+    }
+
+    h2 {
+        font-size: 1.2em; /* Ajustado para legibilidade */
+    }
+
+    .form-group label {
+        font-size: 0.9em;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group button {
+        font-size: 0.9em; /* Ajustado para telas pequenas */
+    }
+
+    .plano-leitura {
+        padding: 10px;
+    }
+
+    .dia-leitura {
+        flex-direction: column; /* Itens empilhados em telas pequenas */
+        align-items: flex-start;
+    }
+
+    .dia-leitura label {
+        margin-top: 5px;
+    }
+}
+
+/* Estilo opcional para Tooltips (controlado pelo navegador por padrão) */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    z-index: 10;
 }
