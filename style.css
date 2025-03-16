@@ -1,0 +1,287 @@
+body {
+    font-family: 'Roboto', sans-serif; /* Fonte mais moderna */
+    margin: 0;
+    padding: 0;
+    background-color: #f0f2f5; /* Cor de fundo mais clara e moderna */
+    color: #333;
+}
+
+header {
+    font-family: 'Ubuntu', sans-serif; /* Fonte diferente para o header */
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    text-align: center;
+}
+
+main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+section {
+    background-color: #fff; /* Branco puro para seções */
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 2px 5px rgba(0, 0, 0, 0.075); /* Sombra mais suave */
+    width: 80%;
+    max-width: 800px;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.5em; /* Aumentado para melhor hierarquia visual */
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select, /* Mantém a estilização para select */
+.form-group input[type="radio"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-right: 5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select {
+    width: 100%;
+}
+
+.form-group button {
+    background-color: #007bff; /* Cor primária azul - mais moderno */
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px; /* Bordas mais arredondadas */
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s ease;
+}
+
+.form-group button:hover {
+    background-color: #0056b3; /* Cor mais escura no hover */
+}
+
+#lista-planos {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.plano-leitura {
+    border: 1px solid #eee; /* Borda mais suave */
+    padding: 15px;
+    border-radius: 8px;
+    background-color: #fff; /* Branco para o plano */
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05); /* Sutil sombra no plano */
+}
+
+.plano-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.progresso-container {
+    background-color: #e9ecef; /* Cor de fundo mais clara para a barra de progresso */
+    border-radius: 4px;
+    height: 8px; /* Barra de progresso mais fina */
+    overflow: hidden;
+    margin-bottom: 5px;
+}
+
+.barra-progresso {
+    background-color: #28a745; /* Verde mais moderno para a barra de progresso */
+    height: 100%;
+    border-radius: 4px;
+    transition: width 0.3s ease; /* Animação suave na barra de progresso */
+}
+
+.dias-leitura {
+    margin-top: 10px;
+}
+
+.dia-leitura {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px dotted #e0e0e0; /* Linha pontilhada mais clara */
+    font-size: 0.95em; /* Tamanho da fonte um pouco menor para os dias */
+}
+
+.dia-leitura:last-child {
+    border-bottom: none;
+}
+.dia-leitura input[type="checkbox"] {
+    margin-right: 8px; /* Espaço entre o checkbox e o texto */
+}
+
+.dia-leitura label {
+    margin-left: 5px;
+}
+
+footer {
+    text-align: center;
+    padding: 15px 0; /* Padding menor no footer */
+    background-color: #333;
+    color: #fff;
+    position: fixed;
+    font-size: 0.9em; /* Fonte menor no footer */
+    bottom: 0;
+    width: 100%;
+}
+
+.acoes-dados {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.acoes-dados button {
+    padding: 8px 16px; /* Aumenta um pouco o padding dos botões de ação */
+    border: none;
+    border-radius: 5px;
+    background-color: #e0e0e0; /* Cor de fundo mais clara para botões de dados */
+    color: #333;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+}
+
+.acoes-dados button:hover {
+    background-color: #d0d0d0; /* Cor mais escura no hover */
+}
+
+.dias-semana-lista > div {
+    display: flex; /* Garante que os itens fiquem em linha */
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.dias-semana-lista label {
+    margin-left: 5px;
+}
+
+.aviso-atraso {
+    background-color: #ffe0b2; /* Laranja mais claro e suave */
+    border: 1px solid #ffb74d; /* Borda laranja mais suave */
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.aviso-atraso p {
+    color: #ff9800; /* Cor do texto laranja */
+    margin: 0;
+    font-weight: bold;
+}
+
+.aviso-atraso button {
+    background-color: #ff9800; /* Botão laranja */
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease;
+    margin-top: 5px;
+}
+
+.aviso-atraso button:hover {
+    background-color: #da190b; /* Cor mais escura no hover */
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+    h1 { font-size: 1.8em; } /* Ajuste o tamanho do título para telas menores */
+    section {
+        width: 90%; /* Maior largura em telas menores */
+        padding: 20px; /* Mantém o padding para respiro */
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select {
+        width: 100%;
+    }
+
+    .acoes-dados {
+        flex-direction: row; /* Botões lado a lado em telas um pouco maiores */
+        align-items: center;
+    }
+
+    .acoes-dados button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 { font-size: 1.6em; } /* Título menor em telas realmente pequenas */
+    h2 { font-size: 1.3em; } /* Subtítulo menor em telas pequenas */
+    .form-group label,
+    .form-group button,
+    .acoes-dados button { font-size: 1em; /* Reduz um pouco a fonte em telas menores */ }
+
+    .form-group input[type="text"],
+    .form-group select,
+    .form-group button {
+        font-size: 0.9em; /* Ajustado para telas pequenas */
+    }
+
+    .plano-leitura {
+        padding: 10px;
+    }
+
+    .dia-leitura { flex-direction: column; align-items: flex-start; /* Empilha em telas muito pequenas */ }
+    .dia-leitura label {
+        margin-top: 5px;
+    }
+}
+
+/* Estilo opcional para Tooltips (controlado pelo navegador por padrão) */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    z-index: 10;
+}
+
+.dia-leitura.alternado {
+    background-color: #f8f9fa; /* Cor de fundo alternada mais suave */
+}
+
+.dia-leitura.lido span { /* Estilo aplicado ao span dentro do dia lido */
+    text-decoration: line-through;
+    color: #777; /* Cor do texto tachado mais suave */
+}
+
+/* Importando fontes do Google Fonts */
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
