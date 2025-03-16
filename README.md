@@ -1,4 +1,3 @@
---- START OF FILE README.md ---
 # Gerenciador de Planos de Leitura Web
 
 Este projeto é uma página web simples para gerenciar seus planos de leitura de livros. Permite que você defina metas de leitura, acompanhe seu progresso e mantenha seus hábitos de leitura organizados.
