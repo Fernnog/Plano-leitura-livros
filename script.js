@@ -1,14 +1,13 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // **Constantes para elementos do DOM**
     const formPlano = document.getElementById('form-plano');
     const listaPlanos = document.getElementById('lista-planos');
     const periodicidadeSelect = document.getElementById('periodicidade');
     const diasSemanaSelecao = document.getElementById('dias-semana-selecao');
-
     const exportarPlanosBtn = document.getElementById('exportar-planos');
     const importarPlanosBtn = document.getElementById('importar-planos-botao');
     const importarPlanosInput = document.getElementById('importar-planos');
     const limparDadosBtn = document.getElementById('limpar-dados');
-
     const definirPorDatasRadio = document.getElementById('definir-por-datas');
     const definirPorDiasRadio = document.getElementById('definir-por-dias');
     const periodoPorDatasDiv = document.getElementById('periodo-por-datas');
@@ -18,22 +17,23 @@ document.addEventListener('DOMContentLoaded', () => {
     const dataInicioInputDias = document.getElementById('data-inicio-dias');
     const numeroDiasInput = document.getElementById('numero-dias');
 
+    // **Estado inicial**
     let planos = carregarPlanosSalvos() || []; // Carrega planos do localStorage ou inicia vazio
     let planoEditandoIndex = -1; // Índice do plano sendo editado, -1 se nenhum
 
-    renderizarPlanos();
+    renderizarPlanos(); // Renderiza os planos ao carregar a página
 
+    // **Evento de mudança na periodicidade**
     periodicidadeSelect.addEventListener('change', function() {
-        if (this.value === 'dias-semana') {
-            diasSemanaSelecao.style.display = 'block';
-        } else {
-            diasSemanaSelecao.style.display = 'none';
-        }
+        diasSemanaSelecao.style.display = this.value === 'dias-semana' ? 'block' : 'none';
     });
 
+    // **Alternância entre definição por datas e por dias**
     definirPorDatasRadio.addEventListener('change', function() {
         periodoPorDatasDiv.style.display = 'block';
         periodoPorDiasDiv.style.display = 'none';
+        dataInicioInputDias.value = ''; // Limpa campo de data de início por dias
+        numeroDiasInput.value = ''; // Limpa campo de número de dias
         dataInicioInputDatas.required = true;
         dataFimInputDatas.required = true;
         dataInicioInputDias.required = false;
@@ -43,20 +43,29 @@ document.addEventListener('DOMContentLoaded', () => {
     definirPorDiasRadio.addEventListener('change', function() {
         periodoPorDatasDiv.style.display = 'none';
         periodoPorDiasDiv.style.display = 'block';
+        dataInicioInputDatas.value = ''; // Limpa data de início por datas
+        dataFimInputDatas.value = ''; // Limpa data de fim
         dataInicioInputDatas.required = false;
         dataFimInputDatas.required = false;
         dataInicioInputDias.required = true;
         numeroDiasInput.required = true;
     });
 
-
+    // **Submissão do formulário**
     formPlano.addEventListener('submit', function(event) {
         event.preventDefault();
 
-        const tituloLivro = document.getElementById('titulo-livro').value;
+        // Validação do total de páginas
         const totalPaginas = parseInt(document.getElementById('total-paginas').value);
+        if (totalPaginas <= 0) {
+            alert("O total de páginas deve ser um número positivo.");
+            return;
+        }
+
+        const tituloLivro = document.getElementById('titulo-livro').value;
         let dataInicio, dataFim;
 
+        // Determina as datas com base no método de definição
         if (definirPorDatasRadio.checked) {
             dataInicio = new Date(dataInicioInputDatas.value);
             dataFim = new Date(dataFimInputDatas.value);
@@ -64,108 +73,100 @@ document.addEventListener('DOMContentLoaded', () => {
                 alert("A data de fim deve ser posterior à data de início.");
                 return;
             }
-        } else { // Definir por dias
+        } else {
             dataInicio = new Date(dataInicioInputDias.value);
             const numeroDeDias = parseInt(numeroDiasInput.value);
-            if (isNaN(numeroDeDias) || numeroDias < 1) {
+            if (isNaN(numeroDeDias) || numeroDeDias < 1) {
                 alert("Número de dias inválido.");
                 return;
             }
             dataFim = new Date(dataInicio);
-            dataFim.setDate(dataInicio.getDate() + numeroDeDias - 1); // Subtrai 1 porque o dia de início conta
+            dataFim.setDate(dataInicio.getDate() + numeroDeDias - 1);
         }
 
-
-        const periodicidade = document.getElementById('periodicidade').value;
-        let diasSelecionados = [];
-
-        if (periodicidade === 'dias-semana') {
-            diasSelecionados = Array.from(document.querySelectorAll('input[name="dia-semana"]:checked'))
-                                     .map(checkbox => checkbox.value);
-            if (diasSelecionados.length === 0) {
-                alert("Selecione pelo menos um dia da semana para a periodicidade.");
-                return;
-            }
+        const periodicidade = periodicidadeSelect.value;
+        let diasSelecionados = periodicidade === 'dias-semana' ?
+            Array.from(document.querySelectorAll('input[name="dia-semana"]:checked')).map(cb => cb.value) : [];
+        
+        if (periodicidade === 'dias-semana' && diasSelecionados.length === 0) {
+            alert("Selecione pelo menos um dia da semana.");
+            return;
         }
 
+        // Cria ou atualiza o plano
+        const plano = criarPlanoLeitura(
+            tituloLivro,
+            totalPaginas,
+            dataInicio,
+            dataFim,
+            periodicidade,
+            diasSelecionados,
+            definirPorDatasRadio.checked ? 'datas' : 'dias'
+        );
 
-        const plano = criarPlanoLeitura(tituloLivro, totalPaginas, dataInicio, dataFim, periodicidade, diasSelecionados);
         if (plano) {
             if (planoEditandoIndex > -1) {
-                planos[planoEditandoIndex] = plano; // Update existing plan
-                planoEditandoIndex = -1; // Reset editing index
-                formPlano.querySelector('button[type="submit"]').textContent = 'Criar Plano'; // Change button text back
+                planos[planoEditandoIndex] = plano;
+                planoEditandoIndex = -1;
+                formPlano.querySelector('button[type="submit"]').textContent = 'Criar Plano';
+                const feedback = document.getElementById('edit-feedback');
+                if (feedback) feedback.remove();
             } else {
-                planos.push(plano); // Add new plan
+                planos.push(plano);
             }
             salvarPlanos(planos);
             renderizarPlanos();
             formPlano.reset();
             diasSemanaSelecao.style.display = 'none';
-            periodoPorDatasDiv.style.display = 'block'; // Reseta para definição por datas
+            periodoPorDatasDiv.style.display = 'block';
             periodoPorDiasDiv.style.display = 'none';
             definirPorDatasRadio.checked = true;
             definirPorDiasRadio.checked = false;
         }
     });
 
-    function criarPlanoLeitura(titulo, totalPaginas, dataInicio, dataFim, periodicidade, diasSemana) {
+    // **Função para criar um plano de leitura**
+    function criarPlanoLeitura(titulo, totalPaginas, dataInicio, dataFim, periodicidade, diasSemana, definicaoPeriodo) {
         const diasPlano = [];
         let dataAtual = new Date(dataInicio);
-        dataAtual.setHours(0, 0, 0, 0); // Garante que comece no início do dia
+        dataAtual.setHours(0, 0, 0, 0);
 
         while (dataAtual <= dataFim) {
-            let diaSemanaAtual = dataAtual.toLocaleDateString('pt-BR', { weekday: 'long' });
-            diaSemanaAtual = diaSemanaAtual.split('-')[0]; // Pega só o nome do dia (ex: "segunda")
-
-            let diaValido = false;
-            if (periodicidade === 'diario') {
-                diaValido = true;
-            } else if (periodicidade === 'dias-semana') {
-                diaValido = diasSemana.includes(diaSemanaAtual);
-            }
+            let diaSemanaAtual = dataAtual.toLocaleDateString('pt-BR', { weekday: 'long' }).split('-')[0];
+            let diaValido = periodicidade === 'diario' || (periodicidade === 'dias-semana' && diasSemana.includes(diaSemanaAtual));
 
             if (diaValido) {
-                diasPlano.push({
-                    data: new Date(dataAtual),
-                    paginas: 0, // Calculado depois
-                    lido: false
-                });
+                diasPlano.push({ data: new Date(dataAtual), paginas: 0, lido: false });
             }
-            dataAtual.setDate(dataAtual.getDate() + 1); // Avança para o próximo dia
+            dataAtual.setDate(dataAtual.getDate() + 1);
         }
 
-        const totalDiasLeitura = diasPlano.length;
-        if (totalDiasLeitura === 0) {
-            alert("Não há dias de leitura válidos no período selecionado com a periodicidade escolhida.");
-            return null; // Retorna null para indicar que não foi possível criar o plano
+        if (diasPlano.length === 0) {
+            alert("Não há dias de leitura válidos no período selecionado.");
+            return null;
         }
-        const paginasPorDia = Math.ceil(totalPaginas / totalDiasLeitura); // Distribui páginas igualmente
 
+        const paginasPorDia = Math.ceil(totalPaginas / diasPlano.length);
         diasPlano.forEach(dia => dia.paginas = paginasPorDia);
 
         return {
-            id: Date.now(), // ID único para cada plano
+            id: Date.now(),
             titulo,
             totalPaginas,
             dataInicio,
             dataFim,
             periodicidade,
-            diasSemana, // Persistindo os dias da semana selecionados
+            diasSemana,
             diasPlano,
-            paginasLidas: 0
+            paginasLidas: 0,
+            definicaoPeriodo
         };
     }
 
-
+    // **Função para renderizar os planos**
     function renderizarPlanos() {
-        listaPlanos.innerHTML = '';
-
-        if (planos.length === 0) {
-            listaPlanos.innerHTML = '<p>Nenhum plano de leitura cadastrado ainda.</p>';
-            return;
-        }
-
+        listaPlanos.innerHTML = planos.length === 0 ? '<p>Nenhum plano de leitura cadastrado ainda.</p>' : '';
+        
         planos.forEach((plano, index) => {
             if (!plano) return;
 
@@ -174,18 +175,12 @@ document.addEventListener('DOMContentLoaded', () => {
             planoDiv.dataset.planoIndex = index;
 
             const progressoPercentual = (plano.paginasLidas / plano.totalPaginas) * 100;
-            let avisoAtrasoHTML = '';
-            let diasAtrasados = verificarAtraso(plano); // Função para verificar atraso, retorna número de dias atrasados
-
-            if (diasAtrasados > 0) {
-                avisoAtrasoHTML = `
-                    <div class="aviso-atraso">
-                        <p>⚠️ Plano de leitura com atraso de ${diasAtrasados} dia(s)!</p>
-                        <button onclick="recalcularPlano(${index})">Recalcular Plano</button>
-                    </div>
-                `;
-            }
-
+            const diasAtrasados = verificarAtraso(plano);
+            const avisoAtrasoHTML = diasAtrasados > 0 ? `
+                <div class="aviso-atraso">
+                    <p>⚠️ Plano com atraso de ${diasAtrasados} dia(s)!</p>
+                    <button onclick="recalcularPlano(${index})">Recalcular Plano</button>
+                </div>` : '';
 
             planoDiv.innerHTML = `
                 <div class="plano-header">
@@ -195,85 +190,74 @@ document.addEventListener('DOMContentLoaded', () => {
                         <button onclick="excluirPlano(${index})">Excluir</button>
                     </div>
                 </div>
-                ${avisoAtrasoHTML}  <!-- Insere o aviso de atraso aqui -->
+                ${avisoAtrasoHTML}
                 <div class="progresso-container">
                     <div class="barra-progresso" style="width: ${progressoPercentual}%"></div>
                 </div>
                 <p>${plano.paginasLidas} de ${plano.totalPaginas} páginas lidas (${progressoPercentual.toFixed(0)}%)</p>
-                <div class="dias-leitura">
-                    ${renderizarDiasLeitura(plano.diasPlano, index)}
-                </div>
+                <div class="dias-leitura">${renderizarDiasLeitura(plano.diasPlano, index)}</div>
             `;
             listaPlanos.appendChild(planoDiv);
         });
     }
 
+    // **Verifica atrasos no plano**
     function verificarAtraso(plano) {
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
-
-        let atrasado = false;
-        let diasAtrasadosCount = 0;
-
-        for (const dia of plano.diasPlano) {
-            const dataDiaLeitura = new Date(dia.data);
-            dataDiaLeitura.setHours(0, 0, 0, 0);
-
-            if (dataDiaLeitura < hoje && !dia.lido) {
-                atrasado = true;
-                diasAtrasadosCount++;
-            }
-        }
-        return atrasado ? diasAtrasadosCount : 0; // Retorna número de dias atrasados se atrasado, senão 0
+        return plano.diasPlano.reduce((count, dia) => {
+            const dataDia = new Date(dia.data);
+            dataDia.setHours(0, 0, 0, 0);
+            return count + (dataDia < hoje && !dia.lido ? 1 : 0);
+        }, 0);
     }
 
-
+    // **Renderiza os dias de leitura**
     function renderizarDiasLeitura(diasPlano, planoIndex) {
-        let diasHTML = '';
-        diasPlano.forEach((dia, diaIndex) => {
-            const dataFormatada = dia.data.toLocaleDateString('pt-BR');
-            diasHTML += `
-                <div class="dia-leitura">
-                    <span>${dataFormatada} - ${dia.paginas} páginas</span>
-                    <input type="checkbox" id="dia-${planoIndex}-${diaIndex}" ${dia.lido ? 'checked' : ''}
-                           onchange="marcarDiaLido(${planoIndex}, ${diaIndex}, this.checked)">
-                    <label for="dia-${planoIndex}-${diaIndex}">Lido</label>
-                </div>
-            `;
-        });
-        return diasHTML;
+        return diasPlano.map((dia, diaIndex) => `
+            <div class="dia-leitura">
+                <span>${dia.data.toLocaleDateString('pt-BR')} - ${dia.paginas} páginas</span>
+                <input type="checkbox" id="dia-${planoIndex}-${diaIndex}" ${dia.lido ? 'checked' : ''} 
+                       onchange="marcarDiaLido(${planoIndex}, ${diaIndex}, this.checked)">
+                <label for="dia-${planoIndex}-${diaIndex}">Lido</label>
+            </div>
+        `).join('');
     }
 
+    // **Marca um dia como lido**
     window.marcarDiaLido = function(planoIndex, diaIndex, lido) {
         planos[planoIndex].diasPlano[diaIndex].lido = lido;
         atualizarPaginasLidas(planoIndex);
         salvarPlanos(planos);
-        renderizarPlanos(); // Refaz a renderização para atualizar a barra de progresso
+        renderizarPlanos();
     };
 
-
+    // **Atualiza o total de páginas lidas**
     function atualizarPaginasLidas(planoIndex) {
-        let paginasLidas = 0;
-        planos[planoIndex].diasPlano.forEach(dia => {
-            if (dia.lido) {
-                paginasLidas += planos[planoIndex].diasPlano[0].paginas; // Assume páginas por dia iguais
-            }
-        });
-        planos[planoIndex].paginasLidas = paginasLidas;
+        planos[planoIndex].paginasLidas = planos[planoIndex].diasPlano.reduce((sum, dia) => 
+            sum + (dia.lido ? dia.paginas : 0), 0);
     }
 
-
+    // **Edita um plano existente**
     window.editarPlano = function(index) {
-        planoEditandoIndex = index; // Set the editing index
+        planoEditandoIndex = index;
         const plano = planos[index];
-        if (!plano) return;
 
-        // Populate the form with plan data
+        // Feedback visual
+        let feedback = document.getElementById('edit-feedback');
+        if (!feedback) {
+            feedback = document.createElement('p');
+            feedback.id = 'edit-feedback';
+            feedback.style.color = '#5cb85c';
+            formPlano.insertBefore(feedback, formPlano.firstChild);
+        }
+        feedback.textContent = `Editando plano: ${plano.titulo}`;
+
+        // Preenche o formulário
         document.getElementById('titulo-livro').value = plano.titulo;
         document.getElementById('total-paginas').value = plano.totalPaginas;
-
-
-        if (plano.dataFim) { // Assume 'por datas' if dataFim exists
+        
+        if (plano.definicaoPeriodo === 'datas') {
             definirPorDatasRadio.checked = true;
             definirPorDiasRadio.checked = false;
             periodoPorDatasDiv.style.display = 'block';
@@ -282,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             dataFimInputDatas.valueAsDate = new Date(plano.dataFim);
             dataInicioInputDias.value = '';
             numeroDiasInput.value = '';
-        } else if (plano.diasPlano && plano.diasPlano.length > 0) { // Fallback to 'por dias'
+        } else {
             definirPorDatasRadio.checked = false;
             definirPorDiasRadio.checked = true;
             periodoPorDatasDiv.style.display = 'none';
@@ -293,94 +277,80 @@ document.addEventListener('DOMContentLoaded', () => {
             dataFimInputDatas.value = '';
         }
 
-
-        document.getElementById('periodicidade').value = plano.periodicidade;
+        periodicidadeSelect.value = plano.periodicidade;
+        diasSemanaSelecao.style.display = plano.periodicidade === 'dias-semana' ? 'block' : 'none';
         if (plano.periodicidade === 'dias-semana') {
-            diasSemanaSelecao.style.display = 'block';
-            // Uncheck all day checkboxes first
-            document.querySelectorAll('input[name="dia-semana"]').forEach(cb => cb.checked = false);
-            // Check the days that were selected for this plan
-            if (plano.diasSemana) {
-                plano.diasSemana.forEach(dia => {
-                    const checkbox = document.getElementById(dia);
-                    if (checkbox) checkbox.checked = true;
-                });
-            }
-        } else {
-            diasSemanaSelecao.style.display = 'none';
+            document.querySelectorAll('input[name="dia-semana"]').forEach(cb => cb.checked = plano.diasSemana.includes(cb.value));
         }
 
-        formPlano.querySelector('button[type="submit"]').textContent = 'Atualizar Plano'; // Change button text
+        formPlano.querySelector('button[type="submit"]').textContent = 'Atualizar Plano';
     };
 
-
-    function atualizarPlano(index) { // This function is now integrated into the form submit event
-        // The logic to update the plan is now within the form submit event listener
-        // No need for a separate atualizarPlano function anymore, as the form submit handles both create and update
-    }
-
-
+    // **Recalcula um plano atrasado**
     window.recalcularPlano = function(index) {
-        let plano = planos[index];
-        if (!plano) return;
-
+        const plano = planos[index];
         const hoje = new Date();
         hoje.setHours(0, 0, 0, 0);
 
-        let diasPassadosNaoLidos = 0;
         let paginasNaoLidas = 0;
-        let diasRestantes = 0;
         let diasRestantesArray = [];
 
-        for (let i = 0; i < plano.diasPlano.length; i++) {
-            const dia = plano.diasPlano[i];
-            const dataDiaLeitura = new Date(dia.data);
-            dataDiaLeitura.setHours(0, 0, 0, 0);
-
-            if (dataDiaLeitura < hoje && !dia.lido) {
-                diasPassadosNaoLidos++;
+        plano.diasPlano.forEach(dia => {
+            const dataDia = new Date(dia.data);
+            dataDia.setHours(0, 0, 0, 0);
+            if (dataDia < hoje && !dia.lido) {
                 paginasNaoLidas += dia.paginas;
-            } else if (dataDiaLeitura >= hoje) {
-                diasRestantes++;
-                diasRestantesArray.push(dia); // Keep track of remaining days
+            } else if (dataDia >= hoje) {
+                diasRestantesArray.push(dia);
             }
-        }
+        });
 
-        const paginasRestantesTotal = plano.totalPaginas - plano.paginasLidas; // More accurate remaining pages
-        let paginasPorDiaRecalculado = 0;
-
-        if (diasRestantes > 0) {
-            paginasPorDiaRecalculado = Math.ceil(paginasRestantesTotal / diasRestantes);
-        } else {
-            paginasPorDiaRecalculado = paginasRestantesTotal; // If no days left, all remaining pages for today (or last day)
-        }
-
-        // Update pages for the remaining days
+        const paginasRestantesTotal = plano.totalPaginas - plano.paginasLidas + paginasNaoLidas;
+        const paginasPorDiaRecalculado = Math.ceil(paginasRestantesTotal / diasRestantesArray.length);
         diasRestantesArray.forEach(dia => dia.paginas = paginasPorDiaRecalculado);
 
         salvarPlanos(planos);
         renderizarPlanos();
-        alert(`Plano recalculado. Páginas por dia ajustadas para ${paginasPorDiaRecalculado} para os dias restantes.`);
+        alert(`Plano recalculado. Páginas por dia ajustadas para ${paginasPorDiaRecalculado}.`);
     };
 
+    // **Exclui um plano**
+    window.excluirPlano = function(index) {
+        if (confirm("Tem certeza que deseja excluir este plano?")) {
+            planos.splice(index, 1);
+            salvarPlanos(planos);
+            renderizarPlanos();
+        }
+    };
 
+    // **Salva planos no localStorage**
     function salvarPlanos(planos) {
         localStorage.setItem('planosLeitura', JSON.stringify(planos));
     }
 
+    // **Carrega planos do localStorage**
     function carregarPlanosSalvos() {
         const planosSalvos = localStorage.getItem('planosLeitura');
-        return planosSalvos ? JSON.parse(planosSalvos) : null;
+        if (!planosSalvos) return null;
+        const planos = JSON.parse(planosSalvos);
+        return planos.map(plano => {
+            plano.dataInicio = new Date(plano.dataInicio);
+            plano.dataFim = new Date(plano.dataFim);
+            plano.diasPlano = plano.diasPlano.map(dia => {
+                dia.data = new Date(dia.data);
+                return dia;
+            });
+            return plano;
+        });
     }
 
+    // **Exporta planos para JSON**
     function exportarPlanosParaJson() {
-        const planosParaExportar = carregarPlanosSalvos() || [];
-        if (planosParaExportar.length === 0) {
-            alert("Não há planos de leitura para exportar.");
+        if (planos.length === 0) {
+            alert("Não há planos para exportar.");
             return;
         }
-        const jsonString = JSON.stringify(planosParaExportar, null, 2);
-
+        const jsonString = JSON.stringify(planos, null, 2);
         const blob = new Blob([jsonString], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
         const a = document.createElement('a');
@@ -392,6 +362,7 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     }
 
+    // **Importa planos de JSON**
     function importarPlanosDeJson(event) {
         const file = event.target.files[0];
         if (!file) return;
@@ -400,49 +371,40 @@ document.addEventListener('DOMContentLoaded', () => {
         reader.onload = function(e) {
             try {
                 let planosImportados = JSON.parse(e.target.result);
-                if (!Array.isArray(planosImportados)) {
-                    alert("Arquivo JSON inválido: não contém um array de planos.");
-                    return;
-                }
-
                 planosImportados = planosImportados.map(plano => {
-                    if (plano.dataInicio) plano.dataInicio = new Date(plano.dataInicio);
-                    if (plano.dataFim) plano.dataFim = new Date(plano.dataFim);
-                    if (plano.diasPlano) {
-                        plano.diasPlano = plano.diasPlano.map(dia => {
-                            if (dia.data) dia.data = new Date(dia.data);
-                            return dia;
-                        });
-                    }
+                    plano.dataInicio = new Date(plano.dataInicio);
+                    plano.dataFim = new Date(plano.dataFim);
+                    plano.diasPlano = plano.diasPlano.map(dia => {
+                        dia.data = new Date(dia.data);
+                        return dia;
+                    });
                     return plano;
                 });
-
                 planos = planosImportados;
                 salvarPlanos(planos);
                 renderizarPlanos();
-                alert("Planos de leitura importados com sucesso!");
+                alert("Planos importados com sucesso!");
             } catch (error) {
-                console.error("Erro ao importar planos de JSON:", error);
-                alert("Erro ao importar planos de leitura. Verifique se o arquivo JSON está correto.");
+                alert("Erro ao importar planos. Verifique o arquivo JSON.");
             }
         };
         reader.readAsText(file);
         event.target.value = '';
     }
 
+    // **Limpa todos os dados**
     function limparDados() {
-        if (confirm("Tem certeza que deseja limpar todos os planos de leitura? Esta ação não pode ser desfeita.")) {
+        if (confirm("Tem certeza que deseja limpar todos os planos?")) {
             planos = [];
             localStorage.removeItem('planosLeitura');
             renderizarPlanos();
-            alert("Todos os planos de leitura foram limpos.");
+            alert("Todos os planos foram limpos.");
         }
     }
 
+    // **Eventos dos botões**
     exportarPlanosBtn.addEventListener('click', exportarPlanosParaJson);
     importarPlanosBtn.addEventListener('click', () => importarPlanosInput.click());
     importarPlanosInput.addEventListener('change', importarPlanosDeJson);
     limparDadosBtn.addEventListener('click', limparDados);
-
 });
---- END OF FILE style.js ---
