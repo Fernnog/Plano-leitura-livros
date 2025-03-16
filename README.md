@@ -9,6 +9,9 @@ O **Gerenciador de Planos de Leitura** é uma aplicação web simples e funciona
     - **Tela Inicial (Início)**: Utilize o botão "Início" para retornar ao painel principal, onde seus planos de leitura ativos são exibidos e gerenciados.
 
 - **Criação de Planos Flexível**: Defina um plano de leitura especificando o título do livro, a página de início e a página de fim, o período (por datas ou número de dias) e a periodicidade (diária ou semanal com seleção de dias da semana).
+
+- **Paginação Eficiente na Listagem de Planos**: Facilidade de navegação entre múltiplos planos de leitura com a introdução de um sistema de paginação numerada. Navegue para planos específicos clicando nos números correspondentes, eliminando a necessidade de rolagem em páginas extensas.
+
 - **Exibição de Intervalos Aprimorada e Visualmente Clara**: Cada dia do plano exibe claramente o intervalo de páginas a serem lidas (ex.: "Páginas 5 a 15"), calculado automaticamente. A visualização foi aprimorada com:
     - **Cores Alternadas**: Facilita o acompanhamento visual das datas do plano.
     - **Efeito Tachado em Dias Lidos**: As datas marcadas como lidas são exibidas com um efeito tachado, indicando visualmente o cumprimento da meta de leitura para aquele dia.
@@ -22,7 +25,10 @@ O **Gerenciador de Planos de Leitura** é uma aplicação web simples e funciona
     - **Exportação para JSON**: Exporte seus planos de leitura para um arquivo JSON para backup ou compartilhamento. Os arquivos JSON são nomeados seguindo o padrão `AAAAMMDD_HHMM_Plano de leitura de livros.json`, facilitando a organização.
     - **Importação de JSON**: Importe planos de leitura previamente salvos a partir de arquivos JSON, restaurando seus planos rapidamente.
     - **Limpeza de Dados**: Limpe todos os dados de planos de leitura armazenados no navegador com um único clique, ideal para começar de novo.
-    - **Exportação para Agenda (.ICS)**: Exporte os eventos de leitura de um plano selecionado para um arquivo `.ICS`, compatível com a maioria dos aplicativos de agenda (Google Calendar, Outlook, etc.). Integre seu plano de leitura diretamente ao seu calendário para lembretes e organização.
+    - **Exportação para Agenda (.ICS) Aprimorada**: Exporte os eventos de leitura de um plano selecionado para um arquivo `.ICS`, compatível com a maioria dos aplicativos de agenda (Google Calendar, Outlook, etc.).
+        - **Lembrete de 15 minutos**: Os eventos exportados incluem agora um lembrete configurado para 15 minutos antes do horário agendado, garantindo que você seja notificado sobre sua leitura.
+        - **Link Direto para o Gerenciador de Planos**: A descrição de cada evento no arquivo `.ICS` contém um link direto para a página do Gerenciador de Planos de Leitura (https://fernnog.github.io/Plano-leitura-livros/). Acesse seus planos com um clique diretamente do seu aplicativo de agenda.
+        - Integre seu plano de leitura diretamente ao seu calendário para lembretes e organização.
 - **Numeração de Planos**: Os planos de leitura na lista são numerados para facilitar a referência, especialmente útil ao exportar planos para a agenda.
 - **Persistência Local e Segura**: Seus planos são salvos automaticamente e de forma segura no `localStorage` do navegador. Seus dados permanecem acessíveis somente no seu navegador, mesmo após fechar e reabrir a página.
 
