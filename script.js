@@ -1,4 +1,3 @@
---- START OF FILE style.js ---
 document.addEventListener('DOMContentLoaded', () => {
     const formPlano = document.getElementById('form-plano');
     const listaPlanos = document.getElementById('lista-planos');
