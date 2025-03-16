@@ -4,13 +4,14 @@ O **Gerenciador de Planos de Leitura** é uma aplicação web simples e funciona
 
 ## Funcionalidades
 
-- **Navegação Simplificada com Botões "Novo" e "Início"**: A interface agora conta com botões "Novo" e "Início" no cabeçalho para facilitar a navegação intuitiva entre a criação de planos e a visualização dos planos em andamento.
-    - **Novo Plano**: Clique no botão "Novo" no cabeçalho para acessar o formulário de criação de planos de leitura.
-    - **Tela Inicial (Início)**: Utilize o botão "Início" para retornar ao painel principal, onde seus planos de leitura ativos são exibidos e gerenciados.
+- **Navegação Simplificada com Botões "Novo" e "Início" Aprimorados com Ícones**: A interface agora conta com botões "Novo" e "Início" no cabeçalho para facilitar a navegação intuitiva entre a criação de planos e a visualização dos planos em andamento. Os botões principais foram aprimorados com ícones para melhor reconhecimento visual:
+    - **Novo Plano**: Clique no botão "Novo" (<span class="material-symbols-outlined align-text-bottom">description</span>) no cabeçalho, agora com um ícone de documento, para acessar o formulário de criação de planos de leitura. O ícone ajuda a identificar rapidamente a ação de criar um novo plano.
+    - **Tela Inicial (Início)**: Utilize o botão "Início" (<span class="material-symbols-outlined align-text-bottom">home</span>), com um ícone de casa, para retornar ao painel principal, onde seus planos de leitura ativos são exibidos e gerenciados. O ícone de casa torna o botão "Início" mais facilmente identificável.
+    - **Outros Botões com Ícones**: Os botões "Exportar" (<span class="material-symbols-outlined align-text-bottom">upload</span>), "Importar" (<span class="material-symbols-outlined align-text-bottom">download</span>) e "Limpar Dados" (<span class="material-symbols-outlined align-text-bottom">delete</span>) também foram atualizados com ícones correspondentes (<span class="material-symbols-outlined align-text-bottom">upload</span> para exportar, <span class="material-symbols-outlined align-text-bottom">download</span> para importar e <span class="material-symbols-outlined align-text-bottom">delete</span> para limpar dados), melhorando a clareza e a usabilidade da interface.
 
-- **Paginador para Navegação Eficiente entre Planos**: Navegue facilmente entre seus planos de leitura ativos com o novo paginador. Localizado centralmente acima da lista de planos, ele exibe números correspondentes a cada plano. Clique em um número para ir diretamente ao plano desejado, eliminando a necessidade de rolagem e melhorando a usabilidade, especialmente quando há múltiplos planos ativos.
-    - **Navegação Direta**: Acesse qualquer plano rapidamente clicando no número correspondente no paginador.
-    - **Centralizado e Intuitivo**: O paginador está posicionado de forma centralizada para fácil localização e uso intuitivo.
+- **Paginador Flutuante para Navegação Eficiente e Sempre Visível entre Planos**: Navegue facilmente entre seus planos de leitura ativos com o paginador, que agora é flutuante e permanece sempre visível no topo da tela. Localizado logo abaixo do cabeçalho, ele exibe números correspondentes a cada plano. Clique em um número para ir diretamente ao plano desejado, eliminando a necessidade de rolagem e melhorando significativamente a usabilidade, especialmente quando há múltiplos planos ativos.
+    - **Navegação Direta e Contínua**: Acesse qualquer plano rapidamente clicando no número correspondente no paginador, que agora está sempre ao alcance, mesmo após visualizar um plano longo.
+    - **Posicionamento Estratégico**: O paginador está posicionado de forma flutuante logo abaixo do cabeçalho, garantindo fácil localização e uso intuitivo sem interromper o fluxo de leitura ou gerenciamento dos planos.
 
 
 - **Criação de Planos Flexível**: Defina um plano de leitura especificando o título do livro, a página de início e a página de fim, o período (por datas ou número de dias) e a periodicidade (diária ou semanal com seleção de dias da semana).
