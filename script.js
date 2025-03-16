@@ -1,4 +1,3 @@
---- START OF FILE script.js ---
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js";
 import { getAnalytics } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-analytics.js"; // Corrected import
 import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut, sendPasswordResetEmail, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js";
@@ -377,4 +376,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 
 });
---- END OF FILE script.js ---
