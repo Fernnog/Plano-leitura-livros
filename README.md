@@ -62,4 +62,3 @@ Este projeto é uma página web simples para gerenciar seus planos de leitura de
 ## Conclusão
 
 Este Gerenciador de Planos de Leitura é uma ferramenta mais completa e útil para organizar e acompanhar suas metas de leitura. Sinta-se à vontade para usar e contribuir com melhorias!
---- START OF FILE README.md ---
