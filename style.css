@@ -1,0 +1,286 @@
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+header {
+    background-color: #333;
+    color: #fff;
+    padding: 20px 0;
+    text-align: center;
+}
+
+main {
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+section {
+    background-color: #fff;
+    padding: 20px;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 80%;
+    max-width: 800px;
+}
+
+h2 {
+    margin-top: 0;
+    font-size: 1.5em; /* Aumentado para melhor hierarquia visual */
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select,
+.form-group input[type="radio"] {
+    padding: 10px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    margin-right: 5px;
+}
+
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select {
+    width: 100%;
+}
+
+.form-group button {
+    background-color: #5cb85c;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 1em;
+    transition: background-color 0.3s; /* Efeito suave ao passar o mouse */
+}
+
+.form-group button:hover {
+    background-color: #4cae4c; /* Cor mais escura no hover */
+}
+
+#lista-planos {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.plano-leitura {
+    border: 1px solid #ddd;
+    padding: 15px;
+    border-radius: 4px;
+    background-color: #f9f9f9;
+}
+
+.plano-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.progresso-container {
+    background-color: #eee;
+    border-radius: 4px;
+    height: 20px;
+    overflow: hidden;
+}
+
+.barra-progresso {
+    background-color: #5cb85c;
+    height: 100%;
+    width: 0%; /* Ajustado dinamicamente via JavaScript */
+    border-radius: 4px;
+    transition: width 0.3s ease; /* Animação suave na barra de progresso */
+}
+
+.dias-leitura {
+    margin-top: 10px;
+}
+
+.dia-leitura {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 5px 0;
+    border-bottom: 1px dotted #ddd;
+}
+
+.dia-leitura:last-child {
+    border-bottom: none;
+}
+
+.dia-leitura label {
+    margin-left: 5px;
+}
+
+footer {
+    text-align: center;
+    padding: 20px 0;
+    background-color: #333;
+    color: #fff;
+    position: fixed; /* Rodapé sempre visível na parte inferior */
+    bottom: 0;
+    width: 100%;
+}
+
+.acoes-dados {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+    margin-top: 10px;
+}
+
+.acoes-dados button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 4px;
+    background-color: #eee;
+    color: #333;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s; /* Efeito suave ao passar o mouse */
+}
+
+.acoes-dados button:hover {
+    background-color: #ddd; /* Cor mais escura no hover */
+}
+
+.dias-semana-lista > div {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.dias-semana-lista label {
+    margin-left: 5px;
+}
+
+.aviso-atraso {
+    background-color: #ffcccc;
+    border: 1px solid #cc0000;
+    padding: 10px;
+    border-radius: 4px;
+    margin-bottom: 10px;
+}
+
+.aviso-atraso p {
+    margin: 0;
+    font-weight: bold;
+    color: #cc0000;
+}
+
+.aviso-atraso button {
+    background-color: #f44336;
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9em;
+    margin-top: 5px;
+}
+
+.aviso-atraso button:hover {
+    background-color: #da190b; /* Cor mais escura no hover */
+}
+
+/* Media Queries para Responsividade */
+@media (max-width: 768px) {
+    section {
+        width: 90%; /* Maior largura em telas menores */
+        padding: 15px;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select {
+        width: 100%;
+    }
+
+    .acoes-dados {
+        flex-direction: column; /* Botões empilhados verticalmente */
+        align-items: center;
+    }
+
+    .acoes-dados button {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+}
+
+@media (max-width: 480px) {
+    h1 {
+        font-size: 1.5em; /* Reduzido para telas pequenas */
+    }
+
+    h2 {
+        font-size: 1.2em; /* Ajustado para legibilidade */
+    }
+
+    .form-group label {
+        font-size: 0.9em;
+    }
+
+    .form-group input[type="text"],
+    .form-group input[type="number"],
+    .form-group input[type="date"],
+    .form-group select,
+    .form-group button {
+        font-size: 0.9em; /* Ajustado para telas pequenas */
+    }
+
+    .plano-leitura {
+        padding: 10px;
+    }
+
+    .dia-leitura {
+        flex-direction: column; /* Itens empilhados em telas pequenas */
+        align-items: flex-start;
+    }
+
+    .dia-leitura label {
+        margin-top: 5px;
+    }
+}
+
+/* Estilo opcional para Tooltips (controlado pelo navegador por padrão) */
+[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    background-color: #333;
+    color: #fff;
+    padding: 5px;
+    border-radius: 4px;
+    font-size: 0.8em;
+    z-index: 10;
+}
+
+ .dia-leitura.alternado {
+        background-color: #e0f7fa; /* Cor de fundo levemente diferente */
+    }
+
+    .dia-leitura.lido span { /* Estilo aplicado ao span dentro do dia lido */
+        text-decoration: line-through;
+    }
