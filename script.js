@@ -1,4 +1,3 @@
---- START OF FILE script.js ---
 document.addEventListener('DOMContentLoaded', () => {
     // Seleção de elementos do DOM
     const formPlano = document.getElementById('form-plano');
@@ -558,4 +557,3 @@ document.addEventListener('DOMContentLoaded', () => {
         URL.revokeObjectURL(url);
     }
 });
---- END OF FILE script.js ---
