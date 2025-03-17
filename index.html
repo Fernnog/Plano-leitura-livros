@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gerenciador de Planos de Leitura</title>
     <link rel="stylesheet" href="style.css">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" >
+    <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
     <link rel="icon" href="favicon.ico" type="image/x-icon">
 </head>
 <body>
     <header>
-        <img src="logo.png" alt="Logo do Gerenciador de Planos de Leitura" class="logo">
-        <h1>Gerenciador de Planos de Leitura</h1>
+        <div class="header-top">
+            <img src="logo.png" alt="Logo do Gerenciador de Planos de Leitura" class="logo">
+            <h1>Gerenciador de Planos de Leitura</h1>
+        </div>
+        <hr class="header-separator">
         <div class="acoes-dados">
             <button id="novo-plano">
                 <span class="material-symbols-outlined align-text-bottom">description</span> Novo
@@ -36,12 +39,11 @@
     </header>
 
     <main>
-         <section id="cadastro-plano" style="display: none;">
+        <section id="cadastro-plano" style="display: none;">
             <button id="inicio-cadastro" style="display: block;">
                 <span class="material-symbols-outlined align-text-bottom">arrow_back</span> Início
             </button>
             <h2>Novo Plano de Leitura</h2>
-            <!-- O FORMULÁRIO VEM AQUI (o mesmo que você já tinha) -->
             <form id="form-plano">
                 <div class="form-group">
                     <label for="titulo-livro">Título do Livro:</label>
@@ -120,7 +122,7 @@
                             <label for="quarta">Quarta</label>
                         </div>
                         <div>
-                             <input type="checkbox" id="quinta" name="dia-semana" value="4" title="Selecionar quinta-feira para leitura">
+                            <input type="checkbox" id="quinta" name="dia-semana" value="4" title="Selecionar quinta-feira para leitura">
                             <label for="quinta">Quinta</label>
                         </div>
                         <div>
@@ -132,23 +134,28 @@
                             <label for="sabado">Sábado</label>
                         </div>
                     </div>
-                 </div>
+                </div>
 
-                 <button type="submit">Salvar Plano</button>
-             </form>
-         </section>
+                <button type="submit">Salvar Plano</button>
+            </form>
+        </section>
 
-         <section id="planos-leitura">
-             <h2>Planos de Leitura Ativos</h2>
-             <div id="paginador-planos" style="text-align: center; margin-bottom: 15px;">
-+                <!-- Paginador será inserido aqui por JavaScript -->
-+            </div>
-             <div id="lista-planos">
-                 <!-- Planos de leitura serão inseridos aqui por JavaScript -->
-             </div>
-         </section>
-     </main>
+        <section id="planos-leitura">
+            <h2>Planos de Leitura Ativos</h2>
+            <div id="paginador-planos" style="text-align: center; margin-bottom: 15px;">
+                <!-- Paginador será inserido aqui por JavaScript -->
+            </div>
+            <div id="lista-planos">
+                <!-- Planos de leitura serão inseridos aqui por JavaScript -->
+            </div>
+        </section>
+    </main>
 
-     <script src="script.js"></script>
- </body>
- </html>
+    <footer>
+        <p>&copy; 2025 Gerenciador de Planos de Leitura</p>
+    </footer>
+
+    <script src="script.js"></script>
+    <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'9219406efd91bfc0',t:'MTc0MjE4MDU0OS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script>
+</body>
+</html>
