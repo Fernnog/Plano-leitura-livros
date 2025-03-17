@@ -115,6 +115,10 @@ h2 {
     flex-wrap: wrap; /* Allow buttons to wrap on smaller screens */
 }
 
+#paginador-planos.hidden {
+    display: none; /* Esconde o paginador quando a classe 'hidden' é aplicada */
+}
+
 #paginador-planos a {
     display: flex;
     justify-content: center;
@@ -147,7 +151,7 @@ h2 {
     background-color: #fff;
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
     scroll-margin-top: 80px; /* Espaço para o header não cobrir o título ao scrollar - Adicionado */
-    scroll-margin-bottom: 60px; /* Adds space below the plan to avoid paginator overlap */
+    scroll-margin-bottom: 80px; /* Ajustado para garantir espaço extra e evitar sobreposição */
 }
 
 .plano-header {
