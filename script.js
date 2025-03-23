@@ -227,9 +227,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const progressoPercentual = (plano.paginasLidas / plano.totalPaginas) * 100;
             const diasAtrasados = verificarAtraso(plano);
             const avisoAtrasoHTML = diasAtrasados > 0 ? `
-                <div class="aviso-atraso">
+                <div class="aviso-atraso" id="aviso-atraso-${index}">
                     <p>⚠️ Plano com atraso de ${diasAtrasados} dia(s)!</p>
-                    <button onclick="recalcularPlano(${index})">Recalcular Plano</button>
+                    <button onclick="mostrarOpcoesRecalculo(${index})">Recalcular Plano</button>
                 </div>` : '';
 
             const planoDiv = document.createElement('div');
@@ -334,251 +334,86 @@ document.addEventListener('DOMContentLoaded', () => {
         novoPlanoBtn.click(); // Simula clique no botão "Novo" para ir para a tela de cadastro
     };
 
-    // Recalcula um plano atrasado
-    window.recalcularPlano = function(index) {
+    window.mostrarOpcoesRecalculo = function(index) {
         const plano = planos[index];
-
-        const hoje = new Date();
-        hoje.setHours(0, 0, 0, 0);
-
-        const firstNotLidoIndex = plano.diasPlano.findIndex(dia => !dia.lido);
-        if (firstNotLidoIndex === -1) {
-            alert("Plano já concluído.");
-            return;
-        }
-
-        let paginasLidasAteAgora = plano.diasPlano.slice(0, firstNotLidoIndex).reduce((sum, dia) =>
-            sum + (dia.lido ? dia.paginas : 0), 0);
-        const paginasRestantes = plano.totalPaginas - paginasLidasAteAgora;
-        const diasRestantes = plano.diasPlano.slice(firstNotLidoIndex);
-        const paginasPorDia = Math.floor(paginasRestantes / diasRestantes.length);
-        const resto = paginasRestantes % diasRestantes.length;
-        let paginaAtual = firstNotLidoIndex === 0 ? plano.paginaInicio : plano.diasPlano[firstNotLidoIndex - 1].paginaFimDia + 1;
-
-        diasRestantes.forEach((dia, i) => {
-            const paginasDia = i < resto ? paginasPorDia + 1 : paginasPorDia;
-            dia.paginaInicioDia = paginaAtual;
-            dia.paginaFimDia = paginaAtual + paginasDia - 1;
-            dia.paginas = paginasDia;
-            paginaAtual = dia.paginaFimDia + 1;
-        });
-
-        salvarPlanos(planos);
-        renderizarPlanos();
-    };
-
-    // Exclui um plano
-    window.excluirPlano = function(index) {
-        if (confirm("Tem certeza que deseja excluir este plano?")) {
-            planos.splice(index, 1);
-            salvarPlanos(planos);
-            renderizarPlanos();
-        }
-    };
-
-    // Salva planos no localStorage
-    function salvarPlanos(planos) {
-        localStorage.setItem('planosLeitura', JSON.stringify(planos));
-    }
-
-    // Carrega planos do localStorage
-    function carregarPlanosSalvos() {
-        const planosSalvos = localStorage.getItem('planosLeitura');
-        if (!planosSalvos) return null;
-        const planos = JSON.parse(planosSalvos);
-        return planos.map(plano => {
-            plano.dataInicio = new Date(plano.dataInicio);
-            plano.dataFim = new Date(plano.dataFim);
-            plano.diasPlano = plano.diasPlano.map(dia => {
-                dia.data = new Date(dia.data);
-                return dia;
-            });
-            return plano;
-        });
-    }
-
-    // Exporta planos para JSON
-    exportarPlanosBtn.addEventListener('click', function() {
-        const jsonString = JSON.stringify(planos, null, 2);
-        const blob = new Blob([jsonString], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-
-        // Formatação da data e hora
-        const now = new Date();
-        const year = now.getFullYear();
-        const month = String(now.getMonth() + 1).padStart(2, '0');
-        const day = String(now.getDate()).padStart(2, '0');
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const fileName = `${year}${month}${day}_${hours}${minutes}_Plano de leitura de livros.json`;
-
-
-        a.download = fileName;
-        a.click();
-        URL.revokeObjectURL(url);
-    });
-
-    // Importa planos de JSON
-    importarPlanosBtn.addEventListener('click', () => importarPlanosInput.click());
-    importarPlanosInput.addEventListener('change', function(event) {
-        const file = event.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            try {
-                const novosPlanos = JSON.parse(e.target.result);
-                planos = novosPlanos.map(plano => ({
-                    ...plano,
-                    dataInicio: new Date(plano.dataInicio),
-                    dataFim: new Date(plano.dataFim),
-                    diasPlano: plano.diasPlano.map(dia => ({
-                        ...dia,
-                        data: new Date(dia.data)
-                    }))
-                }));
-                salvarPlanos(planos);
-                renderizarPlanos();
-            } catch (error) {
-                alert("Erro ao importar o arquivo JSON.");
-            }
-        };
-        reader.readAsText(file);
-    });
-
-    // Limpa todos os dados
-    limparDadosBtn.addEventListener('click', function() {
-        if (confirm("Tem certeza que deseja limpar todos os dados?")) {
-            planos = [];
-            localStorage.removeItem('planosLeitura');
-            renderizarPlanos();
-        }
-    });
-
-    exportarAgendaBtn.addEventListener('click', () => {
-        const planoIndex = prompt("Digite o número do plano que deseja exportar para a agenda (começando do 1):") - 1;
-        if (planoIndex >= 0 && planoIndex < planos.length) {
-            exportarParaAgenda(planos[planoIndex]);
-        } else if (planoIndex !== null) {
-            alert("Índice de plano inválido.");
-        }
-    });
-
-    function exportarParaAgenda(plano) {
-        const horarioInicio = prompt("Digite o horário de início dos eventos (formato HH:MM):");
-        const horarioFim = prompt("Digite o horário de fim dos eventos (formato HH:MM):");
-
-        if (!horarioInicio || !horarioFim) {
-            alert("Horários de início e fim são necessários para exportar para a agenda.");
-            return;
-        }
-
-        if (!/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(horarioInicio) || !/^([01]?[0-9]|2[0-3]):[0-5][0-9]$/.test(horarioFim)) {
-            alert("Formato de horário inválido. Use HH:MM (ex: 09:00 ou 19:30).");
-            return;
-        }
-
-        const eventosICS = gerarICS(plano, horarioInicio, horarioFim);
-        downloadICSFile(eventosICS, plano.titulo);
-    }
-
-    function gerarICS(plano, horarioInicio, horarioFim) {
-        let calendarICS = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Seu Organizador de Plano de Leitura//NONSGML v1.0//EN\r\n`;
-
-        calendarICS += `BEGIN:VEVENT\r\n`; // Iniciar um único evento VEVENT para toda a recorrência
-        calendarICS += `UID:${plano.id}@gerenciador-planos-leitura-recorrente\r\n`; // UID único para o evento recorrente
-
-        // Data de Início do Evento (primeiro dia do plano)
-        const dataInicioISO = plano.diasPlano[0].data.toISOString().slice(0, 10).replace(/-/g, "");
-        const inicioEvento = `${dataInicioISO}T${horarioInicio.replace(/:/g, "")}00`;
-        calendarICS += `DTSTART:${inicioEvento}\r\n`;
-
-        // Data de Fim do Evento (fim do horário no primeiro dia)
-        const fimEventoPrimeiroDia = `${dataInicioISO}T${horarioFim.replace(/:/g, "")}00`;
-        calendarICS += `DTEND:${fimEventoPrimeiroDia}\r\n`;
-
-        // Valarme para lembrete de 15 minutos antes
-        calendarICS += `BEGIN:VALARM\r\nACTION:DISPLAY\r\nDESCRIPTION:Lembrete de leitura\r\nTRIGGER:-PT15M\r\nEND:VALARM\r\n`;
-
-        // Regra de Recorrência (RRULE)
-        let rrule = 'RRULE:';
-        if (plano.periodicidade === 'diario') {
-            rrule += 'FREQ=DAILY';
-        } else if (plano.periodicidade === 'semanal') {
-            rrule += 'FREQ=WEEKLY;BYDAY=';
-            const diasSemanaAbreviados = plano.diasSemana.map(diaIndex => {
-                const diasAbreviados = ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA']; // Domingo a Sábado em inglês abreviado
-                return diasAbreviados[diaIndex];
-            }).join(',');
-            rrule += diasSemanaAbreviados;
-        }
-
-        // Data UNTIL (Data de Fim da Recorrência)
-        const dataFimISO = plano.dataFim.toISOString().slice(0, 10).replace(/-/g, "");
-        rrule += `;UNTIL=${dataFimISO}T235959Z`; // Termina no último segundo do dia final (UTC)
-        calendarICS += rrule + '\r\n';
-
-
-        calendarICS += `SUMMARY:Leitura: ${plano.titulo} - Páginas (ver detalhes)\r\n`; // Resumo genérico para o evento recorrente
-        calendarICS += `DESCRIPTION:Plano de leitura do livro "${plano.titulo}". Acesse o plano em: <a href="https://fernnog.github.io/Plano-leitura-livros/">Gerenciador de Planos de Leitura</a>\r\n\r\n`;
-
-        // Adicionar detalhes dos dias de leitura na descrição (opcional, mas útil)
-        plano.diasPlano.forEach(dia => {
-            calendarICS += `- ${dia.data.toLocaleDateString('pt-BR')} - Páginas ${dia.paginaInicioDia} a ${dia.paginaFimDia}\r\n`;
-        });
-        calendarICS += `\r\nAbra o Gerenciador de Planos de Leitura para mais detalhes.\r\n`;
-        calendarICS += `LOCATION:Sua casa ou local de leitura preferido\r\n`;
-        calendarICS += `END:VEVENT\r\n`; // Fim do evento VEVENT único
-
-        calendarICS += `END:VCALENDAR\r\n`;
-        return calendarICS;
-    }
-
-    function downloadICSFile(icsContent, planoTitulo) {
-        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${planoTitulo.replace(/[^a-z0-9]/gi, '_')}_leitura_agenda.ics`;
-        a.click();
-        URL.revokeObjectURL(url);
-    }
-
-    function togglePaginatorVisibility() {
-        const paginador = document.getElementById('paginador-planos');
-        if (!paginador) return; // Exit if paginator element doesn't exist
-        const planos = document.querySelectorAll('.plano-leitura');
-        if (!planos || planos.length === 0) {
-            if (paginador.classList.contains('hidden')) {
-                paginador.classList.remove('hidden');
-            }
-            return; // No plans, ensure paginator is visible (or not hidden) and exit
-        }
-        const ultimoPlano = planos[planos.length - 1];
-        if (!ultimoPlano) return; // Exit if last plan element doesn't exist
-
-        const rect = ultimoPlano.getBoundingClientRect();
-        const paginadorHeight = paginador.offsetHeight;
-        const windowHeight = window.innerHeight;
-
-        if (rect.bottom <= windowHeight && rect.bottom > windowHeight - paginadorHeight) {
-            if (!paginador.classList.contains('hidden')) {
-                paginador.classList.add('hidden');
-            }
-        } else {
-            if (paginador.classList.contains('hidden')) {
-                paginador.classList.remove('hidden');
-            }
-        }
-    }
-
-    window.addEventListener('scroll', togglePaginatorVisibility);
-    window.addEventListener('resize', togglePaginatorVisibility);
-
-    const originalRenderizarPlanos = renderizarPlanos;
-    renderizarPlanos = function() {
-        originalRenderizarPlanos();
-        togglePaginatorVisibility();
-    };
-});
+        const avisoAtrasoDiv = document.getElementById(`aviso-atraso-${index}`);
+        avisoAtrasoDiv.innerHTML = `
+            <p>⚠️ Plano com atraso. Escolha como recalcular:</p>
+-            <button onclick="recalcularPlanoPeriodoOriginal(${index})">Manter Período Original</button>
++            <button onclick="recalcularPlanoPeriodoOriginal(${index})">Redistribuir no Período Original</button>
+             <button onclick="solicitarNovaDataFim(${index})">Definir Nova Data Limite</button>
++            <button onclick="solicitarPaginasPorDia(${index})">Definir Páginas por Dia</button>
+             <button onclick="fecharAvisoRecalculo(${index})">Cancelar</button>
+         `;
+     };
+@@ -593,6 +632,25 @@
+         }
+     };
+ 
++    window.solicitarPaginasPorDia = function(index) {
++        const paginasPorDiaInput = prompt("Digite o número de páginas que você pretende ler por dia:");
++        if (paginasPorDiaInput) {
++            const paginasPorDia = parseInt(paginasPorDiaInput);
++            if (isNaN(paginasPorDia) || paginasPorDia <= 0) {
++                alert("Por favor, insira um número válido de páginas por dia (maior que zero).");
++                return;
++            }
++            recalcularPlanoPaginasPorDia(index, paginasPorDia);
++        }
++    };
++
++    function calcularNovaDataFimPorPaginasDia(plano, paginasPorDia) {
++        const paginasRestantes = plano.totalPaginas - plano.paginasLidas;
++        const diasNecessarios = Math.ceil(paginasRestantes / paginasPorDia);
++        const novaDataFim = new Date(); // Começa a partir de hoje
++        novaDataFim.setDate(novaDataFim.getDate() + diasNecessarios -1); // Subtrai 1 porque conta o dia de hoje
++        return novaDataFim;
++    }
++
+     // Recalcula um plano atrasado
+     window.recalcularPlanoPeriodoOriginal = function(index) {
+         const plano = planos[index];
+@@ -634,6 +692,35 @@
+         renderizarPlanos();
+     };
+ 
++    // Recalcula o plano com base em páginas por dia
++    window.recalcularPlanoPaginasPorDia = function(index, paginasPorDia) {
++        const plano = planos[index];
++
++        if (paginasPorDia <= 0) {
++            alert("Número de páginas por dia deve ser maior que zero.");
++            return;
++        }
++
++        const novaDataFim = calcularNovaDataFimPorPaginasDia(plano, paginasPorDia);
++
++        if (novaDataFim <= plano.dataInicio) {
++            alert("Com essa quantidade de páginas por dia, a nova data de fim não pode ser antes da data de início.");
++            return;
++        }
++
++        const diasParaAdicionar = Math.ceil((novaDataFim - plano.dataFim) / (1000 * 60 * 60 * 24));
++
++        if (diasParaAdicionar <= 0) {
++             alert("A nova data de fim não estende o plano atual.");
++             return;
++        }
++
++        recalcularPlanoNovaData(index, novaDataFim);
++    };
++
++
++
++
+     // Exclui um plano
+     window.excluirPlano = function(index) {
+         if (confirm("Tem certeza que deseja excluir este plano?")) {
+@@ -674,6 +761,7 @@
+         }
+ 
+         plano.diasPlano = novosDiasPlano;
++        distribuirPaginasPlano(plano); // Esta linha estava faltando e foi adicionada!
+         distribuirPaginasPlano(plano); // Re-distribui as páginas pelo novo período
+         salvarPlanos(planos);
+         renderizarPlanos();
