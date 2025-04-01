@@ -566,8 +566,12 @@ footer {
 /* Telas Pequenas (Celulares) */
 @media (max-width: 480px) {
     header { padding: 10px 15px; }
-    .header-top { justify-content: flex-start; /* Alinha logo à esquerda */}
-    header h1 { font-size: 1.3em; text-align: left; margin-left: 5px;}
+    /* .header-top { justify-content: flex-start; } /* Mantém centralizado */
+    header h1 {
+        font-size: 1.3em;
+        /* text-align: left; /* Mantém centralizado */
+        margin-left: 5px; /* Pode manter ou remover dependendo do visual desejado */
+    }
     .acoes-dados button, .acoes-dados a { font-size: 0.8em; padding: 6px 8px; }
     .acoes-dados .material-symbols-outlined { font-size: 1.1em; }
 
