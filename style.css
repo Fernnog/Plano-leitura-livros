@@ -566,11 +566,12 @@ footer {
 /* Telas Pequenas (Celulares) */
 @media (max-width: 480px) {
     header { padding: 10px 15px; }
-    /* .header-top { justify-content: flex-start; } /* Mantém centralizado */
+    /* A centralização do .header-top é herdada da regra base (justify-content: center) */
     header h1 {
         font-size: 1.3em;
-        /* text-align: left; /* Mantém centralizado */
-        margin-left: 5px; /* Pode manter ou remover dependendo do visual desejado */
+        text-align: center; /* Garante que o texto DENTRO do H1 está centralizado */
+        margin-left: 0; /* Remove a margem esquerda que poderia deslocar */
+        width: 100%; /* Faz o H1 ocupar a largura se quebrar linha */
     }
     .acoes-dados button, .acoes-dados a { font-size: 0.8em; padding: 6px 8px; }
     .acoes-dados .material-symbols-outlined { font-size: 1.1em; }
@@ -588,7 +589,6 @@ footer {
 
     .link-drive-container { flex-direction: column; align-items: flex-start; gap: 8px; }
     .link-drive-container a, .link-drive-container button { width: 100%; justify-content: center; }
-
 
     .dia-leitura { padding: 6px 3px; }
     .dia-leitura label { font-size: 0.85em; }
