@@ -418,7 +418,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-
     // *** FUNÇÃO ATUALIZADA: renderizarPlanos ***
     function renderizarPlanos() {
         paginadorPlanosDiv.innerHTML = '';
@@ -520,10 +519,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 planoDiv.classList.add(statusClass.replace('status-','card-')); // ex: card-atrasado
             }
             planoDiv.id = `plano-${index}`;
+            // ***** CORREÇÃO AQUI: Removidos os comentários {/**/} de dentro da string *****
             planoDiv.innerHTML = `
                 <div class="plano-header">
                     <h3><span class="plano-numero">${index + 1}. </span>${plano.titulo}</h3>
-                    ${statusTagHTML} {/* <-- Tag inserida aqui */}
+                    ${statusTagHTML}
                     <div class="plano-acoes-principais">
                         <button class="acoes-dados button" onclick="editarPlano(${index})" title="Editar detalhes do plano">
                            <span class="material-symbols-outlined">edit_note</span> Editar
@@ -533,7 +533,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         </button>
                     </div>
                 </div>
-                ${avisoAtrasoHTML} {/* Renderiza aviso se necessário */}
+                ${avisoAtrasoHTML}
                 ${linkDriveHTML}
                 <p>Páginas: ${plano.paginaInicio} - ${plano.paginaFim} (${plano.totalPaginas} pgs)</p>
                 <div class="progresso-container" title="${progressoPercentual.toFixed(0)}% concluído">
@@ -545,6 +545,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     <div class="dias-leitura">${renderizarDiasLeitura(plano.diasPlano, index)}</div>
                 </details>
             `;
+            // ***** FIM DA CORREÇÃO *****
             listaPlanos.appendChild(planoDiv);
         });
 
@@ -552,7 +553,6 @@ document.addEventListener('DOMContentLoaded', () => {
         togglePaginatorVisibility();
         renderizarProximasLeituras(); // Renderiza próximas leituras APÓS renderizar os planos
     }
-
 
     // Função verificarAtraso (sem alterações, calcula a contagem de dias)
     function verificarAtraso(plano) {
