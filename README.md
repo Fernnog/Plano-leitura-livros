@@ -67,4 +67,17 @@ cd Plano-leitura-livros
 #    Basta abrir o arquivo `index.html` diretamente no seu navegador.
 #    (Não é necessário um servidor local, pois usa módulos ES6 e não tem dependências complexas de build)
 
+> **Importante:** A configuração do Firebase (`firebaseConfig` no `script.js`) está vinculada ao projeto do desenvolvedor. Se você clonar e quiser usar seu próprio backend Firebase, precisará criar um projeto no Firebase, habilitar Authentication (Email/Senha) e Firestore, e substituir as credenciais no `script.js`.
 
+## 📝 Como Usar
+
+1.  **Login/Cadastro:** Use seu email e senha para acessar ou criar uma conta. Seus planos ficarão salvos e associados à sua conta.
+2.  **Verificar Próximas Leituras:** Na tela inicial, logo abaixo dos botões principais, confira o quadro "Próximas Leituras Agendadas" para ver suas próximas 3 tarefas de leitura.
+3.  **Criar Novo Plano:** Clique em "Novo", preencha os detalhes do livro, páginas, período de leitura e periodicidade. **Adicione o link para suas anotações (opcional)**. Salve o plano.
+4.  **Acompanhar Progresso:** Na lista de planos, marque os checkboxes dos dias que você completou a leitura. A barra de progresso e o resumo de próximas leituras serão atualizados.
+5.  **Acessar Anotações:** Clique no botão "Abrir Notas (Drive)" (ou similar) no card do plano para ir direto ao link que você salvou.
+6.  **Editar Link:** Clique em "Editar Link" para modificar ou adicionar o link de anotações a um plano existente.
+7.  **Editar Plano:** Clique em "Editar" para modificar todos os detalhes do plano (título, páginas, datas, etc.).
+8.  **Recalcular Atrasos:** Se um plano estiver atrasado, um aviso aparecerá. Clique em "Recalcular Plano" e escolha entre definir uma nova data final ou um novo ritmo de páginas por dia.
+9.  **Exportar para Agenda:** Clique em "Agenda", escolha o número do plano e defina os horários de início e fim. Um arquivo `.ics` será baixado para importação na sua agenda.
+10. **Sair:** Clique em "Sair" para deslogar da sua conta.
