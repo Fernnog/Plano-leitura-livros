@@ -63,7 +63,17 @@
     </header>
 
     <main>
-        <!-- *** NOVA SEÇÃO: Próximas Leituras (Inicialmente oculta) *** -->
+        <!-- *** NOVA SEÇÃO: Leituras Atrasadas (Inicialmente oculta) *** -->
+        <section id="leituras-atrasadas-section" style="display: none;">
+            <h2><span class="material-symbols-outlined align-text-bottom">warning</span> Leituras Atrasadas</h2>
+            <div id="lista-leituras-atrasadas">
+                <!-- Conteúdo será gerado pelo JavaScript -->
+            </div>
+            <p id="sem-leituras-atrasadas" style="display: none;">Parabéns! Nenhuma leitura atrasada encontrada.</p>
+        </section>
+        <!-- *** FIM DA NOVA SEÇÃO *** -->
+
+        <!-- Seção existente: Próximas Leituras (Inicialmente oculta) -->
         <section id="proximas-leituras-section" style="display: none;">
             <h2><span class="material-symbols-outlined align-text-bottom">event_upcoming</span> Próximas Leituras Agendadas</h2>
             <div id="lista-proximas-leituras">
@@ -71,7 +81,7 @@
             </div>
             <p id="sem-proximas-leituras" style="display: none;">Nenhuma leitura agendada para os próximos dias.</p>
         </section>
-        <!-- *** FIM DA NOVA SEÇÃO *** -->
+        <!-- Fim da Seção Próximas Leituras -->
 
         <!-- Seção de Cadastro/Edição de Plano (Inicialmente oculta) -->
         <section id="cadastro-plano" style="display: none;">
@@ -180,6 +190,7 @@
                 <button type="submit">Salvar Plano</button>
             </form>
         </section>
+        <!-- Fim da Seção Cadastro/Edição -->
 
         <!-- Seção da Lista de Planos Ativos -->
         <section id="planos-leitura">
@@ -194,6 +205,8 @@
                 <p>Carregando planos...</p> <!-- Mensagem inicial -->
             </div>
         </section>
+        <!-- Fim da Seção Lista Planos -->
+
     </main>
 
     <footer>
@@ -208,101 +221,7 @@
     <!-- End Cloudflare Web Analytics -->
 
     <!-- Scripts de proteção Cloudflare (mantidos do original, podem ser específicos do seu deploy) -->
-    <script>
-        (function(){
-            function c(){
-                var b=a.contentDocument||a.contentWindow.document;
-                if(b){
-                    var d=b.createElement('script');
-                    d.innerHTML="window.__CF$cv$params={r:'925870f39d1a3715',t:'MTc0Mjg0MzEzOS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
-                    b.getElementsByTagName('head')[0].appendChild(d)
-                }
-            }
-            if(document.body){
-                var a=document.createElement('iframe');
-                a.height=1;
-                a.width=1;
-                a.style.position='absolute';
-                a.style.top=0;
-                a.style.left=0;
-                a.style.border='none';
-                a.style.visibility='hidden';
-                document.body.appendChild(a);
-                if('loading'!==document.readyState)c();
-                else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
-                else{
-                    var e=document.onreadystatechange||function(){};
-                    document.onreadystatechange=function(b){
-                        e(b);
-                        'loading'!==document.readyState&&(document.onreadystatechange=e,c())
-                    }
-                }
-            }
-        })();
-    </script>
-    <script>
-        (function(){
-            function c(){
-                var b=a.contentDocument||a.contentWindow.document;
-                if(b){
-                    var d=b.createElement('script');
-                    d.innerHTML="window.__CF$cv$params={r:'9260d6a5be46bcfe',t:'MTc0MjkzMTE5MC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
-                    b.getElementsByTagName('head')[0].appendChild(d)
-                }
-            }
-            if(document.body){
-                var a=document.createElement('iframe');
-                a.height=1;
-                a.width=1;
-                a.style.position='absolute';
-                a.style.top=0;
-                a.style.left=0;
-                a.style.border='none';
-                a.style.visibility='hidden';
-                document.body.appendChild(a);
-                if('loading'!==document.readyState)c();
-                else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
-                else{
-                    var e=document.onreadystatechange||function(){};
-                    document.onreadystatechange=function(b){
-                        e(b);
-                        'loading'!==document.readyState&&(document.onreadystatechange=e,c())
-                    }
-                }
-            }
-        })();
-    </script>
-    <script>
-        (function(){
-            function c(){
-                var b=a.contentDocument||a.contentWindow.document;
-                if(b){
-                    var d=b.createElement('script');
-                    d.innerHTML="window.__CF$cv$params={r:'926668ea38b8507f',t:'MTc0Mjk4OTYxMC4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";
-                    b.getElementsByTagName('head')[0].appendChild(d)
-                }
-            }
-            if(document.body){
-                var a=document.createElement('iframe');
-                a.height=1;
-                a.width=1;
-                a.style.position='absolute';
-                a.style.top=0;
-                a.style.left=0;
-                a.style.border='none';
-                a.style.visibility='hidden';
-                document.body.appendChild(a);
-                if('loading'!==document.readyState)c();
-                else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);
-                else{
-                    var e=document.onreadystatechange||function(){};
-                    document.onreadystatechange=function(b){
-                        e(b);
-                        'loading'!==document.readyState&&(document.onreadystatechange=e,c())
-                    }
-                }
-            }
-        })();
-    </script>
+    <!-- Removi os scripts ofuscados do Cloudflare para clareza, pois eles são injetados dinamicamente pelo serviço -->
+
 </body>
 </html>
