@@ -1,4 +1,4 @@
-/* style.css (Completo e Atualizado) */
+/* style.css (Completo e Atualizado com Leituras Atrasadas) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -254,11 +254,10 @@ section h2 {
 }
 
 /* Adiciona cor na borda esquerda baseada no status (opcional, mas visualmente útil) */
-.plano-leitura.card-proximo { border-left-color: #b2ebf2; }
-.plano-leitura.card-em-dia { border-left-color: #c8e6c9; }
-.plano-leitura.card-atrasado { border-left-color: #ffe0b2; } /* Laranja */
-/* .plano-leitura.card-atrasado { border-left-color: #ffcdd2; } */ /* Vermelho se preferir */
-.plano-leitura.card-concluido { border-left-color: #e0e0e0; }
+.plano-leitura.card-proximo { border-left-color: #b2ebf2; } /* Ciano */
+.plano-leitura.card-em-dia { border-left-color: #c8e6c9; } /* Verde */
+.plano-leitura.card-atrasado { border-left-color: #ffe0b2; } /* Laranja/Amarelo */
+.plano-leitura.card-concluido { border-left-color: #e0e0e0; } /* Cinza */
 
 
 .plano-header {
@@ -277,6 +276,7 @@ section h2 {
     flex-grow: 1; /* Título ocupa espaço disponível */
     display: inline; /* Ajuda alinhamento com tag */
     margin-right: 5px; /* Pequeno espaço antes da tag */
+    order: 0; /* Ordem padrão no flex */
 }
 
 .plano-numero {
@@ -290,6 +290,7 @@ section h2 {
     gap: 8px;
     flex-shrink: 0; /* Impede que os botões encolham */
     margin-left: auto; /* Empurra botões para direita se houver espaço após tag */
+    order: 2; /* Botões vêm depois da tag */
 }
 
 .plano-acoes-principais button {
@@ -415,7 +416,6 @@ section h2 {
 
 .dia-leitura {
     display: flex;
-    /* justify-content: space-between; */ /* Removido para melhor alinhamento com checkbox */
     align-items: center;
     padding: 8px 5px; /* Padding vertical e horizontal */
     border-bottom: 1px dotted #e0e0e0;
@@ -455,8 +455,7 @@ section h2 {
     background-color: #e9f5e9; /* Fundo verde claro sutil */
 }
 
-/* Aviso de Atraso */
-/* Este aviso agora só aparece se o status for 'atrasado' via JS */
+/* Aviso de Atraso & Recálculo */
 .aviso-atraso {
     background-color: #fff3cd; /* Amarelo pálido */
     border: 1px solid #ffeeba;
@@ -495,6 +494,100 @@ section h2 {
 .aviso-atraso .acoes-dados button:hover {
     background-color: #e0a800; /* Amarelo mais escuro */
 }
+
+/* --- *** INÍCIO: Estilos para a Seção de Leituras Atrasadas *** --- */
+
+#leituras-atrasadas-section {
+    background-color: #fff8e1; /* Amarelo bem claro (tipo aviso) */
+    padding: 15px 20px;
+    margin-bottom: 25px;
+    border-radius: 8px;
+    border: 1px solid #ffecb3; /* Borda amarela clara */
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+#leituras-atrasadas-section h2 {
+    margin-top: 0;
+    margin-bottom: 15px; /* Espaço após H2 */
+    font-size: 1.3em; /* Pouco menor que títulos principais */
+    font-family: 'Ubuntu', sans-serif;
+    color: #e65100; /* Laranja escuro */
+    border-bottom: 1px solid #ffe0b2; /* Borda laranja clara */
+    padding-bottom: 8px;
+    display: flex; /* Alinha ícone e texto */
+    align-items: center;
+    gap: 8px; /* Espaço entre ícone e texto */
+}
+
+#leituras-atrasadas-section h2 .material-symbols-outlined {
+    font-size: 1.3em; /* Tamanho do ícone do título */
+    vertical-align: bottom; /* Alinha melhor com o texto */
+    color: #e65100; /* Ícone laranja */
+}
+
+#lista-leituras-atrasadas {
+    display: flex;
+    flex-direction: column;
+    gap: 12px; /* Espaço entre os itens da lista */
+}
+
+.leitura-atrasada-item {
+    background-color: #fff;
+    padding: 10px 15px;
+    border-radius: 5px;
+    border: 1px solid #eee;
+    border-left: 4px solid #ffb74d; /* Borda esquerda laranja */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px; /* Espaço entre data, título e páginas */
+    font-size: 0.95em;
+    flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
+    transition: background-color 0.2s ease;
+}
+.leitura-atrasada-item:hover {
+    background-color: #fffaf0; /* Amarelo ainda mais claro no hover */
+}
+
+.leitura-atrasada-data {
+    font-weight: bold;
+    color: #c63f00; /* Laranja/Vermelho escuro para destaque da data */
+    flex-shrink: 0; /* Evita que a data encolha muito */
+    white-space: nowrap; /* Impede que a data quebre linha */
+    background-color: #ffeacc; /* Fundo laranja bem claro para data */
+    padding: 3px 8px;
+    border-radius: 4px;
+}
+
+.leitura-atrasada-titulo {
+    color: #555;
+    flex-grow: 1; /* Ocupa espaço disponível */
+    text-align: left; /* Garante alinhamento à esquerda */
+}
+
+.leitura-atrasada-paginas {
+    color: #666;
+    font-size: 0.9em;
+    flex-shrink: 0;
+    background-color: #f1f1f1;
+    padding: 3px 8px;
+    border-radius: 4px;
+    white-space: nowrap;
+}
+
+#sem-leituras-atrasadas {
+    text-align: center;
+    color: #584400; /* Cor do texto para o fundo amarelo */
+    font-style: italic;
+    margin-top: 10px;
+    padding: 10px;
+    background-color: #fff; /* Fundo branco para a mensagem */
+    border: 1px dashed #ddd;
+    border-radius: 5px;
+}
+
+/* --- *** FIM: Estilos para a Seção de Leituras Atrasadas *** --- */
+
 
 /* --- *** INÍCIO: Estilos para a Seção de Próximas Leituras *** --- */
 
@@ -561,7 +654,6 @@ section h2 {
 .proxima-leitura-titulo {
     color: #555;
     flex-grow: 1; /* Ocupa espaço disponível */
-    /* font-style: italic; */ /* Removido itálico para melhorar leitura */
     text-align: left; /* Garante alinhamento à esquerda */
 }
 
@@ -646,7 +738,6 @@ footer {
     color: rgba(255, 255, 255, 0.7); /* Branco semitransparente */
     font-size: 0.9em;
     margin-top: 30px; /* Espaço acima do footer */
-    /* Removido position: fixed */
 }
 
 /* Animações */
@@ -655,113 +746,9 @@ footer {
     100% { transform: scale(1) rotate(0deg); opacity: 1; }
 }
 
-/* Media Queries para Responsividade */
-
-/* Telas Médias (Tablets) */
-@media (max-width: 768px) {
-    header h1 { font-size: 1.5em; }
-    main { padding: 15px; padding-bottom: 90px; /* Mais espaço para paginador */ }
-    section { padding: 15px; }
-    section h2 { font-size: 1.4em; }
-
-    #proximas-leituras-section h2 { font-size: 1.2em; } /* Ajuste título próximas leituras */
-    .proxima-leitura-item { font-size: 0.9em; } /* Ajuste fonte itens próximas leituras */
-
-    #paginador-planos a {
-        min-width: 32px;
-        height: 32px;
-        font-size: 0.85em;
-    }
-}
-
-/* Telas Pequenas (Celulares) */
-@media (max-width: 480px) {
-    header { padding: 10px 15px; }
-    /* A centralização do .header-top é herdada da regra base (justify-content: center) */
-    header h1 {
-        font-size: 1.3em;
-        text-align: center; /* Garante que o texto DENTRO do H1 está centralizado */
-        margin-left: 0; /* Remove a margem esquerda que poderia deslocar */
-        width: 100%; /* Faz o H1 ocupar a largura se quebrar linha */
-    }
-    .acoes-dados button, .acoes-dados a { font-size: 0.8em; padding: 6px 8px; }
-    .acoes-dados .material-symbols-outlined { font-size: 1.1em; }
-
-    main { padding: 10px; padding-bottom: 80px; }
-    section { padding: 12px; }
-    section h2 { font-size: 1.2em; margin-bottom: 15px;}
-
-    #form-plano input, #form-plano select { padding: 10px; }
-    #form-plano button[type="submit"] { font-size: 1em; padding: 10px 20px; }
-
-    .plano-header {
-        flex-direction: column; /* Título e Tag/Botões empilhados */
-        align-items: flex-start; /* Alinha tudo à esquerda */
-        gap: 5px;
-    }
-    .plano-header h3 {
-         font-size: 1.15em;
-         width: 100%; /* Título ocupa largura */
-         margin-right: 0;
-    }
-    /* .status-tag já é ajustado na seção de estilos de tag */
-    .plano-acoes-principais {
-         width: 100%;
-         justify-content: flex-end; /* Botões à direita */
-         margin-left: 0; /* Reseta margin-left */
-    }
-
-
-    .link-drive-container { flex-direction: column; align-items: flex-start; gap: 8px; }
-    .link-drive-container a, .link-drive-container button { width: 100%; justify-content: center; }
-
-    /* Ajustes Responsivos para a Nova Seção */
-    #proximas-leituras-section { padding: 10px 15px; }
-    #proximas-leituras-section h2 { font-size: 1.15em; }
-    .proxima-leitura-item {
-        flex-direction: column; /* Empilha verticalmente em telas pequenas */
-        align-items: flex-start; /* Alinha itens à esquerda */
-        gap: 5px;
-        padding: 8px 12px;
-    }
-    .proxima-leitura-data {
-        font-size: 0.9em; /* Ajusta tamanho da data */
-        width: auto; /* Não ocupa mais toda a largura */
-        align-self: flex-start; /* Garante alinhamento */
-        padding: 2px 6px; /* Padding menor */
-    }
-     .proxima-leitura-titulo {
-         width: 100%; /* Ocupa toda a largura */
-         font-size: 0.9em;
-         margin: 3px 0; /* Pequena margem vertical */
-     }
-    .proxima-leitura-paginas {
-        align-self: flex-end; /* Alinha páginas à direita */
-        margin-top: 5px;
-        font-size: 0.85em; /* Páginas menores */
-        padding: 2px 6px;
-    }
-    /* Fim Ajustes Responsivos para Nova Seção */
-
-
-    .dia-leitura { padding: 6px 3px; }
-    .dia-leitura label { font-size: 0.85em; }
-
-    #paginador-planos { padding: 6px 0; }
-    #paginador-planos a {
-        min-width: 30px;
-        height: 30px;
-        font-size: 0.8em;
-    }
-
-    footer { font-size: 0.8em; padding: 10px 0;}
-}
-
 /* Tooltips (Nativos do Navegador) */
 [title] {
-    /* Estilos padrão do navegador geralmente são suficientes */
-    /* Pode adicionar 'cursor: help;' se desejar */
-    cursor: help;
+    cursor: help; /* Indica que há uma dica */
 }
 
 /* Botão de voltar dentro do form */
@@ -793,7 +780,6 @@ footer {
     font-size: 0.75em;   /* Tamanho da fonte menor */
     font-weight: bold;   /* Negrito */
     border-radius: 12px;  /* Bordas arredondadas (formato de pílula) */
-    /* margin-left: 10px; */   /* Removido margin-left daqui para controlar melhor no flex */
     vertical-align: middle; /* Alinha verticalmente com o texto do título */
     white-space: nowrap; /* Evita quebra de linha no texto da tag */
     line-height: 1.3;    /* Ajuste fino da altura da linha */
@@ -803,60 +789,146 @@ footer {
     flex-shrink: 0; /* Impede a tag de encolher */
 }
 
-/* Cores específicas para cada status (baseadas em temas comuns) */
-
+/* Cores específicas para cada status */
 .status-proximo {
     background-color: #e0f7fa; /* Azul claro (ciano) */
     color: #00778a;            /* Azul escuro (ciano) */
     border: 1px solid #b2ebf2; /* Borda sutil */
 }
-
 .status-em-dia {
     background-color: #e8f5e9; /* Verde claro */
     color: #2e7d32;            /* Verde escuro */
     border: 1px solid #c8e6c9; /* Borda sutil */
 }
-
 .status-atrasado {
     background-color: #fff3e0; /* Laranja claro */
     color: #e65100;            /* Laranja escuro */
     border: 1px solid #ffe0b2; /* Borda sutil */
-    /* Alternativa (Vermelho): */
-    /* background-color: #ffebee; */ /* Vermelho claro */
-    /* color: #c62828; */           /* Vermelho escuro */
-    /* border: 1px solid #ffcdd2; */
 }
-
 .status-concluido {
     background-color: #f5f5f5; /* Cinza claro */
     color: #616161;            /* Cinza escuro */
     border: 1px solid #e0e0e0; /* Borda sutil */
 }
 
-/* Ajustes específicos no .plano-header para a tag */
-.plano-header .plano-acoes-principais {
-    order: 2; /* Garante que os botões venham depois da tag */
+/* --- *** FIM: Estilos para Tags de Status do Plano *** --- */
+
+
+/* Media Queries para Responsividade */
+
+/* Telas Médias (Tablets) */
+@media (max-width: 768px) {
+    header h1 { font-size: 1.5em; }
+    main { padding: 15px; padding-bottom: 90px; /* Mais espaço para paginador */ }
+    section { padding: 15px; }
+    section h2 { font-size: 1.4em; }
+
+    /* Ajuste títulos painéis laterais */
+    #leituras-atrasadas-section h2 { font-size: 1.2em; }
+    #proximas-leituras-section h2 { font-size: 1.2em; }
+    /* Ajuste fonte itens painéis laterais */
+    .leitura-atrasada-item { font-size: 0.9em; }
+    .proxima-leitura-item { font-size: 0.9em; }
+
+    #paginador-planos a {
+        min-width: 32px;
+        height: 32px;
+        font-size: 0.85em;
+    }
 }
 
-
-/* Ajustes Responsivos para a Tag */
+/* Telas Pequenas (Celulares) */
 @media (max-width: 480px) {
+    header { padding: 10px 15px; }
+    header h1 {
+        font-size: 1.3em;
+        text-align: center;
+        margin-left: 0;
+        width: 100%;
+    }
+    .acoes-dados button, .acoes-dados a { font-size: 0.8em; padding: 6px 8px; }
+    .acoes-dados .material-symbols-outlined { font-size: 1.1em; }
+
+    main { padding: 10px; padding-bottom: 80px; }
+    section { padding: 12px; }
+    section h2 { font-size: 1.2em; margin-bottom: 15px;}
+
+    #form-plano input, #form-plano select { padding: 10px; }
+    #form-plano button[type="submit"] { font-size: 1em; padding: 10px 20px; }
+
     .plano-header {
-        align-items: flex-start; /* Alinha no topo em telas pequenas */
-        /* .plano-header h3 já ocupa 100% da largura */
+        flex-direction: column; /* Título, Tag e Botões empilhados */
+        align-items: flex-start; /* Alinha tudo à esquerda */
+        gap: 5px;
+    }
+    .plano-header h3 {
+         font-size: 1.15em;
+         width: 100%; /* Título ocupa largura */
+         margin-right: 0;
+         order: 0; /* Garante que título venha primeiro */
     }
     .status-tag {
-        order: 1; /* Mantém ordem após título */
+        order: 1; /* Tag vem depois do título */
         margin-top: 5px; /* Adiciona espaço acima quando quebra linha */
         margin-left: 0; /* Sem margem esquerda */
-        /* display: block; text-align: center; */ /* Opcional: Ocupar largura */
     }
     .plano-acoes-principais {
-         order: 2; /* Mantém ordem após tag */
+         order: 2; /* Botões vêm por último */
+         width: 100%;
+         justify-content: flex-end; /* Botões à direita */
+         margin-left: 0; /* Reseta margin-left */
          margin-top: 5px; /* Adiciona espaço acima se quebrar */
-         /* justify-content: flex-end; já definido */
-         /* width: 100%; já definido */
     }
-}
 
-/* --- *** FIM: Estilos para Tags de Status do Plano *** --- */
+    .link-drive-container { flex-direction: column; align-items: flex-start; gap: 8px; }
+    .link-drive-container a, .link-drive-container button { width: 100%; justify-content: center; }
+
+    /* Ajustes Responsivos para os Painéis Laterais (Atrasadas e Próximas) */
+    #leituras-atrasadas-section,
+    #proximas-leituras-section { padding: 10px 15px; }
+
+    #leituras-atrasadas-section h2,
+    #proximas-leituras-section h2 { font-size: 1.15em; }
+
+    .leitura-atrasada-item,
+    .proxima-leitura-item {
+        flex-direction: column; /* Empilha verticalmente em telas pequenas */
+        align-items: flex-start; /* Alinha itens à esquerda */
+        gap: 5px;
+        padding: 8px 12px;
+    }
+    .leitura-atrasada-data,
+    .proxima-leitura-data {
+        font-size: 0.9em; /* Ajusta tamanho da data */
+        width: auto; /* Não ocupa mais toda a largura */
+        align-self: flex-start; /* Garante alinhamento */
+        padding: 2px 6px; /* Padding menor */
+    }
+     .leitura-atrasada-titulo,
+     .proxima-leitura-titulo {
+         width: 100%; /* Ocupa toda a largura */
+         font-size: 0.9em;
+         margin: 3px 0; /* Pequena margem vertical */
+     }
+    .leitura-atrasada-paginas,
+    .proxima-leitura-paginas {
+        align-self: flex-end; /* Alinha páginas à direita */
+        margin-top: 5px;
+        font-size: 0.85em; /* Páginas menores */
+        padding: 2px 6px;
+    }
+    /* Fim Ajustes Responsivos para Painéis Laterais */
+
+
+    .dia-leitura { padding: 6px 3px; }
+    .dia-leitura label { font-size: 0.85em; }
+
+    #paginador-planos { padding: 6px 0; }
+    #paginador-planos a {
+        min-width: 30px;
+        height: 30px;
+        font-size: 0.8em;
+    }
+
+    footer { font-size: 0.8em; padding: 10px 0;}
+}
