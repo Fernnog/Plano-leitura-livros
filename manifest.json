@@ -1,8 +1,7 @@
 {
-  "name": "Meu gerenciador pessoal de leitura de livros",
-  "short_name": "Gerenciador leitura de livros",
-  "descr",
-  "description": "Meu gerenciador pessoal de leitura de livros inteligente.",
+  "name": "Meu gerenciador de leitura de livros",
+  "short_name": "Gerenciador de leitura",
+  "description": "Gerenciador de leitura de livros inteligente.",
   "start_url": ".", // Ou apenas "/" se o index.html está na raiz
   "display": "standalone", // Faz parecer um app sem a barra de endereço do Chrome
   "background_color": "#f8f9fa", // Cor de fundo da tela de splash (opcional)
