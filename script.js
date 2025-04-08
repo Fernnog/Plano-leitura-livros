@@ -3,6 +3,32 @@ import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebas
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
+// --- Início do seu script.js ou parte relevante ---
+
+// Função para registrar o Service Worker
+function registerServiceWorker() {
+  if ('serviceWorker' in navigator) { // Verifica se o navegador suporta Service Workers
+    navigator.serviceWorker.register('/sw.js') // Tenta registrar o sw.js (ajuste o caminho se necessário)
+      .then(registration => {
+        console.log('Service Worker registrado com sucesso! Escopo:', registration.scope);
+      })
+      .catch(error => {
+        console.error('Falha ao registrar o Service Worker:', error);
+      });
+  } else {
+    console.log('Service Workers não são suportados neste navegador.');
+  }
+}
+
+// Chama a função de registro quando a janela carregar
+window.addEventListener('load', () => {
+    registerServiceWorker();
+    // Coloque o restante do seu código de inicialização aqui dentro se ele
+    // depender do DOM estar pronto (ou mantenha-o fora se for independente)
+    // Ex: initializeApp(), setupEventListeners(), etc.
+});
+
+
 document.addEventListener('DOMContentLoaded', () => {
     // Seleção de elementos do DOM
     const formPlano = document.getElementById('form-plano');
