@@ -1,4 +1,4 @@
-/* style.css (Completo e Atualizado com Leituras Atrasadas e Tag Numérica) */
+/* style.css (Completo e Atualizado - v3 com Layout Horizontal em Telas Pequenas) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -579,7 +579,7 @@ section h2 {
     padding: 3px 8px;
     border-radius: 4px;
     white-space: nowrap;
-    order: 3; /* Último item na linha */
+    order: 3; /* Quarto item na linha */
     margin-left: auto; /* Tenta empurrar para a direita se houver espaço */
 }
 
@@ -679,7 +679,7 @@ section h2 {
     padding: 3px 8px;
     border-radius: 4px;
     white-space: nowrap;
-    order: 3; /* Último item na linha */
+    order: 3; /* Quarto item na linha */
     margin-left: auto; /* Tenta empurrar para a direita se houver espaço */
 }
 
@@ -716,11 +716,7 @@ section h2 {
 }
 
 /* Ajustes específicos para o layout flex dos itens dos painéis */
-.leitura-atrasada-item,
-.proxima-leitura-item {
-    /* Garante que itens dentro do flex fiquem alinhados corretamente com a nova tag */
-    align-items: center; /* Reafirma o alinhamento central vertical */
-}
+/* (O align-items: center já está definido nos seletores .leitura-*-item) */
 
 /* --- *** FIM: Estilos para Tag Numérica *** --- */
 
@@ -880,7 +876,7 @@ footer {
     }
 }
 
-/* Telas Pequenas (Celulares) */
+/* Telas Pequenas (Celulares) - COM AJUSTES PARA LAYOUT HORIZONTAL NOS PAINÉIS */
 @media (max-width: 480px) {
     header { padding: 10px 15px; }
     header h1 {
@@ -926,7 +922,7 @@ footer {
     .link-drive-container { flex-direction: column; align-items: flex-start; gap: 8px; }
     .link-drive-container a, .link-drive-container button { width: 100%; justify-content: center; }
 
-    /* Ajustes Responsivos para os Painéis Laterais (Atrasadas e Próximas) */
+    /* --- AJUSTES PAINÉIS DE LEITURA (Telas Pequenas < 480px) --- */
     #leituras-atrasadas-section,
     #proximas-leituras-section { padding: 10px 15px; }
 
@@ -935,44 +931,62 @@ footer {
 
     .leitura-atrasada-item,
     .proxima-leitura-item {
-        flex-direction: column; /* Empilha verticalmente em telas pequenas */
-        align-items: flex-start; /* Alinha itens à esquerda */
-        gap: 5px;
+        /* Mantém row direction, permite wrap, alinha ao centro vertical */
+        display: flex;
+        flex-direction: row; /* Garante direção de linha */
+        flex-wrap: wrap;     /* Permite quebrar linha */
+        align-items: center; /* Alinha verticalmente os itens na linha */
+        justify-content: flex-start; /* Começa alinhando à esquerda */
+        gap: 5px 8px; /* Gap vertical e horizontal entre itens que quebram linha */
         padding: 8px 12px;
+        /* Removemos o align-items: flex-start que causava o empilhamento inicial */
     }
+
+    /* Data */
     .leitura-atrasada-data,
     .proxima-leitura-data {
-        font-size: 0.9em; /* Ajusta tamanho da data */
-        width: auto; /* Não ocupa mais toda a largura */
-        align-self: flex-start; /* Garante alinhamento */
-        padding: 2px 6px; /* Padding menor */
-        order: 0; /* Data primeiro no empilhado */
+        font-size: 0.85em; /* Ligeiramente menor */
+        padding: 2px 6px;
+        flex-shrink: 0; /* Não encolhe */
+        white-space: nowrap;
+        order: 0; /* Primeiro item */
+        /* Remove width: auto e align-self */
     }
 
-    /* Agrupa a tag numérica e o título */
+    /* Tag Numérica */
     .numero-plano-tag {
-        order: 1; /* Tag vem depois da data */
-        margin-bottom: 0; /* Remove margem inferior padrão da tag */
+        font-size: 0.75em; /* Ligeiramente menor */
+        padding: 1px 5px;
+        flex-shrink: 0; /* Não encolhe */
+        order: 1; /* Segundo item */
+        /* Remove margin-bottom */
     }
+
+    /* Título */
     .leitura-atrasada-titulo,
     .proxima-leitura-titulo {
-        order: 2; /* Título vem depois da tag */
-        width: calc(100% - 30px); /* Ajusta largura para caber ao lado da tag, se possível */
-        display: inline; /* Tenta manter na mesma linha da tag */
         font-size: 0.9em;
-        margin-left: 0; /* Remove margem padrão */
-        margin-bottom: 5px; /* Espaço abaixo do título */
+        flex-grow: 1;       /* Permite crescer para ocupar espaço */
+        flex-shrink: 1;     /* Permite encolher se necessário */
+        min-width: 80px;   /* Largura mínima antes de quebrar */
+        order: 2;           /* Terceiro item */
+        margin-left: 0;     /* Garante sem margem extra */
+        margin-bottom: 0;   /* Remove margem inferior */
+        /* Remove display: inline e width: calc() */
     }
 
+    /* Páginas */
     .leitura-atrasada-paginas,
     .proxima-leitura-paginas {
-        order: 3; /* Páginas vêm por último */
-        align-self: flex-end; /* Alinha páginas à direita */
-        margin-top: 5px;
-        font-size: 0.85em; /* Páginas menores */
+        font-size: 0.8em; /* Ligeiramente menor */
         padding: 2px 6px;
+        flex-shrink: 0;     /* Não encolhe */
+        white-space: nowrap;
+        order: 3;           /* Quarto item */
+        margin-left: auto;  /* TENTA EMPURRAR PARA A DIREITA DA LINHA */
+        /* Remove align-self e margin-top */
     }
-    /* Fim Ajustes Responsivos para Painéis Laterais */
+    /* --- FIM AJUSTES PAINÉIS DE LEITURA (Telas Pequenas) --- */
 
 
     .dia-leitura { padding: 6px 3px; }
