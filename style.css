@@ -1,4 +1,4 @@
-/* style.css (Completo e Atualizado com Leituras Atrasadas) */
+/* style.css (Completo e Atualizado com Leituras Atrasadas e Tag Numérica) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -539,8 +539,8 @@ section h2 {
     border-left: 4px solid #ffb74d; /* Borda esquerda laranja */
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 15px; /* Espaço entre data, título e páginas */
+    align-items: center; /* Alinha itens verticalmente */
+    gap: 10px; /* Espaço reduzido entre itens */
     font-size: 0.95em;
     flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
     transition: background-color 0.2s ease;
@@ -557,12 +557,18 @@ section h2 {
     background-color: #ffeacc; /* Fundo laranja bem claro para data */
     padding: 3px 8px;
     border-radius: 4px;
+    order: 0; /* Primeiro item na linha */
 }
+
+/* A TAG NUMÉRICA já tem estilo definido mais abaixo (.numero-plano-tag) */
+/* Ela será o segundo item (order: 1) */
 
 .leitura-atrasada-titulo {
     color: #555;
     flex-grow: 1; /* Ocupa espaço disponível */
     text-align: left; /* Garante alinhamento à esquerda */
+    order: 2; /* Terceiro item na linha */
+    min-width: 100px; /* Largura mínima para evitar espremer muito */
 }
 
 .leitura-atrasada-paginas {
@@ -573,6 +579,8 @@ section h2 {
     padding: 3px 8px;
     border-radius: 4px;
     white-space: nowrap;
+    order: 3; /* Último item na linha */
+    margin-left: auto; /* Tenta empurrar para a direita se houver espaço */
 }
 
 #sem-leituras-atrasadas {
@@ -631,8 +639,8 @@ section h2 {
     border: 1px solid #eee;
     display: flex;
     justify-content: space-between;
-    align-items: center;
-    gap: 15px; /* Espaço entre data, título e páginas */
+    align-items: center; /* Alinha itens verticalmente */
+    gap: 10px; /* Espaço reduzido entre itens */
     font-size: 0.95em;
     flex-wrap: wrap; /* Permite quebrar linha em telas pequenas */
     transition: background-color 0.2s ease;
@@ -649,12 +657,18 @@ section h2 {
     background-color: #e7f0fe; /* Fundo azul bem claro para data */
     padding: 3px 8px;
     border-radius: 4px;
+    order: 0; /* Primeiro item na linha */
 }
+
+/* A TAG NUMÉRICA já tem estilo definido mais abaixo (.numero-plano-tag) */
+/* Ela será o segundo item (order: 1) */
 
 .proxima-leitura-titulo {
     color: #555;
     flex-grow: 1; /* Ocupa espaço disponível */
     text-align: left; /* Garante alinhamento à esquerda */
+    order: 2; /* Terceiro item na linha */
+    min-width: 100px; /* Largura mínima para evitar espremer muito */
 }
 
 .proxima-leitura-paginas {
@@ -665,6 +679,8 @@ section h2 {
     padding: 3px 8px;
     border-radius: 4px;
     white-space: nowrap;
+    order: 3; /* Último item na linha */
+    margin-left: auto; /* Tenta empurrar para a direita se houver espaço */
 }
 
 #sem-proximas-leituras {
@@ -680,6 +696,33 @@ section h2 {
 
 /* --- *** FIM: Estilos para a Seção de Próximas Leituras *** --- */
 
+/* --- *** INÍCIO: Estilos para Tag Numérica nos Painéis de Leitura *** --- */
+
+.numero-plano-tag {
+    display: inline-block;      /* Permite padding/margin e alinhamento */
+    background-color: #e0e0e0;  /* Cinza claro (pode ajustar se preferir outra cor neutra) */
+    color: #333;                /* Cor do texto escura para contraste */
+    padding: 2px 6px;           /* Padding interno (vertical, horizontal) */
+    border-radius: 4px;         /* Cantos levemente arredondados */
+    font-size: 0.8em;           /* Tamanho da fonte um pouco menor */
+    font-weight: bold;          /* Número em negrito */
+    margin-right: 8px;          /* Espaço à direita, antes do título */
+    min-width: 20px;            /* Largura mínima para acomodar números (ajustável) */
+    text-align: center;         /* Centraliza o número dentro da tag */
+    line-height: 1.4;           /* Ajusta altura da linha para melhor alinhamento vertical */
+    vertical-align: middle;     /* Tenta alinhar verticalmente com o texto adjacente */
+    flex-shrink: 0;             /* Impede que a tag encolha no layout flex */
+    order: 1;                   /* Garante que venha *depois* da data e *antes* do título */
+}
+
+/* Ajustes específicos para o layout flex dos itens dos painéis */
+.leitura-atrasada-item,
+.proxima-leitura-item {
+    /* Garante que itens dentro do flex fiquem alinhados corretamente com a nova tag */
+    align-items: center; /* Reafirma o alinhamento central vertical */
+}
+
+/* --- *** FIM: Estilos para Tag Numérica *** --- */
 
 /* Paginador Flutuante */
 #paginador-planos {
@@ -827,8 +870,8 @@ footer {
     #leituras-atrasadas-section h2 { font-size: 1.2em; }
     #proximas-leituras-section h2 { font-size: 1.2em; }
     /* Ajuste fonte itens painéis laterais */
-    .leitura-atrasada-item { font-size: 0.9em; }
-    .proxima-leitura-item { font-size: 0.9em; }
+    .leitura-atrasada-item { font-size: 0.9em; gap: 8px; /* Menor gap em tablet */}
+    .proxima-leitura-item { font-size: 0.9em; gap: 8px; /* Menor gap em tablet */ }
 
     #paginador-planos a {
         min-width: 32px;
@@ -903,15 +946,27 @@ footer {
         width: auto; /* Não ocupa mais toda a largura */
         align-self: flex-start; /* Garante alinhamento */
         padding: 2px 6px; /* Padding menor */
+        order: 0; /* Data primeiro no empilhado */
     }
-     .leitura-atrasada-titulo,
-     .proxima-leitura-titulo {
-         width: 100%; /* Ocupa toda a largura */
-         font-size: 0.9em;
-         margin: 3px 0; /* Pequena margem vertical */
-     }
+
+    /* Agrupa a tag numérica e o título */
+    .numero-plano-tag {
+        order: 1; /* Tag vem depois da data */
+        margin-bottom: 0; /* Remove margem inferior padrão da tag */
+    }
+    .leitura-atrasada-titulo,
+    .proxima-leitura-titulo {
+        order: 2; /* Título vem depois da tag */
+        width: calc(100% - 30px); /* Ajusta largura para caber ao lado da tag, se possível */
+        display: inline; /* Tenta manter na mesma linha da tag */
+        font-size: 0.9em;
+        margin-left: 0; /* Remove margem padrão */
+        margin-bottom: 5px; /* Espaço abaixo do título */
+    }
+
     .leitura-atrasada-paginas,
     .proxima-leitura-paginas {
+        order: 3; /* Páginas vêm por último */
         align-self: flex-end; /* Alinha páginas à direita */
         margin-top: 5px;
         font-size: 0.85em; /* Páginas menores */
