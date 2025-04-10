@@ -1,4 +1,4 @@
-// script.js (Completo e Corrigido com Painel de Leituras Atrasadas)
+// script.js (Completo com Tag Numérica nos Painéis)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
@@ -382,7 +382,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Chama uma vez para configurar no carregamento inicial
     updateRequiredAttributes();
 
-    // --- *** NOVA FUNÇÃO: Renderizar Leituras Atrasadas *** ---
+    // --- *** FUNÇÃO: Renderizar Leituras Atrasadas (COM TAG NUMÉRICA) *** ---
     function renderizarLeiturasAtrasadas() {
         leiturasAtrasadasSection.style.display = 'none'; // Esconde por padrão
         if (!user || !planos || planos.length === 0) {
@@ -392,7 +392,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const hoje = getHojeNormalizado(); // Pega a data de hoje (00:00:00)
         const todasLeiturasAtrasadas = [];
 
-        planos.forEach((plano, planoIndex) => {
+        planos.forEach((plano, planoIndex) => { // <-- MODIFICAÇÃO: Obtém planoIndex aqui
             // Considera apenas planos que não estão concluídos
             if (plano.diasPlano && plano.diasPlano.length > 0 && determinarStatusPlano(plano) !== 'concluido') {
                 plano.diasPlano.forEach((dia, diaIndex) => {
@@ -407,6 +407,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 data: dia.data,
                                 titulo: plano.titulo,
                                 paginasTexto: `Pgs ${dia.paginaInicioDia}-${dia.paginaFimDia} (${dia.paginas})`,
+                                planoIndex: planoIndex // <-- MODIFICAÇÃO: Adiciona planoIndex ao objeto
                             });
                         }
                     }
@@ -434,8 +435,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dataFormatada = leitura.data.toLocaleDateString('pt-BR', {
                      weekday: 'short', month: 'short', day: 'numeric'
                 });
+                const numeroPlano = leitura.planoIndex + 1; // <-- MODIFICAÇÃO: Calcula o número (1-based)
+
+                // <-- MODIFICAÇÃO: Adiciona o span .numero-plano-tag antes do título
                 itemDiv.innerHTML = `
                     <span class="leitura-atrasada-data">${dataFormatada}</span>
+                    <span class="numero-plano-tag">${numeroPlano}</span>
                     <span class="leitura-atrasada-titulo">${leitura.titulo}</span>
                     <span class="leitura-atrasada-paginas">${leitura.paginasTexto}</span>
                 `;
@@ -444,9 +449,9 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         // Se não houver itens, a seção permanece oculta (display = 'none' no início da função)
     }
-    // --- *** FIM da Nova Função *** ---
+    // --- *** FIM da Função Atrasadas *** ---
 
-    // --- *** FUNÇÃO: Renderizar Próximas Leituras *** ---
+    // --- *** FUNÇÃO: Renderizar Próximas Leituras (COM TAG NUMÉRICA) *** ---
     function renderizarProximasLeituras() {
         proximasLeiturasSection.style.display = 'none'; // Esconde por padrão
         if (!user || !planos || planos.length === 0) {
@@ -454,7 +459,7 @@ document.addEventListener('DOMContentLoaded', () => {
         }
         const hoje = getHojeNormalizado();
         const todasLeiturasFuturas = [];
-        planos.forEach((plano, planoIndex) => {
+        planos.forEach((plano, planoIndex) => { // <-- MODIFICAÇÃO: Obtém planoIndex aqui
             // Considera planos não concluídos
             if (plano.diasPlano && plano.diasPlano.length > 0 && determinarStatusPlano(plano) !== 'concluido') {
                 plano.diasPlano.forEach((dia, diaIndex) => {
@@ -468,6 +473,7 @@ document.addEventListener('DOMContentLoaded', () => {
                                 data: dia.data,
                                 titulo: plano.titulo,
                                 paginasTexto: `Pgs ${dia.paginaInicioDia}-${dia.paginaFimDia} (${dia.paginas})`,
+                                planoIndex: planoIndex // <-- MODIFICAÇÃO: Adiciona planoIndex ao objeto
                             });
                         }
                     }
@@ -487,8 +493,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 const dataFormatada = leitura.data.toLocaleDateString('pt-BR', {
                     weekday: 'short', month: 'short', day: 'numeric'
                 });
+                const numeroPlano = leitura.planoIndex + 1; // <-- MODIFICAÇÃO: Calcula o número (1-based)
+
+                 // <-- MODIFICAÇÃO: Adiciona o span .numero-plano-tag antes do título
                 itemDiv.innerHTML = `
                     <span class="proxima-leitura-data">${dataFormatada}</span>
+                    <span class="numero-plano-tag">${numeroPlano}</span>
                     <span class="proxima-leitura-titulo">${leitura.titulo}</span>
                     <span class="proxima-leitura-paginas">${leitura.paginasTexto}</span>
                 `;
@@ -1303,15 +1313,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
         let paginaAtual = plano.paginaInicio; // Começa na página inicial do plano
 
-        // Guarda o estado 'lido' original para restaurar depois (se necessário)
-        // const diasLidosOriginalmente = {};
-        // diasDeLeitura.forEach((dia, index) => {
-        //     if (dia.data instanceof Date && !isNaN(dia.data)) {
-        //         diasLidosOriginalmente[dia.data.toISOString().split('T')[0]] = dia.lido;
-        //     }
-        //     dia.lido = false; // Reseta 'lido' antes de redistribuir páginas (opcional)
-        // });
-
         // Distribui as páginas dia a dia
         diasDeLeitura.forEach((dia, index) => {
             // Calcula quantas páginas para este dia (base + 1 extra se estiver entre os primeiros)
@@ -1328,14 +1329,6 @@ document.addEventListener('DOMContentLoaded', () => {
 
              // Recalcula o número de páginas efetivas para o dia (evita negativo se fim < inicio)
              dia.paginas = Math.max(0, dia.paginaFimDia - dia.paginaInicioDia + 1);
-
-            // Restaura o estado 'lido' original (se guardado)
-            // if (dia.data instanceof Date && !isNaN(dia.data)) {
-            //     const dataStr = dia.data.toISOString().split('T')[0];
-            //     if (diasLidosOriginalmente[dataStr]) {
-            //         dia.lido = true;
-            //     }
-            // }
 
             // Atualiza a página atual para o próximo dia começar
             paginaAtual = dia.paginaFimDia + 1;
@@ -1675,9 +1668,6 @@ document.addEventListener('DOMContentLoaded', () => {
                      }
                  }
              });
-             // Recalcula paginas lidas com base nos dias marcados (incluindo os restaurados)
-             // Note que as páginas por dia ainda não foram distribuídas, então isso será recalculado após distribuirPaginasPlano
-             // planoData.paginasLidas = planoData.diasPlano.reduce((sum, dia) => sum + (dia.lido && typeof dia.paginas === 'number' ? dia.paginas : 0), 0);
         }
 
         // --- Distribui as Páginas e Atualiza Páginas Lidas ---
