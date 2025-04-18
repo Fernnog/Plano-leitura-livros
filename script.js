@@ -1,4 +1,4 @@
-// script.js (Completo - v5: Comentários removidos do innerHTML - SW REMOVIDO)
+// script.js (Completo - v5: SW Removido + Logs de Diagnóstico Auth)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
 import { getAuth, onAuthStateChanged, signOut, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js';
 import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
@@ -8,27 +8,9 @@ import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } f
 // >>>>>>>>> INÍCIO DA REMOÇÃO SW <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 /*
 // Função para registrar o Service Worker (REMOVIDO)
-function registerServiceWorker() {
-  if ('serviceWorker' in navigator) { // Verifica se o navegador suporta Service Workers
-    navigator.serviceWorker.register('/sw.js') // Tenta registrar o sw.js (ajuste o caminho se necessário)
-      .then(registration => {
-        console.log('Service Worker registrado com sucesso! Escopo:', registration.scope);
-      })
-      .catch(error => {
-        console.error('Falha ao registrar o Service Worker:', error);
-      });
-  } else {
-    console.log('Service Workers não são suportados neste navegador.');
-  }
-}
-
+function registerServiceWorker() { ... }
 // Chama a função de registro quando a janela carregar (REMOVIDO)
-window.addEventListener('load', () => {
-    registerServiceWorker(); // <--- CHAMADA REMOVIDA
-    // Coloque o restante do seu código de inicialização aqui dentro se ele
-    // depender do DOM estar pronto (ou mantenha-o fora se for independente)
-    // Ex: initializeApp(), setupEventListeners(), etc.
-});
+window.addEventListener('load', () => { ... });
 */
 // >>>>>>>>> FIM DA REMOÇÃO SW <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<
 
@@ -96,9 +78,18 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // Inicializar o Firebase
+    console.log("Inicializando Firebase com config:", firebaseConfig); // Log da config
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // >>> LOGS DE DIAGNÓSTICO ADICIONADOS <<<
+    console.log("Firebase App Object:", app);
+    console.log("Firebase Auth Object:", auth);
+    if (!auth) {
+        console.error("ERRO CRÍTICO: Objeto Auth do Firebase NÃO foi inicializado após getAuth()!");
+    }
+    // >>> FIM DOS LOGS DE DIAGNÓSTICO <<<
 
     // Variáveis globais
     let user = null;
@@ -240,8 +231,18 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Funções loginWithEmailPassword, signupWithEmailPassword, logout
     function loginWithEmailPassword() {
+        console.log("--- loginWithEmailPassword FUNCTION CALLED ---"); // <<< LOG ADICIONADO <<<
         const email = emailLoginInput.value;
         const password = passwordLoginInput.value;
+
+        // Verifica se o objeto auth é válido antes de usar
+        if (!auth) {
+             console.error("LOGIN ERROR: Objeto Auth do Firebase não está inicializado!");
+             alert("Erro interno: Falha na inicialização da autenticação.");
+             return;
+        }
+
+        console.log("Attempting sign in with email:", email); // Log para ver o email
 
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
@@ -251,7 +252,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 // onAuthStateChanged cuidará da atualização da UI
             })
             .catch((error) => {
-                // Log de erro aprimorado
+                // Log de erro aprimorado (mantido)
                 console.error('--- LOGIN ERROR ---');
                 console.error('Error Code:', error.code);
                 console.error('Error Message:', error.message);
@@ -260,8 +261,18 @@ document.addEventListener('DOMContentLoaded', () => {
             });
     }
     function signupWithEmailPassword() {
+        console.log("--- signupWithEmailPassword FUNCTION CALLED ---"); // <<< LOG ADICIONADO <<<
         const email = emailLoginInput.value;
         const password = passwordLoginInput.value;
+
+        // Verifica se o objeto auth é válido antes de usar
+        if (!auth) {
+             console.error("SIGNUP ERROR: Objeto Auth do Firebase não está inicializado!");
+             alert("Erro interno: Falha na inicialização da autenticação.");
+             return;
+        }
+
+        console.log("Attempting sign up with email:", email); // Log para ver o email
 
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
@@ -276,7 +287,7 @@ document.addEventListener('DOMContentLoaded', () => {
                  atualizarVisibilidadeBotoesAcao();
             })
             .catch((error) => {
-                // Log de erro aprimorado
+                // Log de erro aprimorado (mantido)
                 console.error('--- SIGNUP ERROR ---');
                 console.error('Error Code:', error.code);
                 console.error('Error Message:', error.message);
@@ -772,19 +783,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     console.error('Falha ao salvar progresso no Firebase.');
                     // Opcional: Reverter a mudança na UI ou mostrar erro ao usuário
-                    // Por ora, a UI já foi atualizada otimisticamente, mas o dado não foi salvo.
-                    // Se a falha for persistente, a próxima recarga trará o dado antigo.
-                    // Poderia tentar reverter:
-                    // planos[planoIndex].diasPlano[diaIndex].lido = !lido;
-                    // atualizarPaginasLidas(planoIndex);
-                    // renderizarPlanos(); // Renderiza de novo com o estado revertido
                     alert("Erro ao salvar o progresso. Sua alteração pode não ter sido salva permanentemente.");
+                    // Reverte a mudança local
+                    planos[planoIndex].diasPlano[diaIndex].lido = !lido;
+                    atualizarPaginasLidas(planoIndex);
+                    renderizarPlanos(); // Renderiza de novo com o estado revertido
                 }
             });
-
-            // Re-renderiza a UI imediatamente para feedback rápido (atualização otimista)
-            // Removido daqui, pois agora está dentro do callback de salvarPlanos
-            // renderizarPlanos();
 
         } else {
             console.error("Índice de plano ou dia inválido para marcar como lido.");
@@ -907,8 +912,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 } else {
                     console.error('Falha ao salvar atualização do link no Firebase.');
                     alert("Erro ao salvar o link. Tente novamente.");
-                    // Poderia reverter a mudança local se o salvamento falhar
-                    // planos[index].linkDrive = linkAtual;
+                    // Reverte a mudança local se o salvamento falhar
+                    planos[index].linkDrive = linkAtual;
                 }
                 // Re-renderiza os planos para mostrar a mudança (ou a reversão)
                 renderizarPlanos();
@@ -1589,33 +1594,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     // Função calcularDataFimReal (Pode ser útil, mas não é usada diretamente no fluxo principal agora)
     /*
-    function calcularDataFimReal(dataInicio, numeroDias, periodicidade, diasSemana) {
-         if (!(dataInicio instanceof Date) || isNaN(dataInicio.getTime()) || typeof numeroDias !== 'number' || numeroDias <= 0) {
-             console.error("Dados inválidos para calcular data fim real:", dataInicio, numeroDias); return null;
-         }
-        let dataAtual = new Date(dataInicio); dataAtual.setHours(0, 0, 0, 0);
-        let diasContados = 0;
-        let dataFim = null;
-        let safetyCounter = 0;
-        const MAX_ITERATIONS_CALC = numeroDias * 10 + 366;
-        while (diasContados < numeroDias && safetyCounter < MAX_ITERATIONS_CALC) {
-            const diaSemanaAtual = dataAtual.getDay();
-            if (periodicidade === 'diario' || (periodicidade === 'semanal' && Array.isArray(diasSemana) && diasSemana.includes(diaSemanaAtual))) {
-                diasContados++;
-                 if (diasContados === numeroDias) {
-                     dataFim = new Date(dataAtual); // Guarda a data do último dia contado
-                     break; // Para o loop
-                 }
-            }
-             dataAtual.setDate(dataAtual.getDate() + 1);
-             safetyCounter++;
-              if (safetyCounter >= MAX_ITERATIONS_CALC) {
-                 console.error("Loop infinito provável em calcularDataFimReal. Interrompido.");
-                 return null; // Retorna null em caso de loop excessivo
-             }
-        }
-        return dataFim; // Retorna a data encontrada ou null
-    }
+    function calcularDataFimReal(dataInicio, numeroDias, periodicidade, diasSemana) { ... }
     */
 
 
