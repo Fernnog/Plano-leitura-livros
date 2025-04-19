@@ -11,13 +11,13 @@
   "scope": "/",
   "icons": [
     {
-      "src": "imagens/logo_192.png", // Verifique se este caminho está correto!
+      "src": "./imagens/logo_192.png", // Verifique se este caminho está correto!
       "type": "image/png",
       "sizes": "192x192",
       "purpose": "any maskable" // maskable é bom para ícones adaptativos no Android
     },
     {
-      "src": "imagens/logo_512.png", // Verifique se este caminho está correto!
+      "src": "./imagens/logo_512.png", // Verifique se este caminho está correto!
       "type": "image/png",
       "sizes": "512x512",
        "purpose": "any maskable"
