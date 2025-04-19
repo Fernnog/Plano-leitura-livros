@@ -219,39 +219,38 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Função atualizarVisibilidadeBotoesAcao
-    function atualizarVisibilidadeBotoesAcao() {
-        const estaNaTelaCadastro = cadastroPlanoSection.style.display !== 'none';
+   function atualizarVisibilidadeBotoesAcao() {
+    const estaNaTelaCadastro = cadastroPlanoSection.style.display !== 'none';
 
-        if (estaNaTelaCadastro) {
-            novoPlanoBtn.style.display = 'none';
-            inicioBtn.style.display = user ? 'block' : 'none';
-            exportarAgendaBtn.style.display = 'none';
-            showAuthButton.style.display = 'none';
-            logoutButton.style.display = 'none';
-            proximasLeiturasSection.style.display = 'none'; // Esconde próximas
-            leiturasAtrasadasSection.style.display = 'none'; // Esconde atrasadas
-        } else {
-            novoPlanoBtn.style.display = user ? 'block' : 'none';
-            inicioBtn.style.display = 'none';
-            exportarAgendaBtn.style.display = user && planos.length > 0 ? 'block' : 'none';
+    if (estaNaTelaCadastro) {
+        novoPlanoBtn.style.display = 'none';
+        inicioBtn.style.display = user ? 'block' : 'none';
+        exportarAgendaBtn.style.display = 'none';
+        showAuthButton.style.display = 'none';
+        logoutButton.style.display = 'none';
+         // Adicionado: Esconder form e cancelar na tela de cadastro
+         authFormDiv.style.display = 'none';
+         cancelAuthButton.style.display = 'none';
+    } else {
+        // Lógica para quando NÃO está na tela de cadastro
+        novoPlanoBtn.style.display = user ? 'block' : 'none';
+        inicioBtn.style.display = 'none';
+        exportarAgendaBtn.style.display = user && planos.length > 0 ? 'block' : 'none';
+        logoutButton.style.display = user ? 'block' : 'none';
+
+        // Controle do botão 'Login/Cadastro' e 'Cancelar'
+        // A visibilidade do authFormDiv será controlada pelos botões específicos
+        if (authFormDiv.style.display === 'none') {
+            // Se o formulário está escondido, mostra o botão 'Login/Cadastro' (se não logado) e esconde 'Cancelar'
             showAuthButton.style.display = user ? 'none' : 'block';
-            logoutButton.style.display = user ? 'block' : 'none';
-            // Visibilidade dos painéis de leitura é controlada em suas respectivas funções de renderização
-        }
-
-        // Lógica adicional para o formulário de autenticação
-        if (!user && showAuthButton.style.display === 'none' && !estaNaTelaCadastro) {
-           // Manter como está (formulário de auth visível)
-        } else if (!user && !estaNaTelaCadastro){
-             authFormDiv.style.display = 'none';
-             cancelAuthButton.style.display = 'none';
-        } else if (user) {
-             authFormDiv.style.display = 'none';
-             cancelAuthButton.style.display = 'none';
+            cancelAuthButton.style.display = 'none';
+        } else {
+            // Se o formulário está visível, esconde o botão 'Login/Cadastro' e mostra 'Cancelar'
+            showAuthButton.style.display = 'none';
+            cancelAuthButton.style.display = 'block'; // Ou 'inline-block'
         }
     }
-
+     
 // Em script.js
 
 function loginWithEmailPassword() {
