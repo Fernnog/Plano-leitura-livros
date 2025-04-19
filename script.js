@@ -271,6 +271,7 @@ function loginWithEmailPassword() {
 }
 
 function signupWithEmailPassword() {
+    console.log(">>> signupWithEmailPassword FUNÇÃO INICIADA!");
     const email = emailLoginInput.value;
     const password = passwordLoginInput.value;
     console.log("Tentando cadastrar com email:", email); // ADD LOG
