@@ -234,44 +234,49 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Funções loginWithEmailPassword, signupWithEmailPassword, logout
-    function loginWithEmailPassword() {
-        const email = emailLoginInput.value;
-        const password = passwordLoginInput.value;
+// Em script.js
 
-        signInWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                console.log('Login com email/senha bem-sucedido');
-                emailLoginInput.value = '';
-                passwordLoginInput.value = '';
-                // onAuthStateChanged cuidará da atualização da UI
-            })
-            .catch((error) => {
-                console.error('Erro ao fazer login com email/senha:', error);
-                alert('Erro ao fazer login: ' + error.message);
-            });
-    }
-    function signupWithEmailPassword() {
-        const email = emailLoginInput.value;
-        const password = passwordLoginInput.value;
+function loginWithEmailPassword() {
+    const email = emailLoginInput.value;
+    const password = passwordLoginInput.value;
+    console.log("Tentando fazer login com email:", email); // ADD LOG
 
-        createUserWithEmailAndPassword(auth, email, password)
-            .then((userCredential) => {
-                console.log('Cadastro com email/senha bem-sucedido:', userCredential.user);
-                alert('Cadastro realizado com sucesso! Faça login.');
-                emailLoginInput.value = '';
-                passwordLoginInput.value = '';
-                // Esconde o form e mostra botão de login/cadastro novamente
-                authFormDiv.style.display = 'none';
-                showAuthButton.style.display = 'block';
-                cancelAuthButton.style.display = 'none';
-                 atualizarVisibilidadeBotoesAcao();
-            })
-            .catch((error) => {
-                console.error('Erro ao fazer cadastro com email/senha:', error);
-                alert('Erro ao cadastrar: ' + error.message);
-            });
-    }
+    signInWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            console.log('Login com email/senha bem-sucedido:', userCredential.user.uid); // ADD LOG com UID
+            emailLoginInput.value = '';
+            passwordLoginInput.value = '';
+        })
+        .catch((error) => {
+            // Log detalhado do erro do Firebase
+            console.error('Erro DETALHADO ao fazer login:', error.code, error.message, error); // ADD LOG DETALHADO
+            alert('Erro ao fazer login: ' + error.message + ' (Código: ' + error.code + ')'); // Mostra o código no alerta
+        });
+}
+
+function signupWithEmailPassword() {
+    const email = emailLoginInput.value;
+    const password = passwordLoginInput.value;
+    console.log("Tentando cadastrar com email:", email); // ADD LOG
+
+    createUserWithEmailAndPassword(auth, email, password)
+        .then((userCredential) => {
+            console.log('Cadastro com email/senha bem-sucedido:', userCredential.user.uid); // ADD LOG com UID
+            alert('Cadastro realizado com sucesso! Faça login.');
+            emailLoginInput.value = '';
+            passwordLoginInput.value = '';
+            authFormDiv.style.display = 'none';
+            showAuthButton.style.display = 'block';
+            cancelAuthButton.style.display = 'none';
+             atualizarVisibilidadeBotoesAcao();
+        })
+        .catch((error) => {
+            // Log detalhado do erro do Firebase
+            console.error('Erro DETALHADO ao cadastrar:', error.code, error.message, error); // ADD LOG DETALHADO
+            alert('Erro ao cadastrar: ' + error.message + ' (Código: ' + error.code + ')'); // Mostra o código no alerta
+        });
+}
+  
     function logout() {
         console.log("Função logout() iniciada");
         signOut(auth)
