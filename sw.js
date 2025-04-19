@@ -5,12 +5,12 @@ const CACHE_NAME = 'gerenciador-leitura-cache-v1';
 // Arquivos essenciais para o app shell (adicione os seus)
 const urlsToCache = [
   '/', // Ou '/index.html' ou '.' dependendo da sua estrutura e start_url
-  '/index.html',
-  '/style.css',
-  '/script.js', // Se o script.js for essencial para o carregamento inicial
-  '/logo.png', // Logo usado no header
-  '/imagens/logo_192.png', // Ícone do manifest
-  '/imagens/logo_512.png', // Ícone do manifest
+  './index.html',
+  './style.css',
+  './script.js', // Se o script.js for essencial para o carregamento inicial
+  './logo.png', // Logo usado no header
+  './imagens/logo_192.png', // Ícone do manifest
+  './imagens/logo_512.png', // Ícone do manifest
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200', // Fonte externa
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap' // Fonte externa
   // Adicione outros CSS, JS, imagens ou fontes essenciais aqui
