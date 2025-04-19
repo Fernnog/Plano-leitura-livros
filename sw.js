@@ -5,14 +5,14 @@ const CACHE_NAME = 'gerenciador-leitura-cache-v1';
 // Arquivos essenciais para o app shell (com caminhos relativos corrigidos)
 const urlsToCache = [
   '.', // Representa o diretório atual (o root do projeto)
-  'index.html', // Ou './index.html'
-  'style.css',  // Ou './style.css'
-  'script.js',  // Ou './script.js'
-  'logo.png',   // Ou './logo.png'
-  'imagens/logo_192.png', // Ou './imagens/logo_192.png'
-  'imagens/logo_512.png', // Ou './imagens/logo_512.png'
-  'manifest.json', // Adicionado (Importante que o manifesto seja cacheado também)
-  'favicon.ico',   // Adicionado (Se você o referenciar)
+  './index.html', // Ou './index.html'
+  './style.css',  // Ou './style.css'
+  './script.js',  // Ou './script.js'
+  './logo.png',   // Ou './logo.png'
+  './imagens/logo_192.png', // Ou './imagens/logo_192.png'
+  './imagens/logo_512.png', // Ou './imagens/logo_512.png'
+  './manifest.json', // Adicionado (Importante que o manifesto seja cacheado também)
+  './favicon.ico',   // Adicionado (Se você o referenciar)
   'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200', // Fonte externa
   'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap' // Fonte externa
   // Adicione outros CSS, JS, imagens ou fontes essenciais aqui, se necessário
