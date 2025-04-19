@@ -51,19 +51,22 @@ document.addEventListener('DOMContentLoaded', () => {
     const showAuthButton = document.getElementById('show-auth-button');
     const cancelAuthButton = document.getElementById('cancel-auth-button');
     const loginEmailButton = document.getElementById('login-email-button');
-    const signupEmailButton = document.getElementById('signup-email-button');
-  console.log("DEBUG: Selecionado Login Button:", loginEmailButton); // LOG 1
-if (loginEmailButton) {
-    loginEmailButton.addEventListener('click', loginWithEmailPassword);
-    console.log("DEBUG: Event Listener ADICIONADO ao Login Button."); // LOG 2
+  if (loginEmailButton) {
+    loginEmailButton.addEventListener('click', () => {
+        console.log(">>> Login Button CLICKED! (Listener Fired)"); // <-- ADD THIS LOG
+        loginWithEmailPassword();
+    });
+    console.log("DEBUG: Event Listener ADICIONADO ao Login Button.");
 } else {
     console.error("ERRO: Botão de Login (login-email-button) não encontrado no DOM!");
 }
-
-console.log("DEBUG: Selecionado Signup Button:", signupEmailButton); // LOG 3
-if (signupEmailButton) {
-    signupEmailButton.addEventListener('click', signupWithEmailPassword);
-    console.log("DEBUG: Event Listener ADICIONADO ao Signup Button."); // LOG 4
+    const signupEmailButton = document.getElementById('signup-email-button');
+  if (signupEmailButton) {
+    signupEmailButton.addEventListener('click', () => {
+        console.log(">>> Signup Button CLICKED! (Listener Fired)"); // <-- ADD THIS LOG
+        signupWithEmailPassword();
+    });
+    console.log("DEBUG: Event Listener ADICIONADO ao Signup Button.");
 } else {
     console.error("ERRO: Botão de Cadastro (signup-email-button) não encontrado no DOM!");
 }
@@ -252,7 +255,7 @@ if (signupEmailButton) {
 // Em script.js
 
 function loginWithEmailPassword() {
-    console.log(">>> loginWithEmailPassword FUNÇÃO INICIADA!");
+    console.log(">>> loginWithEmailPassword FUNCTION CALLED!"); // <-- Ensure this log is still here
     const email = emailLoginInput.value;
     const password = passwordLoginInput.value;
     console.log("Tentando fazer login com email:", email); // ADD LOG
@@ -271,7 +274,7 @@ function loginWithEmailPassword() {
 }
 
 function signupWithEmailPassword() {
-    console.log(">>> signupWithEmailPassword FUNÇÃO INICIADA!");
+    console.log(">>> signupWithEmailPassword FUNCTION CALLED!"); // <-- Ensure this log is still here
     const email = emailLoginInput.value;
     const password = passwordLoginInput.value;
     console.log("Tentando cadastrar com email:", email); // ADD LOG
