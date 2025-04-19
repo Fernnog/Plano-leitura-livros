@@ -8,7 +8,7 @@ import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } f
 // Função para registrar o Service Worker
 function registerServiceWorker() {
   if ('serviceWorker' in navigator) { // Verifica se o navegador suporta Service Workers
-    navigator.serviceWorker.register('/sw.js') // Tenta registrar o sw.js (ajuste o caminho se necessário)
+    navigator.serviceWorker.register('./sw.js') // Tenta registrar o sw.js (ajuste o caminho se necessário)
       .then(registration => {
         console.log('Service Worker registrado com sucesso! Escopo:', registration.scope);
       })
