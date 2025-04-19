@@ -52,6 +52,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const cancelAuthButton = document.getElementById('cancel-auth-button');
     const loginEmailButton = document.getElementById('login-email-button');
     const signupEmailButton = document.getElementById('signup-email-button');
+  console.log("DEBUG: Selecionado Login Button:", loginEmailButton); // LOG 1
+if (loginEmailButton) {
+    loginEmailButton.addEventListener('click', loginWithEmailPassword);
+    console.log("DEBUG: Event Listener ADICIONADO ao Login Button."); // LOG 2
+} else {
+    console.error("ERRO: Botão de Login (login-email-button) não encontrado no DOM!");
+}
+
+console.log("DEBUG: Selecionado Signup Button:", signupEmailButton); // LOG 3
+if (signupEmailButton) {
+    signupEmailButton.addEventListener('click', signupWithEmailPassword);
+    console.log("DEBUG: Event Listener ADICIONADO ao Signup Button."); // LOG 4
+} else {
+    console.error("ERRO: Botão de Cadastro (signup-email-button) não encontrado no DOM!");
+}
     const emailLoginInput = document.getElementById('email-login');
     const passwordLoginInput = document.getElementById('password-login');
     const logoutButton = document.getElementById('logout-button');
