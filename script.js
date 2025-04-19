@@ -252,6 +252,7 @@ if (signupEmailButton) {
 // Em script.js
 
 function loginWithEmailPassword() {
+    console.log(">>> loginWithEmailPassword FUNÇÃO INICIADA!");
     const email = emailLoginInput.value;
     const password = passwordLoginInput.value;
     console.log("Tentando fazer login com email:", email); // ADD LOG
