@@ -1,6 +1,4 @@
-// script.js (Completo e Atualizado)
-// Inclui Firebase Auth/Firestore, PWA registration, Renderização de Planos/Painéis,
-// Funcionalidades de CRUD de planos, Recálculo, Exportação ICS, Paginador e Lógica de Autenticação.
+// script.js (COMPLETO e Atualizado com LOGS ADICIONAIS - v_debug_auth)
 
 // Importações do Firebase SDK (Módulos ES6)
 import { initializeApp } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js';
@@ -9,29 +7,33 @@ import { getFirestore, collection, doc, setDoc, getDoc, updateDoc, deleteDoc } f
 
 // --- Início da Lógica do Aplicativo ---
 
+console.log("[Init] Script carregado.");
+
 // Função para registrar o Service Worker (PWA)
 function registerServiceWorker() {
-  if ('serviceWorker' in navigator) { // Verifica se o navegador suporta Service Workers
-    navigator.serviceWorker.register('./sw.js') // Tenta registrar o sw.js
-      .then(registration => {
-        console.log('Service Worker registrado com sucesso! Escopo:', registration.scope);
-      })
-      .catch(error => {
-        console.error('Falha ao registrar o Service Worker:', error);
-      });
-  } else {
-    console.log('Service Workers não são suportados neste navegador.');
-  }
+    if ('serviceWorker' in navigator) { // Verifica se o navegador suporta Service Workers
+        navigator.serviceWorker.register('./sw.js') // Tenta registrar o sw.js
+          .then(registration => {
+            console.log('[PWA] Service Worker registrado com sucesso! Escopo:', registration.scope);
+          })
+          .catch(error => {
+            console.error('[PWA] Falha ao registrar o Service Worker:', error);
+          });
+    } else {
+        console.log('[PWA] Service Workers não são suportados neste navegador.');
+    }
 }
 
 // Chama a função de registro do Service Worker quando a janela carregar
 window.addEventListener('load', () => {
+    console.log("[Init] Window carregada (load event). Registrando SW...");
     registerServiceWorker();
-    // Código de inicialização que depende do DOM estar pronto vai dentro de DOMContentLoaded
 });
 
 // Executa o código principal quando o DOM estiver totalmente carregado
 document.addEventListener('DOMContentLoaded', () => {
+    console.log("[Init] DOMContentLoaded disparado. Iniciando seletores e listeners...");
+
     // --- Seleção de elementos do DOM ---
     const formPlano = document.getElementById('form-plano');
     const listaPlanos = document.getElementById('lista-planos');
@@ -92,9 +94,11 @@ document.addEventListener('DOMContentLoaded', () => {
     };
 
     // --- Inicialização do Firebase ---
+    console.log("[Firebase] Inicializando Firebase App...");
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
+    console.log("[Firebase] Firebase App inicializado.");
 
     // --- Variáveis Globais ---
     let user = null; // Armazena o usuário autenticado
@@ -112,184 +116,237 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Determina o status de um plano (proximo, em_dia, atrasado, concluido)
     function determinarStatusPlano(plano) {
-        if (!plano || !plano.diasPlano || !(plano.dataInicio instanceof Date) || !(plano.dataFim instanceof Date)) {
-            return 'invalido'; // Dados incompletos
+        if (!plano || !plano.diasPlano || !(plano.dataInicio instanceof Date) || !(plano.dataFim instanceof Date) || isNaN(plano.dataInicio) || isNaN(plano.dataFim)) {
+            // Adicionado log para plano inválido
+            // console.warn("[Status] Dados do plano inválidos para determinar status:", plano);
+            return 'invalido'; // Dados incompletos ou inválidos
         }
 
         const hoje = getHojeNormalizado();
         const dataInicioPlano = new Date(plano.dataInicio); dataInicioPlano.setHours(0,0,0,0);
         const dataFimPlano = new Date(plano.dataFim); dataFimPlano.setHours(0,0,0,0);
 
+        // 1. Concluído (todos os dias marcados como lidos)
         const todosLidos = plano.diasPlano.length > 0 && plano.diasPlano.every(dia => dia.lido);
         if (todosLidos) return 'concluido';
 
+        // 2. Próximo (data de início no futuro)
         if (dataInicioPlano > hoje) return 'proximo';
 
+        // 3. Atrasado (existe algum dia passado não lido)
         const temDiaPassadoNaoLido = plano.diasPlano.some(dia => {
             if (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
                  const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0, 0, 0, 0);
                  return dataDiaNormalizada < hoje && !dia.lido;
             }
-            return false;
+            return false; // Dia inválido não conta como atraso
          });
          if (temDiaPassadoNaoLido) return 'atrasado';
 
+        // 4. Em dia (hoje está dentro do período e não está atrasado/concluído/próximo)
         if (hoje >= dataInicioPlano && hoje <= dataFimPlano) return 'em_dia';
 
-        // Se passou da data fim, não concluído, sem atrasos (provavelmente terminou em dia)
-        if (hoje > dataFimPlano && !todosLidos && !temDiaPassadoNaoLido) return 'em_dia';
+        // 5. Finalizado "em dia" (passou da data fim, não concluído, mas sem dias passados não lidos)
+        if (hoje > dataFimPlano && !todosLidos && !temDiaPassadoNaoLido) {
+            // Consideramos como "em dia" pois não há pendências, embora não marcado como concluído
+            return 'em_dia';
+        }
 
-        console.warn("Plano sem status definido:", plano);
+        // Caso raro: não se encaixa em nenhuma categoria clara
+        console.warn("[Status] Plano sem status definido (caso raro):", plano);
         return ''; // Sem status claro
     }
+
 
     // --- Lógica Principal da Aplicação ---
 
     // Inicializa a aplicação, começando pela autenticação
     function initApp() {
+        console.log("[App] initApp chamado. Iniciando autenticação...");
         initAuth();
     }
 
     // Gerencia o estado de autenticação do usuário
     function initAuth() {
+        console.log("[Auth] initAuth chamado. Configurando onAuthStateChanged listener...");
         onAuthStateChanged(auth, (currentUser) => {
-            user = currentUser;
-            console.log("Estado de Autenticação Mudou:", user ? user.uid : 'Nenhum usuário');
+            console.log("[Auth] >>> onAuthStateChanged disparado <<<");
+            console.log("[Auth] currentUser recebido:", currentUser ? currentUser.uid : 'null');
+            user = currentUser; // Atualiza a variável global user
+
             if (user) {
-                // Usuário logado
-                authFormDiv.style.display = 'none';
-                showAuthButton.style.display = 'none';
-                cancelAuthButton.style.display = 'none';
-                logoutButton.style.display = 'block';
-                syncFirebaseButton.style.display = 'none'; // Esconde botão de sync por enquanto
+                console.log("[Auth] Usuário LOGADO (UID:", user.uid, ")");
+                // Configura UI para usuário logado
+                if (authFormDiv) authFormDiv.style.display = 'none';
+                if (showAuthButton) showAuthButton.style.display = 'none';
+                if (cancelAuthButton) cancelAuthButton.style.display = 'none';
+                if (logoutButton) logoutButton.style.display = 'block';
+                if (syncFirebaseButton) syncFirebaseButton.style.display = 'none'; // Mantém oculto
+
+                console.log("[Auth] Carregando planos para usuário logado...");
                 carregarPlanosSalvos((planosCarregados) => {
+                    console.log("[Data] Planos carregados:", planosCarregados ? planosCarregados.length : 0);
                     planos = planosCarregados || [];
-                    renderizarPlanos(); // Renderiza tudo após carregar os planos
+                    console.log("[UI] Renderizando planos (usuário logado)...");
+                    renderizarPlanos(); // Renderiza a lista principal
+                    console.log("[UI] Chamando atualizarVisibilidadeBotoesAcao (usuário logado)...");
+                    atualizarVisibilidadeBotoesAcao(); // Ajusta os botões do header
                 });
             } else {
-                // Usuário deslogado
-                authFormDiv.style.display = 'none'; // Começa escondido
-                showAuthButton.style.display = 'block'; // Mostra botão de login
-                cancelAuthButton.style.display = 'none';
-                logoutButton.style.display = 'none';
-                syncFirebaseButton.style.display = 'none';
+                console.log("[Auth] Usuário DESLOGADO.");
+                // Configura UI para usuário deslogado
+                if (authFormDiv) authFormDiv.style.display = 'none'; // Começa escondido
+                if (showAuthButton) showAuthButton.style.display = 'block'; // Mostra botão de login
+                if (cancelAuthButton) cancelAuthButton.style.display = 'none';
+                if (logoutButton) logoutButton.style.display = 'none';
+                if (syncFirebaseButton) syncFirebaseButton.style.display = 'none';
+
                 planos = []; // Limpa planos locais
+                console.log("[UI] Renderizando planos (usuário deslogado)...");
                 renderizarPlanos(); // Renderiza (mostrará mensagem de login)
+                console.log("[UI] Chamando atualizarVisibilidadeBotoesAcao (usuário deslogado)...");
+                 atualizarVisibilidadeBotoesAcao(); // Ajusta os botões do header
             }
-            atualizarVisibilidadeBotoesAcao(); // Ajusta botões do header
+            console.log("[Auth] <<< Saindo de onAuthStateChanged >>>");
         });
+        console.log("[Auth] onAuthStateChanged listener configurado.");
     }
 
     // Atualiza a visibilidade dos botões do header com base no estado (logado, tela atual)
-   function atualizarVisibilidadeBotoesAcao() {
+    function atualizarVisibilidadeBotoesAcao() {
+        console.log("[UI] >> Entrando em atualizarVisibilidadeBotoesAcao");
+
+        // Verifica se os elementos essenciais existem antes de prosseguir
+        if (!cadastroPlanoSection || !novoPlanoBtn || !inicioBtn || !exportarAgendaBtn || !showAuthButton || !logoutButton || !authFormDiv || !cancelAuthButton) {
+            console.error("[UI] ERRO CRÍTICO em atualizarVisibilidadeBotoesAcao: Um ou mais elementos do DOM não foram encontrados!");
+            return; // Interrompe a execução para evitar mais erros
+        }
+
         const estaNaTelaCadastro = cadastroPlanoSection.style.display !== 'none';
+        console.log(`[UI]   - estaNaTelaCadastro: ${estaNaTelaCadastro}`);
+        console.log(`[UI]   - user: ${user ? user.uid : 'null'}`);
+        console.log(`[UI]   - planos.length: ${planos ? planos.length : 'undefined'}`);
 
         if (estaNaTelaCadastro) {
-            // Na tela de Cadastro/Edição
-            novoPlanoBtn.style.display = 'none';
-            inicioBtn.style.display = user ? 'block' : 'none'; // Botão 'Início' visível se logado
-            exportarAgendaBtn.style.display = 'none';
-            showAuthButton.style.display = 'none'; // Esconde Login/Cadastro
-            logoutButton.style.display = 'none';  // Esconde Sair
-            authFormDiv.style.display = 'none'; // Garante que form auth esteja escondido
-            cancelAuthButton.style.display = 'none'; // Garante que botão cancelar auth esteja escondido
+            console.log("[UI]   - Lógica: Tela de Cadastro/Edição");
+            novoPlanoBtn.style.display = 'none';         console.log("[UI]     #novo-plano set to none");
+            inicioBtn.style.display = user ? 'block' : 'none'; console.log(`[UI]     #inicio set to ${user ? 'block' : 'none'}`);
+            exportarAgendaBtn.style.display = 'none';    console.log("[UI]     #exportar-agenda set to none");
+            showAuthButton.style.display = 'none';       console.log("[UI]     #show-auth-button set to none");
+            logoutButton.style.display = 'none';         console.log("[UI]     #logout-button set to none");
+            authFormDiv.style.display = 'none';          console.log("[UI]     #auth-form set to none");
+            cancelAuthButton.style.display = 'none';     console.log("[UI]     #cancel-auth-button set to none");
         } else {
-            // Na tela Principal (Lista de Planos)
-            novoPlanoBtn.style.display = user ? 'block' : 'none'; // 'Novo' visível se logado
-            inicioBtn.style.display = 'none'; // 'Início' sempre escondido aqui
-            exportarAgendaBtn.style.display = user && planos.length > 0 ? 'block' : 'none'; // 'Agenda' se logado e com planos
-            logoutButton.style.display = user ? 'block' : 'none'; // 'Sair' visível se logado
+            console.log("[UI]   - Lógica: Tela Principal (Lista)");
+            novoPlanoBtn.style.display = user ? 'block' : 'none'; console.log(`[UI]     #novo-plano set to ${user ? 'block' : 'none'}`);
+            inicioBtn.style.display = 'none';                    console.log("[UI]     #inicio set to none");
+            // Corrigido: verificar se 'planos' existe antes de acessar length
+            exportarAgendaBtn.style.display = user && planos && planos.length > 0 ? 'block' : 'none'; console.log(`[UI]     #exportar-agenda set to ${user && planos && planos.length > 0 ? 'block' : 'none'}`);
+            logoutButton.style.display = user ? 'block' : 'none'; console.log(`[UI]     #logout-button set to ${user ? 'block' : 'none'}`);
 
             // Controle do formulário de autenticação e seus botões
-            if (authFormDiv.style.display === 'none') {
-                // Se o formulário está escondido
-                showAuthButton.style.display = user ? 'none' : 'block'; // Mostra 'Login/Cadastro' se deslogado
-                cancelAuthButton.style.display = 'none'; // Esconde 'Cancelar'
+            const formVisivel = authFormDiv.style.display !== 'none';
+            console.log(`[UI]   - formVisivel (#auth-form): ${formVisivel}`);
+            if (!formVisivel) {
+                showAuthButton.style.display = user ? 'none' : 'block'; console.log(`[UI]     #show-auth-button set to ${user ? 'none' : 'block'} (form oculto)`);
+                cancelAuthButton.style.display = 'none';              console.log("[UI]     #cancel-auth-button set to none (form oculto)");
             } else {
-                // Se o formulário está visível
-                showAuthButton.style.display = 'none'; // Esconde 'Login/Cadastro'
-                cancelAuthButton.style.display = 'block'; // Mostra 'Cancelar'
+                showAuthButton.style.display = 'none';                console.log("[UI]     #show-auth-button set to none (form visível)");
+                cancelAuthButton.style.display = 'block';             console.log("[UI]     #cancel-auth-button set to block (form visível)");
             }
         }
+        console.log("[UI] << Saindo de atualizarVisibilidadeBotoesAcao");
     }
+
 
     // --- Funções de Autenticação ---
 
     // Login com Email e Senha
     function loginWithEmailPassword() {
-        console.log(">>> loginWithEmailPassword FUNCTION CALLED!");
+        console.log("[Auth] Tentando executar loginWithEmailPassword()..."); // Log de entrada na função
+        if (!emailLoginInput || !passwordLoginInput) {
+             console.error("[Auth] Inputs de login não encontrados!"); return;
+        }
         const email = emailLoginInput.value;
         const password = passwordLoginInput.value;
-        console.log("Tentando fazer login com email:", email);
+        console.log("[Auth]   - Email:", email ? email.substring(0, 3) + '...' : 'vazio');
+        console.log("[Auth]   - Senha:", password ? 'preenchida' : 'vazia');
 
         if (!email || !password) {
             alert("Por favor, preencha o email e a senha.");
+            console.log("[Auth]   - Login abortado: campos vazios.");
             return;
         }
 
+        console.log("[Auth]   - Chamando signInWithEmailAndPassword...");
         signInWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                console.log('Login com email/senha bem-sucedido:', userCredential.user.uid);
-                // Limpar campos e fechar form será tratado pelo onAuthStateChanged
+                // O sucesso será tratado pelo onAuthStateChanged, que atualizará a UI
+                console.log('[Auth]   - signInWithEmailAndPassword SUCESSO:', userCredential.user.uid);
+                // Não precisa limpar campos ou esconder form aqui, onAuthStateChanged fará isso.
             })
             .catch((error) => {
-                console.error('Erro DETALHADO ao fazer login:', error.code, error.message, error);
-                alert('Erro ao fazer login: ' + error.message + ' (Verifique email/senha e tente novamente. Código: ' + error.code + ')');
+                console.error('[Auth]   - signInWithEmailAndPassword ERRO:', error.code, error.message);
+                alert('Erro ao fazer login: ' + error.message + ' (Verifique email/senha. Código: ' + error.code + ')');
             });
     }
 
     // Cadastro com Email e Senha
     function signupWithEmailPassword() {
-        console.log(">>> signupWithEmailPassword FUNCTION CALLED!");
+        console.log("[Auth] Tentando executar signupWithEmailPassword()..."); // Log de entrada na função
+         if (!emailLoginInput || !passwordLoginInput) {
+             console.error("[Auth] Inputs de cadastro não encontrados!"); return;
+        }
         const email = emailLoginInput.value;
         const password = passwordLoginInput.value;
-        console.log("Tentando cadastrar com email:", email);
+        console.log("[Auth]   - Email:", email ? email.substring(0, 3) + '...' : 'vazio');
+        console.log("[Auth]   - Senha:", password ? 'preenchida' : 'vazia');
 
          if (!email || !password) {
             alert("Por favor, preencha o email e a senha para cadastrar.");
+            console.log("[Auth]   - Cadastro abortado: campos vazios.");
             return;
         }
          if (password.length < 6) {
             alert("A senha deve ter pelo menos 6 caracteres.");
+             console.log("[Auth]   - Cadastro abortado: senha curta.");
             return;
          }
 
+        console.log("[Auth]   - Chamando createUserWithEmailAndPassword...");
         createUserWithEmailAndPassword(auth, email, password)
             .then((userCredential) => {
-                console.log('Cadastro com email/senha bem-sucedido:', userCredential.user.uid);
+                console.log('[Auth]   - createUserWithEmailAndPassword SUCESSO:', userCredential.user.uid);
                 alert('Cadastro realizado com sucesso! Agora você pode fazer login.');
                 // Limpa campos e esconde form para incentivar o login
                 emailLoginInput.value = '';
                 passwordLoginInput.value = '';
-                authFormDiv.style.display = 'none';
-                showAuthButton.style.display = 'block';
-                cancelAuthButton.style.display = 'none';
+                if (authFormDiv) authFormDiv.style.display = 'none';
+                if (showAuthButton) showAuthButton.style.display = 'block';
+                if (cancelAuthButton) cancelAuthButton.style.display = 'none';
+                console.log("[UI] Chamando atualizarVisibilidadeBotoesAcao após cadastro bem-sucedido...");
                 atualizarVisibilidadeBotoesAcao();
             })
             .catch((error) => {
-                console.error('Erro DETALHADO ao cadastrar:', error.code, error.message, error);
+                console.error('[Auth]   - createUserWithEmailAndPassword ERRO:', error.code, error.message);
                  let friendlyMessage = 'Erro ao cadastrar: ' + error.message;
-                 if (error.code === 'auth/email-already-in-use') {
-                     friendlyMessage = 'Erro: Este email já está cadastrado. Tente fazer login.';
-                 } else if (error.code === 'auth/invalid-email') {
-                     friendlyMessage = 'Erro: O formato do email é inválido.';
-                 } else if (error.code === 'auth/weak-password') {
-                     friendlyMessage = 'Erro: A senha é muito fraca. Use pelo menos 6 caracteres.';
-                 }
+                 if (error.code === 'auth/email-already-in-use') { friendlyMessage = 'Erro: Este email já está cadastrado. Tente fazer login.'; }
+                 else if (error.code === 'auth/invalid-email') { friendlyMessage = 'Erro: O formato do email é inválido.'; }
+                 else if (error.code === 'auth/weak-password') { friendlyMessage = 'Erro: A senha é muito fraca. Use pelo menos 6 caracteres.'; }
                 alert(friendlyMessage + ' (Código: ' + error.code + ')');
             });
     }
 
     // Logout do usuário
     function logout() {
-        console.log("Função logout() iniciada");
+        console.log("[Auth] Função logout() iniciada. Chamando signOut...");
         signOut(auth)
             .then(() => {
-                console.log('Logout bem-sucedido');
-                // onAuthStateChanged cuidará da atualização da UI (limpar planos, etc.)
+                console.log('[Auth] signOut SUCESSO.');
+                // onAuthStateChanged cuidará da atualização da UI (limpar planos, mostrar login, etc.)
             })
             .catch((error) => {
-                console.error('Erro ao fazer logout:', error);
+                console.error('[Auth] signOut ERRO:', error);
                 alert('Erro ao fazer logout. Tente novamente.');
             });
     }
@@ -299,66 +356,79 @@ document.addEventListener('DOMContentLoaded', () => {
     // Carrega planos do Firestore para o usuário logado
     async function carregarPlanosSalvos(callback) {
         if (!user) {
-            console.log('Usuário não logado, retornando planos vazios.');
+            console.log('[Data] Usuário não logado, retornando planos vazios.');
             if (callback) callback([]);
             return;
         }
         const userId = user.uid;
         const docRef = doc(db, 'users', userId);
-        console.log("Tentando carregar planos para userId:", userId);
+        console.log("[Data] Tentando carregar planos para userId:", userId);
         try {
             const docSnap = await getDoc(docRef);
             let planosDoFirestore = [];
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 planosDoFirestore = data.planos || [];
-                console.log(`Documento encontrado para ${userId}. Planos brutos:`, planosDoFirestore.length);
+                console.log(`[Data] Documento encontrado para ${userId}. Planos brutos:`, planosDoFirestore.length);
 
                 // Processamento: Converter strings de data para objetos Date e garantir campos
-                planosDoFirestore = planosDoFirestore.map(plano => {
+                planosDoFirestore = planosDoFirestore.map((plano, index) => {
+                    // Validação Mínima (Título e Datas)
+                    if (!plano || typeof plano.titulo !== 'string' || !plano.dataInicio || !plano.dataFim) {
+                        console.warn(`[Data] Plano ${index} inválido ou incompleto (sem título/datas), filtrando:`, plano);
+                        return null;
+                    }
                     const dataInicio = plano.dataInicio ? new Date(plano.dataInicio) : null;
                     const dataFim = plano.dataFim ? new Date(plano.dataFim) : null;
-                    // Validação básica das datas
+                    // Validação das Datas convertidas
                     if (!dataInicio || isNaN(dataInicio) || !dataFim || isNaN(dataFim)) {
-                         console.warn("Plano com datas inválidas encontrado e filtrado:", plano.titulo, plano.dataInicio, plano.dataFim);
+                         console.warn(`[Data] Plano "${plano.titulo}" com datas inválidas após conversão, filtrando:`, plano.dataInicio, plano.dataFim);
                          return null; // Marcar para remoção
                     }
                     return {
                         ...plano,
                         id: plano.id || crypto.randomUUID(), // Garante um ID
-                        linkDrive: plano.linkDrive || '', // Garante que linkDrive exista
+                        linkDrive: plano.linkDrive || '', // Garante que linkDrive exista (string vazia se não)
                         dataInicio: dataInicio,
                         dataFim: dataFim,
                         diasPlano: plano.diasPlano ? plano.diasPlano.map(dia => {
                             const dataDia = dia.data ? new Date(dia.data) : null;
-                            // Validar data do dia
-                            if (!dataDia || isNaN(dataDia)) {
-                                console.warn("Dia com data inválida em plano:", plano.titulo, dia);
-                                return { ...dia, data: null }; // Manter o resto, mas invalidar data
+                            // Não filtra dias com data inválida aqui, apenas marca como null
+                            if (dataDia && isNaN(dataDia)) {
+                                console.warn("[Data] Dia com data inválida no plano:", plano.titulo, dia.data);
+                                return { ...dia, data: null };
                             }
                             return {
                                 ...dia,
-                                data: dataDia
+                                data: dataDia,
+                                // Garante que campos numéricos do dia existam
+                                paginaInicioDia: Number(dia.paginaInicioDia) || 0,
+                                paginaFimDia: Number(dia.paginaFimDia) || 0,
+                                paginas: Number(dia.paginas) || 0,
+                                lido: Boolean(dia.lido || false) // Garante booleano
                             };
                         }) : [],
-                        // Garante que campos numéricos existam e sejam números
+                        // Garante que campos numéricos do plano existam
                         paginaInicio: Number(plano.paginaInicio) || 1,
                         paginaFim: Number(plano.paginaFim) || 1,
                         totalPaginas: Number(plano.totalPaginas) || 0,
-                        paginasLidas: Number(plano.paginasLidas) || 0
+                        paginasLidas: Number(plano.paginasLidas) || 0,
+                        // Garante periodicidade e diasSemana
+                        periodicidade: plano.periodicidade || 'diario',
+                        diasSemana: Array.isArray(plano.diasSemana) ? plano.diasSemana : []
                     };
-                }).filter(plano => plano !== null); // Remove planos marcados como nulos (com datas inválidas)
+                }).filter(plano => plano !== null); // Remove planos marcados como nulos (inválidos)
 
             } else {
-                console.log("Nenhum documento de usuário encontrado para", userId,". Criando um novo.");
-                // Cria o documento inicial se não existir (boa prática)
+                console.log("[Data] Nenhum documento de usuário encontrado para", userId,". Criando um novo.");
+                // Cria o documento inicial se não existir
                 await setDoc(docRef, { planos: [] });
             }
-            console.log('Planos processados e carregados do Firestore:', planosDoFirestore.length);
+            console.log('[Data] Planos processados e válidos carregados do Firestore:', planosDoFirestore.length);
             if (callback) callback(planosDoFirestore);
         } catch (error) {
-            console.error('Erro CRÍTICO ao carregar planos do Firestore:', error);
-            alert('Erro grave ao carregar seus planos. Verifique sua conexão e tente recarregar a página. Se o problema persistir, contate o suporte.');
+            console.error('[Data] Erro CRÍTICO ao carregar planos do Firestore:', error);
+            alert('Erro grave ao carregar seus planos. Verifique sua conexão e tente recarregar a página.');
             if (callback) callback([]); // Retorna array vazio em caso de erro crítico
         }
     }
@@ -366,48 +436,72 @@ document.addEventListener('DOMContentLoaded', () => {
     // Salva o array de planos no Firestore para o usuário logado
     async function salvarPlanos(planosParaSalvar, callback) {
         if (!user) {
-            console.error('Usuário não logado, não é possível salvar.');
+            console.error('[Data] Usuário não logado, não é possível salvar.');
             alert("Você precisa estar logado para salvar as alterações.");
             if (callback) callback(false);
             return;
         }
         const userId = user.uid;
         const docRef = doc(db, 'users', userId);
-        console.log("Tentando salvar", planosParaSalvar.length, "planos para userId:", userId);
+        console.log("[Data] Tentando salvar", planosParaSalvar.length, "planos para userId:", userId);
 
         // Prepara os dados para o Firestore (converte Date para ISOString, garante tipos)
         const planosParaFirestore = planosParaSalvar.map(plano => {
-             // Validação básica antes de salvar
-            if (!plano || !plano.id || !plano.titulo || !(plano.dataInicio instanceof Date) || isNaN(plano.dataInicio) || !(plano.dataFim instanceof Date) || isNaN(plano.dataFim)) {
-                 console.error("Tentativa de salvar plano inválido:", plano);
-                 // O que fazer? Poderia lançar um erro ou filtrar. Por ora, vamos logar e continuar.
-                 // return null; // Ou, se quiser filtrar antes de salvar: return null;
+             // Validação rigorosa antes de tentar salvar
+            if (!plano || !plano.id || typeof plano.titulo !== 'string' || plano.titulo.trim() === '' ||
+                !(plano.dataInicio instanceof Date) || isNaN(plano.dataInicio) ||
+                !(plano.dataFim instanceof Date) || isNaN(plano.dataFim)) {
+                 console.error("[Data] ERRO: Tentativa de salvar plano inválido (faltando id, titulo ou datas válidas). Plano ignorado:", plano);
+                 // Poderia lançar um erro ou filtrar. Optando por logar e não incluir.
+                 return null; // Marcando para filtrar
             }
             return {
+                // Copia todas as propriedades existentes
                 ...plano,
-                linkDrive: typeof plano.linkDrive === 'string' ? plano.linkDrive : '', // Garante string
-                // Conversão para ISOString
+                // Garante tipos e converte datas para string
+                linkDrive: typeof plano.linkDrive === 'string' ? plano.linkDrive : '',
                 dataInicio: plano.dataInicio.toISOString(),
                 dataFim: plano.dataFim.toISOString(),
                 diasPlano: plano.diasPlano ? plano.diasPlano.map(dia => ({
                     ...dia,
-                    // Só converte se for Date válido
-                    data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null
+                    // Só converte se for Date válido, senão salva null
+                    data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null,
+                    // Garante números para páginas do dia
+                    paginaInicioDia: Number(dia.paginaInicioDia) || 0,
+                    paginaFimDia: Number(dia.paginaFimDia) || 0,
+                    paginas: Number(dia.paginas) || 0,
+                    lido: Boolean(dia.lido || false)
                 })) : [],
-                 // Garante que sejam números
+                 // Garante números para páginas do plano
                 paginaInicio: Number(plano.paginaInicio) || 1,
                 paginaFim: Number(plano.paginaFim) || 1,
                 totalPaginas: Number(plano.totalPaginas) || 0,
-                paginasLidas: Number(plano.paginasLidas) || 0
+                paginasLidas: Number(plano.paginasLidas) || 0,
+                 // Garante periodicidade e diasSemana
+                periodicidade: plano.periodicidade || 'diario',
+                diasSemana: Array.isArray(plano.diasSemana) ? plano.diasSemana : []
             };
-        });//.filter(p => p !== null); // Se decidirmos filtrar planos inválidos
+        }).filter(p => p !== null); // Filtra os planos marcados como nulos (inválidos)
+
+        // Verifica se restou algum plano válido para salvar
+        if (planosParaFirestore.length !== planosParaSalvar.length) {
+             console.warn(`[Data] ${planosParaSalvar.length - planosParaFirestore.length} planos inválidos foram filtrados antes de salvar.`);
+        }
+        if (planosParaFirestore.length === 0 && planosParaSalvar.length > 0) {
+            console.error("[Data] Nenhum plano válido restante para salvar após a filtragem.");
+            // Decide se quer salvar um array vazio ou alertar o usuário.
+            // Vamos salvar vazio para refletir o estado filtrado.
+        }
+
 
         try {
-            await setDoc(docRef, { planos: planosParaFirestore }, { merge: true }); // Use merge: true se quiser apenas atualizar/adicionar planos sem sobrescrever outros campos no doc do usuário
-            console.log('Planos salvos no Firestore com sucesso!');
+            // Usa setDoc para sobrescrever o array 'planos' inteiro no documento do usuário
+            // Se outros campos existirem no documento do usuário, eles serão mantidos
+            await setDoc(docRef, { planos: planosParaFirestore }, { merge: true });
+            console.log('[Data] Planos salvos no Firestore com sucesso!');
             if (callback) callback(true);
         } catch (error) {
-            console.error('Erro CRÍTICO ao salvar planos no Firestore:', error);
+            console.error('[Data] Erro CRÍTICO ao salvar planos no Firestore:', error);
             alert('Erro grave ao salvar seus planos. Verifique sua conexão e tente novamente. Suas últimas alterações podem não ter sido salvas.');
             if (callback) callback(false);
         }
@@ -417,7 +511,11 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Atualiza quais campos de data são obrigatórios com base na seleção do radio
     function updateRequiredAttributes() {
-        if (!definirPorDatasRadio || !dataInicio || !dataFim || !dataInicioDias || !numeroDias || !linkDriveInput) return; // Checagem de segurança
+        // Adiciona verificação se os elementos existem
+        if (!definirPorDatasRadio || !dataInicio || !dataFim || !dataInicioDias || !numeroDias || !linkDriveInput) {
+             console.warn("[UI] Elementos do formulário de período não encontrados para updateRequiredAttributes.");
+             return;
+        }
 
         if (definirPorDatasRadio.checked) {
             dataInicio.required = true;
@@ -434,12 +532,16 @@ document.addEventListener('DOMContentLoaded', () => {
         linkDriveInput.required = false;
     }
     // Chama uma vez para configurar no carregamento inicial
-    updateRequiredAttributes();
+    if (formPlano) { // Só chama se o formulário existir
+        updateRequiredAttributes();
+    }
 
     // --- Funções de Renderização da Interface ---
 
     // Renderiza o painel de leituras atrasadas
     function renderizarLeiturasAtrasadas() {
+        if (!leiturasAtrasadasSection || !listaLeiturasAtrasadasDiv || !semLeiturasAtrasadasP) return; // Verifica elementos
+
         leiturasAtrasadasSection.style.display = 'none'; // Esconde por padrão
         if (!user || !planos || planos.length === 0) return; // Sai se não logado ou sem planos
 
@@ -447,16 +549,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const todasLeiturasAtrasadas = [];
 
         planos.forEach((plano, planoIndex) => {
-            // Só processa planos que não estão concluídos
-            if (plano.diasPlano && plano.diasPlano.length > 0 && determinarStatusPlano(plano) !== 'concluido') {
+            if (plano.diasPlano && plano.diasPlano.length > 0 && determinarStatusPlano(plano) === 'atrasado') { // Otimização: só checa planos atrasados
                 plano.diasPlano.forEach((dia) => {
-                    // Verifica se o dia tem data válida, é anterior a hoje e não foi lido
                     if (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
                         const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0, 0, 0, 0);
                         if (dataDiaNormalizada < hoje && !dia.lido) {
                             todasLeiturasAtrasadas.push({
                                 data: dia.data,
-                                titulo: plano.titulo,
+                                titulo: plano.titulo || 'Plano sem Título',
                                 paginasTexto: `Pgs ${dia.paginaInicioDia || '?'}-${dia.paginaFimDia || '?'} (${dia.paginas || 0})`,
                                 planoIndex: planoIndex
                             });
@@ -466,15 +566,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Ordena por data (mais antiga primeiro) e pega as 3 primeiras
-        todasLeiturasAtrasadas.sort((a, b) => a.data - b.data);
-        const leiturasAtrasadasParaMostrar = todasLeiturasAtrasadas.slice(0, 3);
+        todasLeiturasAtrasadas.sort((a, b) => a.data - b.data); // Ordena por data
+        const leiturasAtrasadasParaMostrar = todasLeiturasAtrasadas.slice(0, 3); // Pega as 3 mais antigas
 
-        listaLeiturasAtrasadasDiv.innerHTML = ''; // Limpa o conteúdo anterior
+        listaLeiturasAtrasadasDiv.innerHTML = ''; // Limpa
 
         if (leiturasAtrasadasParaMostrar.length > 0) {
-            leiturasAtrasadasSection.style.display = 'block'; // Mostra a seção
-            semLeiturasAtrasadasP.style.display = 'none'; // Esconde mensagem "sem leituras"
+            leiturasAtrasadasSection.style.display = 'block'; // Mostra seção
+            semLeiturasAtrasadasP.style.display = 'none'; // Esconde mensagem
 
             leiturasAtrasadasParaMostrar.forEach(leitura => {
                 const itemDiv = document.createElement('div');
@@ -485,14 +584,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemDiv.innerHTML = `
                     <span class="leitura-atrasada-data">${dataFormatada}</span>
                     <span class="numero-plano-tag">${numeroPlano}</span>
-                    <span class="leitura-atrasada-titulo">${leitura.titulo || 'Título não disponível'}</span>
+                    <span class="leitura-atrasada-titulo">${leitura.titulo}</span>
                     <span class="leitura-atrasada-paginas">${leitura.paginasTexto}</span>
                 `;
                 listaLeiturasAtrasadasDiv.appendChild(itemDiv);
             });
         } else {
-            // Se não há atrasadas, pode optar por esconder a seção ou mostrar a mensagem
-            // Vamos mostrar a mensagem dentro da seção para consistência
+            // Opção: manter a seção visível com a mensagem, ou esconder tudo.
+            // Mantendo visível com mensagem:
             leiturasAtrasadasSection.style.display = 'block';
             semLeiturasAtrasadasP.style.display = 'block';
         }
@@ -500,6 +599,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Renderiza o painel de próximas leituras agendadas
     function renderizarProximasLeituras() {
+        if (!proximasLeiturasSection || !listaProximasLeiturasDiv || !semProximasLeiturasP) return; // Verifica elementos
+
         proximasLeiturasSection.style.display = 'none'; // Esconde por padrão
         if (!user || !planos || planos.length === 0) return; // Sai se não logado ou sem planos
 
@@ -508,15 +609,15 @@ document.addEventListener('DOMContentLoaded', () => {
 
         planos.forEach((plano, planoIndex) => {
             // Só processa planos que não estão concluídos
-            if (plano.diasPlano && plano.diasPlano.length > 0 && determinarStatusPlano(plano) !== 'concluido') {
+            const statusPlano = determinarStatusPlano(plano);
+            if (plano.diasPlano && plano.diasPlano.length > 0 && statusPlano !== 'concluido' && statusPlano !== 'invalido') {
                 plano.diasPlano.forEach((dia) => {
-                    // Verifica se o dia tem data válida, é hoje ou futuro e não foi lido
                     if (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
                         const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0,0,0,0);
-                        if (dataDiaNormalizada >= hoje && !dia.lido) {
+                        if (dataDiaNormalizada >= hoje && !dia.lido) { // A partir de hoje, não lido
                             todasLeiturasFuturas.push({
                                 data: dia.data,
-                                titulo: plano.titulo,
+                                titulo: plano.titulo || 'Plano sem Título',
                                 paginasTexto: `Pgs ${dia.paginaInicioDia || '?'}-${dia.paginaFimDia || '?'} (${dia.paginas || 0})`,
                                 planoIndex: planoIndex
                             });
@@ -526,15 +627,14 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         });
 
-        // Ordena por data (mais próxima primeiro) e pega as 3 primeiras
-        todasLeiturasFuturas.sort((a, b) => a.data - b.data);
-        const proximas3Leituras = todasLeiturasFuturas.slice(0, 3);
+        todasLeiturasFuturas.sort((a, b) => a.data - b.data); // Ordena por data mais próxima
+        const proximas3Leituras = todasLeiturasFuturas.slice(0, 3); // Pega as 3 primeiras
 
-        listaProximasLeiturasDiv.innerHTML = ''; // Limpa conteúdo anterior
+        listaProximasLeiturasDiv.innerHTML = ''; // Limpa
 
         if (proximas3Leituras.length > 0) {
-            proximasLeiturasSection.style.display = 'block'; // Mostra a seção
-            semProximasLeiturasP.style.display = 'none'; // Esconde mensagem "sem leituras"
+            proximasLeiturasSection.style.display = 'block'; // Mostra seção
+            semProximasLeiturasP.style.display = 'none'; // Esconde mensagem
 
             proximas3Leituras.forEach(leitura => {
                 const itemDiv = document.createElement('div');
@@ -545,13 +645,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 itemDiv.innerHTML = `
                     <span class="proxima-leitura-data">${dataFormatada}</span>
                     <span class="numero-plano-tag">${numeroPlano}</span>
-                    <span class="proxima-leitura-titulo">${leitura.titulo || 'Título não disponível'}</span>
+                    <span class="proxima-leitura-titulo">${leitura.titulo}</span>
                     <span class="proxima-leitura-paginas">${leitura.paginasTexto}</span>
                 `;
                 listaProximasLeiturasDiv.appendChild(itemDiv);
             });
         } else {
-            // Mostra a mensagem "sem próximas leituras" dentro da seção
+            // Mostra a seção com a mensagem "sem próximas"
              proximasLeiturasSection.style.display = 'block';
              semProximasLeiturasP.style.display = 'block';
         }
@@ -559,7 +659,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Renderiza a lista principal de planos de leitura (cards)
     function renderizarPlanos() {
-        console.log("Renderizando planos...");
+        console.log("[UI] Renderizando planos...");
+         // Verifica se os elementos necessários existem
+         if (!paginadorPlanosDiv || !listaPlanos || !proximasLeiturasSection || !leiturasAtrasadasSection) {
+             console.error("[UI] ERRO: Elementos essenciais para renderizarPlanos não encontrados.");
+             return;
+         }
+
         // Limpa conteúdo anterior e prepara interface
         paginadorPlanosDiv.innerHTML = '';
         listaPlanos.innerHTML = '';
@@ -569,46 +675,50 @@ document.addEventListener('DOMContentLoaded', () => {
         // Verifica estado de login
         if (!user) {
             listaPlanos.innerHTML = '<p>Faça login ou cadastre-se para gerenciar seus planos de leitura.</p>';
-            atualizarVisibilidadeBotoesAcao();
-            // Não renderiza painéis ou paginador se não estiver logado
+            // atualizarVisibilidadeBotoesAcao já é chamado fora desta função após a mudança de estado
             return;
         }
 
         // Verifica se há planos
         if (!planos || planos.length === 0) {
             listaPlanos.innerHTML = '<p>Nenhum plano de leitura cadastrado ainda. Clique em "Novo" para começar!</p>';
-            atualizarVisibilidadeBotoesAcao();
             togglePaginatorVisibility(); // Esconde paginador se não há planos
-            // Não renderiza painéis se não há planos
+            // atualizarVisibilidadeBotoesAcao já é chamado fora
             return;
         }
 
-        // Ordena os planos (opcional, pode ser por data de início, status, etc.)
-        // Exemplo: ordenar por data de início mais recente primeiro
-        planos.sort((a, b) => (b.dataInicio || 0) - (a.dataInicio || 0));
+        // Ordena os planos (Exemplo: por data de início mais recente)
+        // Certifica que datas inválidas não quebrem a ordenação
+        planos.sort((a, b) => (b.dataInicio instanceof Date && !isNaN(b.dataInicio) ? b.dataInicio.getTime() : 0) -
+                           (a.dataInicio instanceof Date && !isNaN(a.dataInicio) ? a.dataInicio.getTime() : 0));
 
 
         // Renderiza Paginador (se houver mais de um plano)
         if (planos.length > 1) {
             planos.forEach((plano, index) => {
-                const linkPaginador = document.createElement('a');
-                linkPaginador.href = `#plano-${plano.id}`; // Link para o ID único do plano
-                linkPaginador.textContent = index + 1; // Número sequencial
-                linkPaginador.title = plano.titulo || 'Plano sem título';
-                paginadorPlanosDiv.appendChild(linkPaginador);
+                 // Verifica se plano e ID são válidos antes de criar link
+                 if (plano && plano.id) {
+                    const linkPaginador = document.createElement('a');
+                    linkPaginador.href = `#plano-${plano.id}`; // Link para o ID único do plano
+                    linkPaginador.textContent = index + 1; // Número sequencial
+                    linkPaginador.title = plano.titulo || 'Plano sem título';
+                    paginadorPlanosDiv.appendChild(linkPaginador);
+                 } else {
+                     console.warn("[UI] Plano inválido ou sem ID encontrado durante a criação do paginador, pulando:", plano);
+                 }
             });
         }
 
         // Renderiza Cards dos Planos
         planos.forEach((plano, index) => {
-            // Validação Mínima do Plano antes de renderizar
-             if (!plano || !plano.id || !plano.titulo) {
-                 console.warn("Ignorando renderização de plano inválido ou incompleto:", plano);
+            // Validação Mínima do Plano antes de renderizar o card
+             if (!plano || !plano.id || typeof plano.titulo !== 'string') {
+                 console.warn("[UI] Ignorando renderização de card para plano inválido ou sem ID/título:", plano);
                  return; // Pula este plano
              }
 
             const progressoPercentual = (plano.totalPaginas && plano.totalPaginas > 0)
-                ? (plano.paginasLidas / plano.totalPaginas) * 100
+                ? Math.min(100, Math.max(0, (plano.paginasLidas / plano.totalPaginas) * 100)) // Garante 0-100
                 : 0;
             const status = determinarStatusPlano(plano);
             let statusText = '';
@@ -618,9 +728,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 case 'em_dia': statusText = 'Em dia'; statusClass = 'status-em-dia'; break;
                 case 'atrasado': statusText = 'Atrasado'; statusClass = 'status-atrasado'; break;
                 case 'concluido': statusText = 'Concluído'; statusClass = 'status-concluido'; break;
+                // Não adiciona tag para 'invalido'
             }
             const statusTagHTML = statusText ? `<span class="status-tag ${statusClass}">${statusText}</span>` : '';
 
+            // Aviso de Atraso
             const diasAtrasados = (status === 'atrasado') ? verificarAtraso(plano) : 0;
             const avisoAtrasoHTML = (status === 'atrasado' && diasAtrasados > 0) ? `
                 <div class="aviso-atraso" id="aviso-atraso-${index}">
@@ -633,7 +745,6 @@ document.addEventListener('DOMContentLoaded', () => {
              // Link Drive / Notas
              let linkDriveHTML = '';
              if (plano.linkDrive) {
-                 // Validação simples de URL (melhorar se necessário)
                  const isValidUrl = plano.linkDrive.startsWith('http://') || plano.linkDrive.startsWith('https://');
                  linkDriveHTML = `
                  <div class="link-drive-container">
@@ -663,6 +774,10 @@ document.addEventListener('DOMContentLoaded', () => {
             }
             planoDiv.id = `plano-${plano.id}`; // Usa ID único do plano
 
+            // Formatação segura das datas de início/fim do plano
+            const dataInicioPlanoStr = plano.dataInicio instanceof Date && !isNaN(plano.dataInicio) ? plano.dataInicio.toLocaleDateString('pt-BR') : 'Inválida';
+            const dataFimPlanoStr = plano.dataFim instanceof Date && !isNaN(plano.dataFim) ? plano.dataFim.toLocaleDateString('pt-BR') : 'Inválida';
+
             planoDiv.innerHTML = `
                 <div class="plano-header">
                     <h3><span class="plano-numero">${index + 1}</span>${plano.titulo}</h3>
@@ -678,10 +793,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 </div>
                 ${avisoAtrasoHTML}
                 ${linkDriveHTML}
-                <p>Páginas: ${plano.paginaInicio} - ${plano.paginaFim} (${plano.totalPaginas || 0} pgs)</p>
+                <p>Páginas: ${plano.paginaInicio} - ${plano.paginaFim} (${plano.totalPaginas || 0} pgs) | Período: ${dataInicioPlanoStr} a ${dataFimPlanoStr}</p>
                 <div class="progresso-container" title="${progressoPercentual.toFixed(0)}% concluído (${plano.paginasLidas} de ${plano.totalPaginas} pgs)">
                     <div class="barra-progresso" style="width: ${progressoPercentual}%"></div>
-                    <span class="progresso-texto" style="position: absolute; left: 50%; transform: translateX(-50%); color: ${progressoPercentual > 50 ? 'white' : 'black'}; font-size: 0.7em; line-height: 10px;">${progressoPercentual.toFixed(0)}%</span>
+                    <span class="progresso-texto" style="position: absolute; left: 50%; transform: translateX(-50%); color: ${progressoPercentual > 50 ? 'white' : 'black'}; font-size: 0.7em; line-height: 10px; text-shadow: 1px 1px 1px rgba(0,0,0,0.5);">${progressoPercentual.toFixed(0)}%</span>
                 </div>
                 <p>${plano.paginasLidas} de ${plano.totalPaginas} páginas lidas.</p>
                  <details class="dias-leitura-details" ${status === 'concluido' ? '' : 'open'} >
@@ -692,12 +807,11 @@ document.addEventListener('DOMContentLoaded', () => {
             listaPlanos.appendChild(planoDiv);
         });
 
-        // Atualiza visibilidade dos botões, paginador e RENDERIZA PAINÉIS
-        atualizarVisibilidadeBotoesAcao();
-        togglePaginatorVisibility();
+        // RENDERIZA PAINÉIS (Atrasadas e Próximas) APÓS renderizar os cards
         renderizarLeiturasAtrasadas();
         renderizarProximasLeituras();
-        console.log("Renderização de planos concluída.");
+        togglePaginatorVisibility(); // Atualiza visibilidade do paginador
+        console.log("[UI] Renderização de planos concluída.");
     }
 
     // Verifica quantos dias de leitura estão atrasados em um plano
@@ -707,7 +821,8 @@ document.addEventListener('DOMContentLoaded', () => {
             return 0;
         }
         return plano.diasPlano.reduce((count, dia) => {
-             if (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
+             // Verifica se 'dia' e 'dia.data' são válidos antes de acessar propriedades
+             if (dia && dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
                 const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0, 0, 0, 0);
                 if (dataDiaNormalizada < hoje && !dia.lido) {
                     return count + 1;
@@ -722,96 +837,144 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!diasPlano || diasPlano.length === 0) {
             return '<p>Nenhum dia de leitura definido para este plano.</p>';
         }
-        // Ordena os dias por data para garantir a ordem correta
-        const diasOrdenados = [...diasPlano].sort((a, b) => (a.data || 0) - (b.data || 0));
+        // Garante que temos o plano correto antes de prosseguir
+        if (!planos || planoIndex < 0 || planoIndex >= planos.length || !planos[planoIndex]) {
+             console.error("[UI] Erro em renderizarDiasLeitura: plano não encontrado no índice", planoIndex);
+             return '<p style="color:red;">Erro ao carregar dias.</p>';
+        }
+
+        // Ordena os dias por data para garantir a ordem correta na exibição
+        const diasOrdenados = [...diasPlano].sort((a, b) => {
+            const dataA = a && a.data instanceof Date && !isNaN(a.data) ? a.data.getTime() : 0;
+            const dataB = b && b.data instanceof Date && !isNaN(b.data) ? b.data.getTime() : 0;
+            return dataA - dataB;
+        });
 
         return diasOrdenados.map((dia, diaIndexOriginal) => {
-            // Encontra o índice real no array 'planos' (importante para marcarLido)
-            const diaIndex = planos[planoIndex].diasPlano.findIndex(d => d === dia);
+            // Validação básica do objeto 'dia'
+            if (!dia) {
+                 console.warn("[UI] Dia inválido encontrado em renderizarDiasLeitura, pulando.");
+                 return '';
+            }
+
+            // Encontra o índice real no array 'planos[planoIndex].diasPlano' para a função marcarLido
+            // É crucial que 'dia' seja uma referência ao objeto original dentro de planos[planoIndex].diasPlano
+            const diaIndex = planos[planoIndex].diasPlano.findIndex(dOriginal => dOriginal === dia);
+
+            if (diaIndex === -1) {
+                 console.error("[UI] Erro crítico: não foi possível encontrar o índice original do dia para marcar como lido. Dia:", dia);
+                 // Poderia retornar um elemento indicando erro ou pular
+                 return `<div class="dia-leitura alternado" style="color:red; font-style:italic;">Erro ao processar este dia.</div>`;
+            }
+
 
             const dataFormatada = (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime()))
-                ? dia.data.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' }) // Formato mais curto
-                : '<span style="color:red;">Data Inválida</span>'; // Indica erro
-            const alternadoClass = diaIndexOriginal % 2 === 0 ? 'alternado' : ''; // Estilo alternado visual
-            const lidoClass = dia.lido ? 'lido' : ''; // Classe se já lido
-            const idCheckbox = `dia-${planoIndex}-${diaIndex}`; // ID único para o checkbox e label
-            const paginasTexto = `Pgs ${dia.paginaInicioDia || '?'}-${dia.paginaFimDia || '?'} (${dia.paginas || 0})`; // Texto das páginas
+                ? dia.data.toLocaleDateString('pt-BR', { weekday: 'short', day: 'numeric', month: 'short' })
+                : '<span style="color:red;">Data Inválida</span>';
+            const alternadoClass = diaIndexOriginal % 2 === 0 ? 'alternado' : '';
+            const lidoClass = dia.lido ? 'lido' : '';
+            const idCheckbox = `dia-${planoIndex}-${diaIndex}`; // Usa o índice real
+            const paginasTexto = `Pgs ${dia.paginaInicioDia || '?'}-${dia.paginaFimDia || '?'} (${dia.paginas || 0})`;
 
-            // Verifica se a data é válida antes de criar o input
-            const inputCheckbox = (dia.data && !isNaN(dia.data))
-             ? `<input type="checkbox" id="${idCheckbox}" ${dia.lido ? 'checked' : ''} onchange="window.marcarDiaLido(${planoIndex}, ${diaIndex}, this.checked)" title="${dia.lido ? 'Desmarcar' : 'Marcar'} dia ${dataFormatada} como lido">`
-             : `<span title="Não é possível marcar: data inválida" style="margin-right: 10px; color: #ccc;">☑</span>`; // Checkbox desabilitado visualmente
+            // Só permite marcar/desmarcar se a data for válida
+            const inputCheckbox = (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime()))
+             ? `<input type="checkbox" id="${idCheckbox}" ${dia.lido ? 'checked' : ''} onchange="window.marcarDiaLido(${planoIndex}, ${diaIndex}, this.checked)" title="${dia.lido ? 'Desmarcar' : 'Marcar'} dia ${dataFormatada.replace(/<.*?>/g, '')} como lido">` // Remove tags HTML do title
+             : `<span title="Não é possível marcar: data inválida" style="margin-right: 10px; color: #ccc; cursor: not-allowed;">☑</span>`; // Checkbox visualmente desabilitado
+
+            // Label associado ao ID do checkbox
+            const labelElement = `<label for="${idCheckbox}" title="Leitura do dia ${dataFormatada.replace(/<.*?>/g, '')}: ${paginasTexto}">${dataFormatada} - ${paginasTexto}</label>`;
 
             return `<div class="dia-leitura ${alternadoClass} ${lidoClass}">
                         ${inputCheckbox}
-                        <label for="${idCheckbox}" title="Leitura do dia ${dataFormatada}: ${paginasTexto}">${dataFormatada} - ${paginasTexto}</label>
+                        ${labelElement}
                     </div>`;
         }).join('');
     }
+
 
     // --- Funções de Interação com Planos (CRUD, Marcar Lido, etc.) ---
 
     // Marca/desmarca um dia como lido e atualiza o progresso
     // Tornada global para ser acessível pelo onclick
     window.marcarDiaLido = function(planoIndex, diaIndex, lido) {
-        console.log(`Marcando dia ${diaIndex} do plano ${planoIndex} como ${lido}`);
-        if (planos[planoIndex] && planos[planoIndex].diasPlano && planos[planoIndex].diasPlano[diaIndex]) {
-            planos[planoIndex].diasPlano[diaIndex].lido = lido;
-            atualizarPaginasLidas(planoIndex); // Recalcula progresso do plano
-            salvarPlanos(planos, (salvoComSucesso) => { // Salva no Firebase
+        console.log(`[Action] Marcando dia ${diaIndex} do plano ${planoIndex} como ${lido}`);
+        // Validação robusta dos índices e existência dos objetos
+        if (planos && planoIndex >= 0 && planoIndex < planos.length &&
+            planos[planoIndex] && planos[planoIndex].diasPlano &&
+            diaIndex >= 0 && diaIndex < planos[planoIndex].diasPlano.length &&
+            planos[planoIndex].diasPlano[diaIndex])
+        {
+            planos[planoIndex].diasPlano[diaIndex].lido = lido; // Atualiza estado local
+            atualizarPaginasLidas(planoIndex); // Recalcula progresso local
+
+            salvarPlanos(planos, (salvoComSucesso) => { // Tenta salvar no Firebase
                 if (salvoComSucesso) {
-                    console.log('Progresso salvo no Firebase.');
+                    console.log('[Data] Progresso salvo no Firebase.');
                     renderizarPlanos(); // Re-renderiza a interface para refletir a mudança
                 } else {
-                    console.error('Falha ao salvar progresso no Firebase. Revertendo alteração localmente.');
+                    console.error('[Data] Falha ao salvar progresso no Firebase. Revertendo alteração localmente.');
                      // Reverte a alteração local se o salvamento falhar
                     planos[planoIndex].diasPlano[diaIndex].lido = !lido;
-                    atualizarPaginasLidas(planoIndex);
+                    atualizarPaginasLidas(planoIndex); // Recalcula de novo com o estado revertido
                     alert("Erro ao salvar o progresso. Sua marcação foi desfeita. Verifique sua conexão.");
                     renderizarPlanos(); // Renderiza novamente com o estado original
                 }
             });
         } else {
-            console.error("Índice de plano ou dia inválido para marcar como lido:", planoIndex, diaIndex);
+            console.error("[Action] Índice de plano ou dia inválido para marcar como lido:", planoIndex, diaIndex, "Planos:", planos);
              alert("Erro interno ao tentar marcar o dia. Recarregue a página.");
         }
     };
 
     // Recalcula o total de páginas lidas para um plano específico
     function atualizarPaginasLidas(planoIndex) {
-        if (planos[planoIndex] && planos[planoIndex].diasPlano) {
+        if (planos && planoIndex >= 0 && planoIndex < planos.length && planos[planoIndex] && planos[planoIndex].diasPlano) {
             planos[planoIndex].paginasLidas = planos[planoIndex].diasPlano.reduce((sum, dia) => {
                 // Soma apenas se 'lido' for true e 'paginas' for um número válido > 0
-                return sum + (dia.lido && typeof dia.paginas === 'number' && dia.paginas > 0 ? dia.paginas : 0);
+                // Adiciona verificação se 'dia' existe
+                return sum + (dia && dia.lido && typeof dia.paginas === 'number' && dia.paginas > 0 ? dia.paginas : 0);
             }, 0);
-            console.log(`Páginas lidas atualizadas para plano ${planoIndex}: ${planos[planoIndex].paginasLidas}`);
+            console.log(`[Calc] Páginas lidas atualizadas para plano ${planoIndex} (${planos[planoIndex].titulo}): ${planos[planoIndex].paginasLidas}`);
         } else {
-            console.error("Plano inválido para atualizar páginas lidas:", planoIndex);
-            if(planos[planoIndex]) planos[planoIndex].paginasLidas = 0; // Zera se o plano existe mas diasPlano não
+            console.warn("[Calc] Plano inválido ou sem diasPlano para atualizar páginas lidas:", planoIndex);
+            // Se o plano existe mas diasPlano não, zera as páginas lidas
+            if(planos && planoIndex >= 0 && planoIndex < planos.length && planos[planoIndex]) {
+                 planos[planoIndex].paginasLidas = 0;
+            }
         }
     }
 
     // Preenche o formulário de cadastro/edição com os dados de um plano existente
     // Tornada global para ser acessível pelo onclick
     window.editarPlano = function(index) {
+        console.log("[Action] Iniciando edição do plano no índice:", index);
         if (index < 0 || index >= planos.length || !planos[index]) {
-            console.error("Índice de plano inválido para edição:", index);
+            console.error("[Action] Índice de plano inválido para edição:", index);
             alert("Erro: Plano não encontrado para edição.");
             return;
         }
+
+        // Verifica se os elementos do formulário existem antes de tentar preenchê-los
+        if (!cadastroPlanoSection || !formPlano || !document.getElementById('titulo-livro') || !document.getElementById('link-drive') || /* ... outros campos ... */ !inicioCadastroBtn) {
+             console.error("[Action] ERRO: Elementos do formulário de edição não encontrados no DOM!");
+             alert("Erro ao tentar abrir a edição. Recarregue a página.");
+             return;
+        }
+
+
         planoEditandoIndex = index;
         preventFormReset = true; // Impede reset acidental ao clicar "Novo" novamente
         const plano = planos[index];
 
         // Navega para a tela de cadastro/edição
         cadastroPlanoSection.style.display = 'block';
-        planosLeituraSection.style.display = 'none';
-        leiturasAtrasadasSection.style.display = 'none'; // Esconde painéis
-        proximasLeiturasSection.style.display = 'none';
+        if (planosLeituraSection) planosLeituraSection.style.display = 'none';
+        if (leiturasAtrasadasSection) leiturasAtrasadasSection.style.display = 'none';
+        if (proximasLeiturasSection) proximasLeiturasSection.style.display = 'none';
         atualizarVisibilidadeBotoesAcao(); // Ajusta botões do header
         inicioCadastroBtn.style.display = 'block'; // Mostra botão "Voltar para Início"
 
-        // Preenche os campos do formulário
+        // --- Preenche os campos do formulário ---
         document.getElementById('titulo-livro').value = plano.titulo || '';
         document.getElementById('link-drive').value = plano.linkDrive || '';
         document.getElementById('pagina-inicio').value = plano.paginaInicio || '';
@@ -819,59 +982,64 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Preenche a seção de período (Datas ou Dias)
         if (plano.definicaoPeriodo === 'dias') {
-            definirPorDiasRadio.checked = true;
-            periodoPorDatasDiv.style.display = 'none';
-            periodoPorDiasDiv.style.display = 'block';
+            if (definirPorDiasRadio) definirPorDiasRadio.checked = true;
+            if (periodoPorDatasDiv) periodoPorDatasDiv.style.display = 'none';
+            if (periodoPorDiasDiv) periodoPorDiasDiv.style.display = 'block';
             // Preenche data de início (formato YYYY-MM-DD para input date)
              if (plano.dataInicio instanceof Date && !isNaN(plano.dataInicio)) {
-                 document.getElementById('data-inicio-dias').valueAsDate = plano.dataInicio;
+                 if (dataInicioDias) dataInicioDias.valueAsDate = plano.dataInicio;
              } else {
-                 document.getElementById('data-inicio-dias').value = ''; // Limpa se inválido
+                 if (dataInicioDias) dataInicioDias.value = ''; // Limpa se inválido
              }
-             // Calcula o número de dias (contando os dias válidos no array diasPlano)
-            const numDias = plano.diasPlano ? plano.diasPlano.filter(d => d.data instanceof Date && !isNaN(d.data)).length : '';
-            document.getElementById('numero-dias').value = numDias;
-        } else { // Assume 'datas' como padrão se não for 'dias'
-            definirPorDatasRadio.checked = true;
-            periodoPorDatasDiv.style.display = 'block';
-            periodoPorDiasDiv.style.display = 'none';
+             // Calcula o número de dias válidos (contando os dias válidos no array diasPlano)
+            const numDiasValidos = plano.diasPlano ? plano.diasPlano.filter(d => d && d.data instanceof Date && !isNaN(d.data)).length : 0;
+            if (numeroDias) numeroDias.value = numDiasValidos > 0 ? numDiasValidos : ''; // Mostra apenas se > 0
+        } else { // Assume 'datas' como padrão se não for 'dias' ou se for inválido
+            if (definirPorDatasRadio) definirPorDatasRadio.checked = true;
+            if (periodoPorDatasDiv) periodoPorDatasDiv.style.display = 'block';
+            if (periodoPorDiasDiv) periodoPorDiasDiv.style.display = 'none';
              // Preenche datas de início e fim
              if (plano.dataInicio instanceof Date && !isNaN(plano.dataInicio)) {
-                document.getElementById('data-inicio').valueAsDate = plano.dataInicio;
+                if (dataInicio) dataInicio.valueAsDate = plano.dataInicio;
              } else {
-                 document.getElementById('data-inicio').value = '';
+                 if (dataInicio) dataInicio.value = '';
              }
              if (plano.dataFim instanceof Date && !isNaN(plano.dataFim)) {
-                document.getElementById('data-fim').valueAsDate = plano.dataFim;
+                if (dataFim) dataFim.valueAsDate = plano.dataFim;
              } else {
-                 document.getElementById('data-fim').value = '';
+                 if (dataFim) dataFim.value = '';
              }
         }
 
         // Preenche periodicidade e dias da semana (se aplicável)
-        periodicidadeSelect.value = plano.periodicidade || 'diario';
-        diasSemanaSelecao.style.display = periodicidadeSelect.value === 'semanal' ? 'block' : 'none';
+        if (periodicidadeSelect) periodicidadeSelect.value = plano.periodicidade || 'diario';
+        if (diasSemanaSelecao) diasSemanaSelecao.style.display = periodicidadeSelect.value === 'semanal' ? 'block' : 'none';
         document.querySelectorAll('input[name="dia-semana"]').forEach(cb => cb.checked = false); // Limpa checkboxes
         if (plano.periodicidade === 'semanal' && Array.isArray(plano.diasSemana)) {
             document.querySelectorAll('input[name="dia-semana"]').forEach(cb => {
                 // Marca o checkbox se o valor (0-6) estiver no array diasSemana do plano
-                cb.checked = plano.diasSemana.includes(parseInt(cb.value));
+                // Garante que cb.value seja comparado como número
+                if (plano.diasSemana.includes(parseInt(cb.value))) {
+                    cb.checked = true;
+                }
             });
         }
 
         // Atualiza texto do botão e atributos 'required'
-        formPlano.querySelector('button[type="submit"]').textContent = 'Atualizar Plano';
+        const submitButton = formPlano.querySelector('button[type="submit"]');
+        if (submitButton) submitButton.textContent = 'Atualizar Plano';
         updateRequiredAttributes();
         cadastroPlanoSection.scrollIntoView({ behavior: 'smooth' }); // Rola para o formulário
         preventFormReset = false; // Libera o reset para a próxima ação
-        console.log("Formulário preenchido para edição do plano:", plano.titulo);
+        console.log("[Action] Formulário preenchido para edição do plano:", plano.titulo);
     };
 
     // Permite editar ou adicionar o link de anotações via prompt
     // Tornada global para ser acessível pelo onclick
     window.editarLinkDrive = function(index) {
+        console.log("[Action] Editando link drive para plano no índice:", index);
         if (index < 0 || index >= planos.length || !planos[index]) {
-            console.error("Índice de plano inválido para editar link:", index); return;
+            console.error("[Action] Índice de plano inválido para editar link:", index); return;
         }
         const plano = planos[index];
         const linkAtual = plano.linkDrive || '';
@@ -879,29 +1047,40 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Só atualiza se o usuário não clicou em "Cancelar" (null)
         if (novoLink !== null) {
-            planos[index].linkDrive = novoLink.trim(); // Remove espaços extras
+            const linkTrimmed = novoLink.trim();
+            // Validação opcional de URL (simples)
+             if (linkTrimmed !== '' && !linkTrimmed.startsWith('http://') && !linkTrimmed.startsWith('https://')) {
+                 alert("Link inválido. Certifique-se de que começa com http:// ou https://");
+                 return; // Não prossegue se inválido (e não vazio)
+             }
+
+            planos[index].linkDrive = linkTrimmed; // Atualiza localmente
             salvarPlanos(planos, (salvoComSucesso) => { // Salva a alteração
                 if (salvoComSucesso) {
-                    console.log('Link atualizado e salvo no Firebase.');
+                    console.log('[Data] Link atualizado e salvo no Firebase.');
                 } else {
-                    console.error('Falha ao salvar atualização do link no Firebase.');
+                    console.error('[Data] Falha ao salvar atualização do link no Firebase. Revertendo.');
                      alert("Erro ao salvar o link. A alteração foi desfeita.");
                      // Reverte localmente se salvar falhar
                      planos[index].linkDrive = linkAtual;
                 }
                 renderizarPlanos(); // Re-renderiza para mostrar o link atualizado (ou o antigo se falhou)
             });
+        } else {
+            console.log("[Action] Edição de link cancelada pelo usuário.");
         }
     };
 
     // --- Funções de Recálculo de Planos Atrasados ---
 
     // Exibe as opções de recálculo no card do plano
-    // Tornada global para ser acessível pelo onclick
     window.mostrarOpcoesRecalculo = function(index) {
         const avisoAtrasoDiv = document.getElementById(`aviso-atraso-${index}`);
-        if (!avisoAtrasoDiv) return;
-        console.log("Mostrando opções de recálculo para plano", index);
+        if (!avisoAtrasoDiv) {
+             console.warn("[Action] Div de aviso de atraso não encontrada para mostrar opções:", index);
+             return;
+        }
+        console.log("[Action] Mostrando opções de recálculo para plano", index);
         avisoAtrasoDiv.innerHTML = `
             <p>⚠️ Plano atrasado. Como deseja recalcular?</p>
             <div class="acoes-dados recalculo-opcoes">
@@ -911,12 +1090,14 @@ document.addEventListener('DOMContentLoaded', () => {
             </div>`;
     };
 
-    // Fecha as opções de recálculo e volta ao aviso de atraso original
-    // Tornada global para ser acessível pelo onclick
+    // Fecha as opções de recálculo e volta ao aviso de atraso original (se ainda aplicável)
     window.fecharAvisoRecalculo = function(index) {
         const avisoAtrasoDiv = document.getElementById(`aviso-atraso-${index}`);
-        if (!avisoAtrasoDiv || !planos[index]) return;
-        console.log("Fechando opções de recálculo para plano", index);
+        if (!avisoAtrasoDiv || index < 0 || index >= planos.length || !planos[index]) {
+             console.warn("[Action] Div de aviso ou plano não encontrado para fechar opções:", index);
+             return;
+        }
+        console.log("[Action] Fechando opções de recálculo para plano", index);
         const plano = planos[index];
         const diasAtrasados = verificarAtraso(plano);
         const status = determinarStatusPlano(plano);
@@ -931,44 +1112,45 @@ document.addEventListener('DOMContentLoaded', () => {
         } else {
              // Se não está mais atrasado (ex: marcou dias como lidos), remove o aviso
             avisoAtrasoDiv.remove();
-            console.log("Aviso de atraso removido para plano", index, "pois não está mais atrasado.");
+            console.log("[Action] Aviso de atraso removido para plano", index, "pois não está mais atrasado.");
         }
     };
 
     // Solicita a nova data de fim via prompt
-    // Tornada global para ser acessível pelo onclick
     window.solicitarNovaDataFim = function(index) {
+        if (index < 0 || index >= planos.length || !planos[index]) return; // Valida índice
+
         const hoje = getHojeNormalizado();
         const hojeStr = hoje.toISOString().split('T')[0]; // Formato YYYY-MM-DD
         const novaDataFimInput = prompt(`Recalcular definindo Nova Data de Fim:\n\nDigite a nova data limite para concluir a leitura (formato YYYY-MM-DD).\nA data deve ser posterior a hoje (${hoje.toLocaleDateString('pt-BR')}).`);
 
         if (novaDataFimInput) {
             try {
-                // Adiciona T00:00:00 para evitar problemas de fuso horário ao converter para Date
-                const novaDataFim = new Date(novaDataFimInput + 'T00:00:00');
+                // Adiciona T00:00:00 para evitar problemas de fuso horário
+                const novaDataFim = new Date(novaDataFimInput.trim() + 'T00:00:00');
                 // Validação da data
                 if (isNaN(novaDataFim.getTime())) throw new Error("Data inválida.");
+                novaDataFim.setHours(0,0,0,0); // Normaliza para comparar com 'hoje'
                 if (novaDataFim <= hoje) throw new Error("A nova data de fim deve ser posterior à data de hoje.");
 
-                console.log("Nova data fim solicitada:", novaDataFim.toLocaleDateString('pt-BR'));
+                console.log("[Action] Nova data fim solicitada:", novaDataFim.toLocaleDateString('pt-BR'));
                 recalcularPlanoNovaData(index, novaDataFim); // Chama a função de recálculo
             } catch (e) {
-                 console.error("Erro ao processar data de fim:", e.message);
+                 console.error("[Action] Erro ao processar data de fim:", e.message);
                  alert("Erro: " + e.message + "\nUse o formato YYYY-MM-DD e certifique-se que a data é futura.");
                  mostrarOpcoesRecalculo(index); // Volta para as opções
             }
         } else {
-             console.log("Recálculo por data fim cancelado pelo usuário.");
+             console.log("[Action] Recálculo por data fim cancelado pelo usuário.");
              mostrarOpcoesRecalculo(index); // Volta para as opções se cancelou o prompt
         }
     };
 
     // Solicita o novo número de páginas por dia via prompt
-    // Tornada global para ser acessível pelo onclick
      window.solicitarPaginasPorDia = function(index) {
-         if (!planos[index]) return;
+         if (index < 0 || index >= planos.length || !planos[index]) return; // Valida índice
          const plano = planos[index];
-         const paginasRestantes = (plano.totalPaginas || 0) - (plano.paginasLidas || 0);
+         const paginasRestantes = Math.max(0, (plano.totalPaginas || 0) - (plano.paginasLidas || 0));
 
           if (paginasRestantes <= 0) {
              alert("Não há páginas restantes para ler neste plano. O recálculo não é necessário.");
@@ -985,10 +1167,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 mostrarOpcoesRecalculo(index);
                 return;
             }
-             console.log("Páginas por dia solicitadas:", paginasPorDia);
+             console.log("[Action] Páginas por dia solicitadas:", paginasPorDia);
             recalcularPlanoPaginasPorDia(index, paginasPorDia); // Chama a função de recálculo
         } else {
-             console.log("Recálculo por páginas/dia cancelado pelo usuário.");
+             console.log("[Action] Recálculo por páginas/dia cancelado pelo usuário.");
              mostrarOpcoesRecalculo(index); // Volta para as opções
         }
     };
@@ -997,19 +1179,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Calcula a nova data de fim baseada nas páginas restantes e páginas/dia desejadas
     function calcularNovaDataFimPorPaginasDia(plano, paginasPorDia) {
-         if (!plano || !plano.totalPaginas || typeof paginasPorDia !== 'number' || paginasPorDia <= 0) {
-             console.error("Dados inválidos para calcularNovaDataFimPorPaginasDia");
+         // Validação robusta das entradas
+         if (!plano || !plano.totalPaginas || typeof plano.paginaInicio !== 'number' || typeof plano.paginaFim !== 'number' || typeof plano.paginasLidas !== 'number' || typeof paginasPorDia !== 'number' || paginasPorDia <= 0 || !plano.periodicidade || !Array.isArray(plano.diasSemana)) {
+             console.error("[Calc] Dados inválidos para calcularNovaDataFimPorPaginasDia", {plano, paginasPorDia});
              return null;
          }
-        const paginasRestantes = Math.max(0, (plano.totalPaginas || 0) - (plano.paginasLidas || 0));
+        const paginasRestantes = Math.max(0, plano.totalPaginas - plano.paginasLidas);
          if (paginasRestantes <= 0) {
-             console.log("Não há páginas restantes, não é necessário calcular nova data fim.");
-             return plano.dataFim; // Retorna a data fim atual se não há mais o que ler
+             console.log("[Calc] Não há páginas restantes, retornando data fim atual.");
+             return plano.dataFim instanceof Date && !isNaN(plano.dataFim) ? new Date(plano.dataFim) : null; // Retorna cópia da data fim atual
          }
 
         let proximoDiaLeitura = getHojeNormalizado(); // Começa a contar a partir de hoje
-        const diasSemanaPlano = Array.isArray(plano.diasSemana) ? plano.diasSemana : [];
-        const periodicidadePlano = plano.periodicidade || 'diario';
+        const diasSemanaPlano = plano.diasSemana;
+        const periodicidadePlano = plano.periodicidade;
 
         // Função interna para verificar se uma data é um dia de leitura válido
         const isDiaValido = (data) => {
@@ -1018,18 +1201,25 @@ document.addEventListener('DOMContentLoaded', () => {
          };
 
          // Avança até encontrar o primeiro dia de leitura válido a partir de hoje
-         while (!isDiaValido(proximoDiaLeitura)) {
+         let safetyDateFind = 0;
+         while (!isDiaValido(proximoDiaLeitura) && safetyDateFind < 366) {
              proximoDiaLeitura.setDate(proximoDiaLeitura.getDate() + 1);
+             safetyDateFind++;
+         }
+         if(safetyDateFind >= 366) {
+            console.error("[Calc] Não foi possível encontrar próximo dia válido em 1 ano.");
+            alert("Erro: Não foi possível encontrar um dia de leitura válido. Verifique a periodicidade.");
+            return null;
          }
 
         // Calcula quantos dias de leitura serão necessários
         const diasLeituraNecessarios = Math.ceil(paginasRestantes / paginasPorDia);
-        console.log(`Páginas restantes: ${paginasRestantes}, Págs/Dia: ${paginasPorDia}, Dias necessários: ${diasLeituraNecessarios}`);
+        console.log(`[Calc] Páginas restantes: ${paginasRestantes}, Págs/Dia: ${paginasPorDia}, Dias necessários: ${diasLeituraNecessarios}`);
 
         let dataFimCalculada = new Date(proximoDiaLeitura); // Começa do primeiro dia válido
         let diasLeituraContados = 0;
         let safetyCounter = 0; // Previne loop infinito
-        const MAX_ITERATIONS = 10000; // Limite seguro de iterações
+        const MAX_ITERATIONS = diasLeituraNecessarios * 7 + 30; // Limite mais dinâmico
 
         // Itera dia a dia, contando apenas os dias válidos, até atingir o número necessário
         while(diasLeituraContados < diasLeituraNecessarios && safetyCounter < MAX_ITERATIONS) {
@@ -1042,25 +1232,25 @@ document.addEventListener('DOMContentLoaded', () => {
              }
              safetyCounter++;
              if(safetyCounter >= MAX_ITERATIONS) {
-                 console.error("Loop break em calcularNovaDataFimPorPaginasDia. Muitas iterações.");
+                 console.error(`[Calc] Loop break em calcularNovaDataFimPorPaginasDia (${MAX_ITERATIONS} iterações).`);
                  alert("Erro: Não foi possível calcular a data final. O número de dias/páginas pode ser muito grande ou a periodicidade muito restrita.");
                  return null;
              }
         }
-        console.log("Nova data fim calculada:", dataFimCalculada.toLocaleDateString('pt-BR'));
+        console.log("[Calc] Nova data fim calculada:", dataFimCalculada.toLocaleDateString('pt-BR'));
         return dataFimCalculada;
     }
 
     // Recalcula o plano definindo um número fixo de páginas por dia
-    // Tornada global para ser acessível pelo onclick
     window.recalcularPlanoPaginasPorDia = function(index, paginasPorDia) {
-        if (!planos[index]) return;
+        if (index < 0 || index >= planos.length || !planos[index]) return; // Valida índice
         const plano = planos[index];
-        console.log(`Iniciando recálculo por ${paginasPorDia} páginas/dia para plano ${index}`);
+        console.log(`[Action] Iniciando recálculo por ${paginasPorDia} páginas/dia para plano ${index} (${plano.titulo})`);
         const novaDataFim = calcularNovaDataFimPorPaginasDia(plano, paginasPorDia);
 
         if (!novaDataFim) {
-             // A função calcularNovaDataFimPorPaginasDia já deve ter mostrado um alerta
+             // A função calcularNovaDataFimPorPaginasDia já deve ter mostrado um alerta se falhou
+             console.log("[Action] Não foi possível calcular nova data fim. Voltando às opções.");
              mostrarOpcoesRecalculo(index); // Volta às opções
              return;
          }
@@ -1070,16 +1260,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
      // Recalcula o plano baseando-se em uma nova data de fim (lógica principal)
     function recalcularPlanoNovaData(index, novaDataFim) {
-        if (!planos[index] || !(novaDataFim instanceof Date) || isNaN(novaDataFim)) {
-            console.error("Dados inválidos para recalcularPlanoNovaData:", index, novaDataFim);
+        // Validação robusta das entradas
+        if (index < 0 || index >= planos.length || !planos[index] || !(novaDataFim instanceof Date) || isNaN(novaDataFim)) {
+            console.error("[Action] Dados inválidos para recalcularPlanoNovaData:", index, novaDataFim);
              alert("Erro interno ao tentar recalcular. Dados inválidos.");
             return;
         }
         const planoOriginal = planos[index];
-        console.log(`Iniciando recálculo por nova data fim (${novaDataFim.toLocaleDateString('pt-BR')}) para plano ${index}`);
+        console.log(`[Action] Iniciando recálculo por nova data fim (${novaDataFim.toLocaleDateString('pt-BR')}) para plano ${index} (${planoOriginal.titulo})`);
 
         const paginasLidas = planoOriginal.paginasLidas || 0;
-        // A página inicial do recálculo é a próxima página após a última lida
         const paginaInicioRecalculo = (planoOriginal.paginaInicio || 1) + paginasLidas;
         const paginasRestantes = Math.max(0, (planoOriginal.totalPaginas || 0) - paginasLidas);
 
@@ -1100,10 +1290,18 @@ document.addEventListener('DOMContentLoaded', () => {
          };
 
          // Encontra o primeiro dia válido para começar o recálculo (a partir de hoje)
-         while (!isDiaValido(dataInicioRecalculo)) {
+         let safetyDateFind = 0;
+         while (!isDiaValido(dataInicioRecalculo) && safetyDateFind < 366) {
              dataInicioRecalculo.setDate(dataInicioRecalculo.getDate() + 1);
+             safetyDateFind++;
          }
-         console.log("Recálculo iniciará em:", dataInicioRecalculo.toLocaleDateString('pt-BR'));
+          if(safetyDateFind >= 366) {
+            console.error("[Action] Não foi possível encontrar próximo dia válido para recálculo.");
+            alert("Erro: Não foi possível encontrar um dia de leitura válido para iniciar o recálculo.");
+            mostrarOpcoesRecalculo(index);
+            return;
+         }
+         console.log("[Action] Recálculo iniciará em:", dataInicioRecalculo.toLocaleDateString('pt-BR'));
 
          // Validação: nova data fim não pode ser anterior ao início do recálculo
          if (novaDataFim < dataInicioRecalculo) {
@@ -1115,20 +1313,29 @@ document.addEventListener('DOMContentLoaded', () => {
         // Gera a lista de novos dias de leitura válidos entre o início do recálculo e a nova data fim
         const novosDiasLeitura = [];
         let dataAtual = new Date(dataInicioRecalculo);
-        while (dataAtual <= novaDataFim) {
+        let safetyLoopDays = 0;
+        const MAX_LOOP_DAYS = 10000; // Previne loop infinito em caso de datas muito distantes
+        while (dataAtual <= novaDataFim && safetyLoopDays < MAX_LOOP_DAYS) {
             if (isDiaValido(dataAtual)) {
-                // Adiciona apenas a data, as páginas serão calculadas depois
                 novosDiasLeitura.push({ data: new Date(dataAtual), paginaInicioDia: 0, paginaFimDia: 0, paginas: 0, lido: false });
             }
             dataAtual.setDate(dataAtual.getDate() + 1);
+            safetyLoopDays++;
         }
+        if(safetyLoopDays >= MAX_LOOP_DAYS){
+             console.error("[Action] Loop de geração de dias de recálculo excedeu o limite.");
+             alert("Erro: O período selecionado para recálculo é muito longo.");
+             mostrarOpcoesRecalculo(index);
+             return;
+        }
+
 
         if (novosDiasLeitura.length === 0) {
             alert("Erro: Não há dias de leitura válidos entre "+ dataInicioRecalculo.toLocaleDateString('pt-BR') +" e "+ novaDataFim.toLocaleDateString('pt-BR') +" com a periodicidade selecionada. Ajuste a data fim ou a periodicidade do plano.");
             mostrarOpcoesRecalculo(index); // Volta às opções
             return;
         }
-         console.log("Número de novos dias de leitura calculados:", novosDiasLeitura.length);
+         console.log("[Action] Número de novos dias de leitura calculados:", novosDiasLeitura.length);
 
         // Distribui as páginas restantes entre os novos dias de leitura
         const numNovosDias = novosDiasLeitura.length;
@@ -1138,12 +1345,24 @@ document.addEventListener('DOMContentLoaded', () => {
 
         novosDiasLeitura.forEach((dia, idx) => {
             let paginasNesteDia = paginasPorDiaBase + (idx < paginasExtras ? 1 : 0); // Distribui as extras nos primeiros dias
+
+             // Garante que não aloque páginas negativas ou zero se algo der errado
+             if (paginasNesteDia <= 0 && paginasRestantes > 0) {
+                 console.warn(`[Calc Recalc] Cálculo resultou em ${paginasNesteDia} páginas para o dia ${idx+1}. Forçando 1.`);
+                 paginasNesteDia = 1;
+             }
+
             dia.paginaInicioDia = paginaAtualRecalculo;
             dia.paginaFimDia = paginaAtualRecalculo + paginasNesteDia - 1;
              // Ajuste para não ultrapassar a página final do livro
              if(dia.paginaFimDia > planoOriginal.paginaFim) {
                  dia.paginaFimDia = planoOriginal.paginaFim;
              }
+             // Ajuste caso página inicial ultrapasse final (ex: 1 página no último dia)
+              if (dia.paginaInicioDia > dia.paginaFimDia) {
+                 dia.paginaInicioDia = dia.paginaFimDia;
+             }
+
              // Calcula o número de páginas efetivamente alocadas para este dia
              dia.paginas = Math.max(0, dia.paginaFimDia - dia.paginaInicioDia + 1);
              // Atualiza a página para o próximo dia começar
@@ -1153,151 +1372,168 @@ document.addEventListener('DOMContentLoaded', () => {
         // Ajuste final: Garante que o último dia recalculado termine exatamente na página final do livro
         const ultimoDiaNovo = novosDiasLeitura[numNovosDias - 1];
         if (ultimoDiaNovo && ultimoDiaNovo.paginaFimDia < planoOriginal.paginaFim && paginaAtualRecalculo <= planoOriginal.paginaFim) {
-            console.warn(`Ajustando pág final recalculada no último dia de ${ultimoDiaNovo.paginaFimDia} para ${planoOriginal.paginaFim}`);
+            console.warn(`[Action Recalc] Ajustando pág final recalculada no último dia de ${ultimoDiaNovo.paginaFimDia} para ${planoOriginal.paginaFim}`);
             ultimoDiaNovo.paginaFimDia = planoOriginal.paginaFim;
             ultimoDiaNovo.paginas = Math.max(0, ultimoDiaNovo.paginaFimDia - ultimoDiaNovo.paginaInicioDia + 1);
         } else if (ultimoDiaNovo && ultimoDiaNovo.paginaFimDia > planoOriginal.paginaFim) {
              // Caso raro: se o cálculo passou, corrige para a página final exata
-            ultimoDiaNovo.paginaFimDia = planoOriginal.paginaFim;
-            ultimoDiaNovo.paginas = Math.max(0, ultimoDiaNovo.paginaFimDia - ultimoDiaNovo.paginaInicioDia + 1);
-        }
+            console.warn(`[Action Recalc] Corrigindo pág final do último dia que ultrapassou: ${ultimoDiaNovo.paginaFimDia} -> ${planoOriginal.paginaFim}`);
+             ultimoDiaNovo.paginaFimDia = planoOriginal.paginaFim;
+             ultimoDiaNovo.paginas = Math.max(0, ultimoDiaNovo.paginaFimDia - ultimoDiaNovo.paginaInicioDia + 1);
+         }
 
         // Combina os dias que já foram lidos do plano original com os novos dias recalculados
-        const diasLidosOriginais = planoOriginal.diasPlano.filter(dia => dia.lido && dia.data < dataInicioRecalculo);
+        // Filtra dias lidos que ocorreram ANTES do início do recálculo
+        const diasLidosOriginais = planoOriginal.diasPlano.filter(dia => dia && dia.lido && dia.data instanceof Date && dia.data < dataInicioRecalculo);
         // Substitui a lista de dias do plano e atualiza a data de fim
-        planos[index].diasPlano = [...diasLidosOriginais, ...novosDiasLeitura].sort((a, b) => (a.data || 0) - (b.data || 0));
-        planos[index].dataFim = novaDataFim; // Atualiza a data fim do plano
-        atualizarPaginasLidas(index); // Recalcula o total lido (não deve mudar, mas é boa prática)
+        planos[index].diasPlano = [...diasLidosOriginais, ...novosDiasLeitura].sort((a, b) => (a.data || 0) - (b.data || 0)); // Ordena por data
+        planos[index].dataFim = new Date(novaDataFim); // Atualiza a data fim do plano com a nova data
+        atualizarPaginasLidas(index); // Recalcula o total lido (deve incluir os dias lidos originais preservados)
 
-        console.log("Plano recalculado. Novos dias:", novosDiasLeitura);
+        console.log("[Action] Plano recalculado. Dias lidos preservados:", diasLidosOriginais.length, "Novos dias:", novosDiasLeitura.length);
 
         // Salva o plano recalculado no Firebase
         salvarPlanos(planos, (salvoComSucesso) => {
             if (salvoComSucesso) {
-                console.log("Plano recalculado e salvo com sucesso.");
+                console.log("[Data] Plano recalculado e salvo com sucesso.");
                 alert(`Plano "${planoOriginal.titulo}" recalculado com sucesso!\nNova data de término: ${novaDataFim.toLocaleDateString('pt-BR')}.`);
             } else {
-                 console.error("Erro ao salvar plano recalculado.");
+                 console.error("[Data] Erro ao salvar plano recalculado.");
                  alert("Erro ao salvar o plano recalculado. As alterações podem não ter sido aplicadas. Tente novamente.");
-                 // Idealmente, deveria haver um mecanismo de rollback aqui, mas por simplicidade, apenas alertamos.
+                 // Considerar implementar rollback aqui em versões futuras
             }
             renderizarPlanos(); // Re-renderiza a interface com o plano atualizado
         });
     }
 
     // Exclui um plano de leitura
-    // Tornada global para ser acessível pelo onclick
     window.excluirPlano = function(index) {
         if (index < 0 || index >= planos.length || !planos[index]) {
-            console.error("Índice inválido para exclusão:", index); return;
+            console.error("[Action] Índice inválido para exclusão:", index); return;
         }
-        const plano = planos[index];
-        if (confirm(`Tem certeza que deseja excluir o plano "${plano.titulo}"?\n\nEsta ação não pode ser desfeita.`)) {
-            console.log("Excluindo plano:", plano.titulo);
-            planos.splice(index, 1); // Remove o plano do array local
-            salvarPlanos(planos, (salvoComSucesso) => { // Salva a lista atualizada no Firebase
+        const planoParaExcluir = planos[index]; // Guarda referência para possível rollback
+        const tituloPlano = planoParaExcluir.titulo || 'Plano sem título';
+
+        if (confirm(`Tem certeza que deseja excluir o plano "${tituloPlano}"?\n\nEsta ação não pode ser desfeita.`)) {
+            console.log("[Action] Excluindo plano:", tituloPlano);
+            planos.splice(index, 1); // Remove o plano do array local PRIMEIRO
+
+            salvarPlanos(planos, (salvoComSucesso) => { // Tenta salvar a lista atualizada
                 if (salvoComSucesso) {
-                    console.log("Plano excluído com sucesso no Firebase.");
-                    alert(`Plano "${plano.titulo}" excluído.`);
+                    console.log("[Data] Plano excluído com sucesso no Firebase.");
+                    alert(`Plano "${tituloPlano}" excluído.`);
+                    renderizarPlanos(); // Re-renderiza após sucesso
                 } else {
-                    console.error('Falha ao salvar exclusão no Firebase. Tentando re-adicionar localmente.');
-                     // Tenta re-adicionar localmente se o salvamento falhou (melhor que perder dados)
-                     planos.splice(index, 0, plano); // Insere de volta na mesma posição
+                    console.error('[Data] Falha ao salvar exclusão no Firebase. Revertendo exclusão local.');
+                     // Reverte a exclusão local se o salvamento falhou
+                     planos.splice(index, 0, planoParaExcluir); // Insere de volta na mesma posição
                      alert("Erro ao excluir o plano no servidor. A exclusão foi cancelada. Verifique sua conexão.");
+                     renderizarPlanos(); // Re-renderiza para mostrar o plano de volta
                 }
-                renderizarPlanos(); // Re-renderiza a lista de planos
             });
         } else {
-            console.log("Exclusão do plano cancelada pelo usuário.");
+            console.log("[Action] Exclusão do plano cancelada pelo usuário.");
         }
     };
 
     // --- Funcionalidade de Exportação para Agenda (.ics) ---
 
     // Listener para o botão de exportar agenda
-    exportarAgendaBtn.addEventListener('click', () => {
-        if (!user) { alert("Você precisa estar logado para exportar."); return; }
-        if (!planos || planos.length === 0) { alert("Nenhum plano cadastrado para exportar."); return; }
+    if (exportarAgendaBtn) {
+        exportarAgendaBtn.addEventListener('click', () => {
+            console.log("[Export] Botão Exportar Agenda clicado.");
+            if (!user) { alert("Você precisa estar logado para exportar."); return; }
+            if (!planos || planos.length === 0) { alert("Nenhum plano cadastrado para exportar."); return; }
 
-        // Cria a mensagem para o prompt, listando os planos numerados
-        let promptMessage = "Digite o número do plano para exportar para a agenda:\n\n";
-        planos.forEach((plano, index) => { promptMessage += `${index + 1}. ${plano.titulo || 'Plano sem título'}\n`; });
-        const planoIndexInput = prompt(promptMessage);
+            // Cria a mensagem para o prompt, listando os planos numerados
+            let promptMessage = "Digite o número do plano para exportar para a agenda:\n\n";
+            planos.forEach((plano, index) => {
+                promptMessage += `${index + 1}. ${plano.titulo || 'Plano sem título'}\n`;
+            });
+            const planoIndexInput = prompt(promptMessage);
 
-        if (planoIndexInput === null) return; // Usuário cancelou
+            if (planoIndexInput === null) {
+                 console.log("[Export] Exportação cancelada pelo usuário no prompt.");
+                 return; // Usuário cancelou
+            }
 
-        const planoIndex = parseInt(planoIndexInput) - 1; // Converte para índice 0-based
+            const planoIndex = parseInt(planoIndexInput) - 1; // Converte para índice 0-based
 
-        // Validação da entrada do usuário
-        if (isNaN(planoIndex) || planoIndex < 0 || planoIndex >= planos.length || !planos[planoIndex]) {
-            alert("Número de plano inválido."); return;
-        }
-         // Validação se o plano selecionado tem dias definidos
-         if (!planos[planoIndex].diasPlano || planos[planoIndex].diasPlano.length === 0 || planos[planoIndex].diasPlano.every(d => !d.data || isNaN(d.data))) {
-             alert(`O plano "${planos[planoIndex].titulo}" não possui dias de leitura válidos definidos e não pode ser exportado.`); return;
-         }
+            // Validação da entrada do usuário e do plano selecionado
+            if (isNaN(planoIndex) || planoIndex < 0 || planoIndex >= planos.length || !planos[planoIndex]) {
+                alert("Número de plano inválido."); return;
+            }
+             const planoSelecionado = planos[planoIndex];
+             // Validação se o plano selecionado tem dias válidos definidos
+             if (!planoSelecionado.diasPlano || planoSelecionado.diasPlano.length === 0 || planoSelecionado.diasPlano.every(d => !d || !d.data || !(d.data instanceof Date) || isNaN(d.data))) {
+                 alert(`O plano "${planoSelecionado.titulo}" não possui dias de leitura válidos definidos e não pode ser exportado.`); return;
+             }
 
-        exportarParaAgenda(planos[planoIndex]); // Chama a função de exportação
-    });
+            exportarParaAgenda(planoSelecionado); // Chama a função de exportação
+        });
+    }
 
     // Função principal que coordena a exportação para .ics
     function exportarParaAgenda(plano) {
-        console.log("Iniciando exportação para agenda do plano:", plano.titulo);
+        console.log("[Export] Iniciando exportação para agenda do plano:", plano.titulo);
         // Solicita horários de início e fim para os eventos
         const horarioInicio = prompt(`Exportar "${plano.titulo}" para Agenda:\n\nDefina o horário de início da leitura diária (formato HH:MM):`, "09:00");
-        if (!horarioInicio) { console.log("Exportação cancelada (horário início)."); return; }
+        if (!horarioInicio) { console.log("[Export] Exportação cancelada (horário início)."); return; }
 
         const horarioFim = prompt(`Defina o horário de fim da leitura diária (formato HH:MM):`, "09:30");
-        if (!horarioFim) { console.log("Exportação cancelada (horário fim)."); return; }
+        if (!horarioFim) { console.log("[Export] Exportação cancelada (horário fim)."); return; }
 
-        // Validação simples do formato HH:MM
+        // Validação do formato HH:MM e se fim > início
         const timeRegex = /^([01]?[0-9]|2[0-3]):[0-5][0-9]$/;
         if (!timeRegex.test(horarioInicio) || !timeRegex.test(horarioFim)) {
             alert("Formato de horário inválido. Use HH:MM (ex: 08:00, 14:30)."); return;
         }
-         // Validação se hora fim é depois da hora início (simples)
          if (horarioFim <= horarioInicio) {
              alert("O horário de fim deve ser posterior ao horário de início."); return;
          }
 
         try {
             // Gera o conteúdo do arquivo .ics
+            console.log("[Export] Gerando conteúdo ICS...");
             const eventosICS = gerarICS(plano, horarioInicio, horarioFim);
+            console.log("[Export] Conteúdo ICS gerado. Iniciando download...");
             // Inicia o download do arquivo
             downloadICSFile(eventosICS, plano.titulo);
-            console.log("Arquivo ICS gerado e download iniciado.");
+            console.log("[Export] Arquivo ICS download iniciado.");
+            alert(`Arquivo "${`Plano_Leitura_${plano.titulo.replace(/[^a-z0-9]/gi, '_')}.ics`}" gerado!\nImporte-o para sua aplicação de calendário (Google Agenda, Outlook, etc.).`);
         } catch (error) {
-             console.error("Erro ao gerar ou baixar arquivo ICS:", error);
+             console.error("[Export] Erro ao gerar ou baixar arquivo ICS:", error);
              alert("Ocorreu um erro ao gerar o arquivo da agenda: " + error.message);
         }
     }
 
     // Gera o conteúdo do arquivo .ics com base nos dados do plano
     function gerarICS(plano, horarioInicio, horarioFim) {
-         // Validação robusta dos dados do plano necessários para o ICS
-         if (!plano || !plano.id || !plano.titulo ||
+         // Revalidação robusta dos dados do plano
+         if (!plano || !plano.id || typeof plano.titulo !== 'string' || plano.titulo.trim() === '' ||
              !plano.diasPlano || plano.diasPlano.length === 0 ||
              !plano.dataInicio || !(plano.dataInicio instanceof Date) || isNaN(plano.dataInicio) ||
              !plano.dataFim || !(plano.dataFim instanceof Date) || isNaN(plano.dataFim)) {
-            throw new Error("Dados do plano incompletos ou inválidos para gerar o arquivo da agenda. Verifique título, datas e dias de leitura.");
+            console.error("[Export ICS] Dados do plano inválidos para gerar ICS:", plano);
+            throw new Error("Dados do plano incompletos ou inválidos para gerar o arquivo da agenda.");
         }
 
-         // UID único para o evento recorrente
          const uidEvento = `${plano.id.replace(/[^a-z0-9]/gi, '')}@gerenciador-planos-leitura.app`;
-         // Timestamp de criação do arquivo
          const dtstamp = new Date().toISOString().replace(/[-:]/g, "").split('.')[0] + "Z";
 
          // Formata data e hora para o padrão ICS (YYYYMMDDTHHMMSS) - Local Time
          const formatICSDateTimeLocal = (date, time) => {
-            if (!(date instanceof Date) || isNaN(date)) throw new Error(`Data inválida (${date}) no formatICSDateTimeLocal`);
-            const [year, month, day] = [date.getFullYear(), (date.getMonth() + 1).toString().padStart(2, '0'), date.getDate().toString().padStart(2, '0')];
+            if (!(date instanceof Date) || isNaN(date)) throw new Error(`[ICS] Data inválida (${date}) no formatICSDateTimeLocal`);
+            const year = date.getFullYear();
+            const month = (date.getMonth() + 1).toString().padStart(2, '0');
+            const day = date.getDate().toString().padStart(2, '0');
             const [hour, minute] = time.split(':');
             return `${year}${month}${day}T${hour}${minute}00`;
          };
 
         // Formata a data final da recorrência (UNTIL) para o padrão ICS (YYYYMMDDTHHMMSSZ) - UTC
          const formatICSDateUTCUntil = (date) => {
-             if (!(date instanceof Date) || isNaN(date)) throw new Error(`Data inválida (${date}) no formatICSDateUTCUntil`);
+             if (!(date instanceof Date) || isNaN(date)) throw new Error(`[ICS] Data inválida (${date}) no formatICSDateUTCUntil`);
              // Cria uma data UTC no final do dia para garantir que inclua a data final
              const dateUtc = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate(), 23, 59, 59));
              const year = dateUtc.getUTCFullYear();
@@ -1306,97 +1542,97 @@ document.addEventListener('DOMContentLoaded', () => {
              return `${year}${month}${day}T235959Z`;
          };
 
-        // Encontra o primeiro dia de leitura válido no plano para definir o DTSTART
+        // Encontra o primeiro dia de leitura VÁLIDO no plano para definir o DTSTART
         let primeiroDiaLeituraValido = null;
         for(const dia of plano.diasPlano) {
-             if (dia.data instanceof Date && !isNaN(dia.data)) {
+             if (dia && dia.data instanceof Date && !isNaN(dia.data)) {
                  primeiroDiaLeituraValido = dia.data;
-                 break; // Encontrou o primeiro, pode parar
+                 break; // Encontrou o primeiro válido
              }
         }
-        // Se nenhum dia válido foi encontrado (improvável após validação anterior, mas seguro verificar)
-        if(!primeiroDiaLeituraValido) throw new Error("Nenhum dia de leitura válido encontrado no plano para definir o início do evento.");
+        if(!primeiroDiaLeituraValido) {
+            console.error("[Export ICS] Nenhum dia de leitura válido encontrado no plano:", plano.diasPlano);
+            throw new Error("Nenhum dia de leitura válido encontrado no plano para definir o início do evento.");
+        }
+        console.log("[Export ICS] Primeiro dia válido encontrado para DTSTART:", primeiroDiaLeituraValido.toLocaleDateString());
+
 
         // --- Construção da String ICS ---
          let icsString = `BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//GerenciadorPlanosLeitura//AppWeb//PT\r\nCALSCALE:GREGORIAN\r\nMETHOD:PUBLISH\r\n`;
-
-         // Adiciona o evento principal (recorrente)
         icsString += `BEGIN:VEVENT\r\n`;
-        icsString += `UID:${uidEvento}\r\n`; // Identificador único do evento
-        icsString += `DTSTAMP:${dtstamp}\r\n`; // Quando o evento foi criado/modificado
-        // Data e hora de início do primeiro evento da série (usa a hora local)
+        icsString += `UID:${uidEvento}\r\n`;
+        icsString += `DTSTAMP:${dtstamp}\r\n`;
         icsString += `DTSTART:${formatICSDateTimeLocal(primeiroDiaLeituraValido, horarioInicio)}\r\n`;
-        // Data e hora de fim do primeiro evento da série (usa a hora local)
         icsString += `DTEND:${formatICSDateTimeLocal(primeiroDiaLeituraValido, horarioFim)}\r\n`;
 
         // Regra de Recorrência (RRULE)
         let rrule = 'RRULE:FREQ=';
         if (plano.periodicidade === 'diario') {
-            rrule += 'DAILY'; // Repete diariamente
+            rrule += 'DAILY';
         } else if (plano.periodicidade === 'semanal' && Array.isArray(plano.diasSemana) && plano.diasSemana.length > 0) {
-            rrule += 'WEEKLY'; // Repete semanalmente
-            // Mapeia os índices (0-6) para os códigos ICS (SU, MO, TU, WE, TH, FR, SA)
+            rrule += 'WEEKLY';
             const diasSemanaICS = plano.diasSemana.sort().map(diaIndex => ['SU', 'MO', 'TU', 'WE', 'TH', 'FR', 'SA'][diaIndex]).join(',');
-            rrule += `;BYDAY=${diasSemanaICS}`; // Nos dias da semana especificados
+            rrule += `;BYDAY=${diasSemanaICS}`;
         } else {
-             console.warn("Periodicidade inválida ou semanal sem dias para RRULE. Usando DAILY como fallback.");
-             rrule += 'DAILY'; // Fallback para diário se algo estiver errado
+             console.warn("[Export ICS] Periodicidade inválida ou semanal sem dias para RRULE. Usando DAILY.");
+             rrule += 'DAILY';
         }
 
-        // Define até quando a recorrência vai (UNTIL), usando a data final do plano em UTC
+         // Define até quando a recorrência vai (UNTIL)
          rrule += `;UNTIL=${formatICSDateUTCUntil(plano.dataFim)}`;
-         icsString += `${rrule}\r\n`; // Adiciona a regra de recorrência completa
+         icsString += `${rrule}\r\n`;
 
-        // Descrição do evento (com quebras de linha \n)
+        // Descrição e outros detalhes do evento
         let description = `Plano de Leitura: ${plano.titulo}.\\n`;
         description += `Páginas do Plano: ${plano.paginaInicio}-${plano.paginaFim}.\\n`;
-         // Formata as datas de início e fim do plano
         const dataInicioStr = plano.dataInicio.toLocaleDateString('pt-BR');
         const dataFimStr = plano.dataFim.toLocaleDateString('pt-BR');
         description += `Período Total do Plano: ${dataInicioStr} a ${dataFimStr}.\\n\\n`;
         description += `Lembrete: Verifique no aplicativo as páginas exatas designadas para o dia de hoje.\\n`;
-        description += `Acesse o app: ${window.location.origin + window.location.pathname}`; // Link para o app
-        icsString += `SUMMARY:Leitura: ${plano.titulo}\r\n`; // Título do evento na agenda
-        icsString += `DESCRIPTION:${description}\r\n`; // Descrição detalhada
-        icsString += `LOCATION:Seu local de leitura\r\n`; // Localização (opcional)
-        icsString += `STATUS:CONFIRMED\r\n`; // Status do evento
-        icsString += `TRANSP:OPAQUE\r\n`; // Define como "ocupado" no calendário
+        // Tenta obter a URL base da aplicação
+        let appUrl = window.location.origin + window.location.pathname;
+        description += `Acesse o app: ${appUrl}`;
 
-        // Alarme/Lembrete (opcional) - 15 minutos antes
+        icsString += `SUMMARY:Leitura: ${plano.titulo}\r\n`;
+        icsString += `DESCRIPTION:${description}\r\n`;
+        icsString += `LOCATION:Seu local de leitura\r\n`;
+        icsString += `STATUS:CONFIRMED\r\n`;
+        icsString += `TRANSP:OPAQUE\r\n`; // Marca como ocupado
+
+        // Alarme/Lembrete (15 minutos antes)
         icsString += `BEGIN:VALARM\r\n`;
         icsString += `ACTION:DISPLAY\r\n`;
         icsString += `DESCRIPTION:Lembrete de Leitura: ${plano.titulo}\r\n`;
-        icsString += `TRIGGER:-PT15M\r\n`; // 15 minutos antes (P=Period, T=Time, 15M=15 Minutes)
+        icsString += `TRIGGER:-PT15M\r\n`;
         icsString += `END:VALARM\r\n`;
 
-        icsString += `END:VEVENT\r\n`; // Fim do evento
-        icsString += `END:VCALENDAR\r\n`; // Fim do arquivo iCalendar
+        icsString += `END:VEVENT\r\n`;
+        icsString += `END:VCALENDAR\r\n`;
 
         return icsString;
     }
 
     // Cria um link temporário e clica nele para baixar o arquivo .ics gerado
     function downloadICSFile(icsContent, planoTitulo) {
-        // Cria um Blob (Binary Large Object) com o conteúdo ICS
-        const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
-        // Cria uma URL temporária para o Blob
-        const url = URL.createObjectURL(blob);
-        // Cria um elemento <a> invisível
-        const a = document.createElement('a');
-        a.style.display = 'none';
-        a.href = url;
-        // Define o nome do arquivo para download (limpa caracteres inválidos)
-        const nomeArquivo = `Plano_Leitura_${planoTitulo.replace(/[^a-z0-9]/gi, '_')}.ics`;
-        a.download = nomeArquivo;
-        // Adiciona o link ao corpo do documento
-        document.body.appendChild(a);
-        // Simula um clique no link para iniciar o download
-        a.click();
-        // Remove o link do corpo do documento
-        document.body.removeChild(a);
-        // Libera a URL do Blob da memória
-        URL.revokeObjectURL(url);
+        try {
+            const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.style.display = 'none';
+            a.href = url;
+            const nomeArquivo = `Plano_Leitura_${planoTitulo.replace(/[^a-z0-9]/gi, '_')}.ics`;
+            a.download = nomeArquivo;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+            console.log(`[Export] Download do arquivo ${nomeArquivo} iniciado.`);
+        } catch (e) {
+            console.error("[Export] Erro ao criar ou iniciar download do ICS:", e);
+            alert("Erro ao tentar baixar o arquivo da agenda.");
+        }
     }
+
 
     // --- Lógica do Paginador Flutuante ---
 
@@ -1404,33 +1640,38 @@ document.addEventListener('DOMContentLoaded', () => {
     function togglePaginatorVisibility() {
         const paginador = document.getElementById('paginador-planos');
         if (!paginador) return; // Sai se o elemento não existe
+
         const lista = document.getElementById('lista-planos');
 
         // Esconde se não estiver logado, não houver planos ou só houver 1 plano
         if (!user || !planos || planos.length <= 1 || !lista) {
-            paginador.classList.add('hidden');
+            if (paginador.classList.contains('hidden') === false) {
+                 console.log("[UI Paginator] Escondendo (sem user, sem planos ou <= 1 plano)");
+                 paginador.classList.add('hidden');
+            }
             return;
         }
 
-        // Lógica para mostrar/esconder com base na rolagem (exibe se a lista está visível e longa)
         const footer = document.querySelector('footer');
         const listaRect = lista.getBoundingClientRect();
-        const footerRect = footer ? footer.getBoundingClientRect() : { top: document.body.scrollHeight }; // Fallback se footer não existir
+        const footerRect = footer ? footer.getBoundingClientRect() : { top: document.body.scrollHeight };
         const windowHeight = window.innerHeight;
 
-        // Condição para mostrar:
-        // 1. A lista tem algum conteúdo visível (altura > 0)
-        // 2. A parte de baixo da lista + uma margem está abaixo do topo do footer OU o footer está fora da tela
-        // Isso garante que o paginador apareça quando a lista é longa o suficiente para precisar rolar até ela.
-        if (listaRect.height > 0 && (listaRect.bottom + 50 > footerRect.top || footerRect.top > windowHeight)) {
-            paginador.classList.remove('hidden'); // Mostra
-         } else {
-            paginador.classList.add('hidden'); // Esconde
+        // Condição para mostrar: Lista tem altura e (está perto do footer ou footer fora da tela)
+        const shouldShow = listaRect.height > 0 && (listaRect.bottom + 50 > footerRect.top || footerRect.top > windowHeight);
+
+        if (shouldShow && paginador.classList.contains('hidden')) {
+            console.log("[UI Paginator] Mostrando");
+            paginador.classList.remove('hidden');
+         } else if (!shouldShow && !paginador.classList.contains('hidden')) {
+            console.log("[UI Paginator] Escondendo (scroll/posição)");
+            paginador.classList.add('hidden');
          }
     }
     // Adiciona listeners para chamar a função em rolagem e redimensionamento
     window.addEventListener('scroll', togglePaginatorVisibility);
     window.addEventListener('resize', togglePaginatorVisibility);
+
 
     // --- Funções de Geração e Distribuição de Dias/Páginas ---
 
@@ -1440,39 +1681,51 @@ document.addEventListener('DOMContentLoaded', () => {
         if (!plano || !plano.diasPlano || plano.diasPlano.length === 0 ||
             typeof plano.paginaInicio !== 'number' || plano.paginaInicio < 1 ||
             typeof plano.paginaFim !== 'number' || plano.paginaFim < plano.paginaInicio) {
-            console.warn("Dados insuficientes ou inválidos para distribuir páginas:", plano);
+            console.warn("[Calc] Dados insuficientes ou inválidos para distribuir páginas:", plano);
             // Zera as páginas nos dias existentes se a distribuição falhar
             if(plano && plano.diasPlano) {
-                 plano.diasPlano.forEach(dia => { dia.paginaInicioDia = 0; dia.paginaFimDia = -1; dia.paginas = 0; });
+                 plano.diasPlano.forEach(dia => { if(dia) {dia.paginaInicioDia = 0; dia.paginaFimDia = -1; dia.paginas = 0;} });
             }
              if(plano) { plano.totalPaginas = 0; plano.paginasLidas = 0; } // Zera totais do plano
             return; // Interrompe a função
         }
 
         const totalPaginasLivro = plano.paginaFim - plano.paginaInicio + 1;
-        const diasDeLeitura = plano.diasPlano; // Array de objetos {data, ...}
-        const numeroDeDias = diasDeLeitura.length; // Número de dias efetivos de leitura
+        // Filtra dias inválidos antes de contar (garante que só dias com data contem)
+        const diasDeLeituraValidos = plano.diasPlano.filter(dia => dia && dia.data instanceof Date && !isNaN(dia.data));
+        const numeroDeDiasValidos = diasDeLeituraValidos.length;
+
+        // Se não há dias válidos, não há como distribuir
+        if (numeroDeDiasValidos === 0) {
+            console.warn("[Calc] Nenhum dia de leitura válido encontrado para distribuir páginas:", plano.titulo);
+            plano.totalPaginas = totalPaginasLivro; // Mantém total páginas do livro
+            plano.paginasLidas = 0; // Zera lidas
+             // Zera páginas nos dias (mesmo os inválidos)
+             plano.diasPlano.forEach(dia => { if(dia) {dia.paginaInicioDia = 0; dia.paginaFimDia = -1; dia.paginas = 0;} });
+            return;
+        }
+
 
         plano.totalPaginas = totalPaginasLivro; // Define o total de páginas no objeto plano
 
         // Calcula a base de páginas por dia e quantas páginas extras sobram
-        const paginasPorDiaBase = Math.floor(totalPaginasLivro / numeroDeDias);
-        const paginasRestantes = totalPaginasLivro % numeroDeDias;
+        const paginasPorDiaBase = Math.floor(totalPaginasLivro / numeroDeDiasValidos);
+        const paginasRestantes = totalPaginasLivro % numeroDeDiasValidos;
 
         let paginaAtual = plano.paginaInicio; // Começa da página inicial do plano
 
-        // Itera por cada dia de leitura no plano
-        diasDeLeitura.forEach((dia, index) => {
-            // Calcula quantas páginas alocar para este dia (base + 1 extra se for um dos primeiros dias)
+        // Itera APENAS pelos dias de leitura VÁLIDOS para distribuir páginas
+        diasDeLeituraValidos.forEach((dia, index) => {
+            // Calcula quantas páginas alocar para este dia (base + 1 extra se for um dos primeiros)
             let paginasNesteDia = paginasPorDiaBase + (index < paginasRestantes ? 1 : 0);
 
              // Garante que não aloque páginas negativas ou zero se algo der errado
-             if (paginasNesteDia <= 0 && totalPaginasLivro > 0 && numeroDeDias > 0) {
-                 console.warn(`Cálculo resultou em ${paginasNesteDia} páginas para o dia ${index+1}. Verifique os dados.`);
-                 paginasNesteDia = 1; // Aloca pelo menos 1 se houver páginas totais
+             if (paginasNesteDia <= 0 && totalPaginasLivro > 0) {
+                 console.warn(`[Calc] Distribuição resultou em ${paginasNesteDia} páginas para o dia ${dia.data.toLocaleDateString()}. Forçando 1.`);
+                 paginasNesteDia = 1;
              }
 
-            // Define a página inicial e final para este dia
+            // Define a página inicial e final para este dia VÁLIDO
             dia.paginaInicioDia = paginaAtual;
             dia.paginaFimDia = paginaAtual + paginasNesteDia - 1;
 
@@ -1492,27 +1745,35 @@ document.addEventListener('DOMContentLoaded', () => {
             paginaAtual = dia.paginaFimDia + 1;
         });
 
-        // Verificação final (opcional mas útil): Checa se a última página do último dia bate com a página final do livro
-        if (diasDeLeitura.length > 0) {
-            const ultimoDia = diasDeLeitura[numeroDeDias - 1];
-             if (ultimoDia.paginaFimDia < plano.paginaFim && paginaAtual <= plano.paginaFim) {
-                 // Este bloco geralmente não deveria ser necessário se a lógica acima estiver correta,
-                 // mas serve como uma garantia para forçar o último dia a terminar na página final.
-                 console.warn(`Ajuste pós-cálculo: Último dia (${ultimoDia.data.toLocaleDateString()}) terminaria em ${ultimoDia.paginaFimDia}. Corrigindo para ${plano.paginaFim}.`);
-                 ultimoDia.paginaFimDia = plano.paginaFim;
-                 ultimoDia.paginas = Math.max(0, ultimoDia.paginaFimDia - ultimoDia.paginaInicioDia + 1);
+        // Zera páginas para dias que foram filtrados (sem data válida)
+        plano.diasPlano.forEach(dia => {
+            if (dia && !(dia.data instanceof Date && !isNaN(dia.data))) {
+                dia.paginaInicioDia = 0;
+                dia.paginaFimDia = -1;
+                dia.paginas = 0;
+            }
+        });
+
+
+        // Verificação final no último dia VÁLIDO
+        if (diasDeLeituraValidos.length > 0) {
+            const ultimoDiaValido = diasDeLeituraValidos[numeroDeDiasValidos - 1];
+             if (ultimoDiaValido.paginaFimDia < plano.paginaFim && paginaAtual <= plano.paginaFim) {
+                 console.warn(`[Calc] Ajuste pós-distribuição: Último dia válido (${ultimoDiaValido.data.toLocaleDateString()}) terminaria em ${ultimoDiaValido.paginaFimDia}. Corrigindo para ${plano.paginaFim}.`);
+                 ultimoDiaValido.paginaFimDia = plano.paginaFim;
+                 ultimoDiaValido.paginas = Math.max(0, ultimoDiaValido.paginaFimDia - ultimoDiaValido.paginaInicioDia + 1);
              }
         }
 
         // Recalcula as páginas lidas com base nos dias marcados como 'lido' APÓS a distribuição
-        // Isso é importante se o plano está sendo criado ou editado.
-        if (planos.includes(plano)) {
-             atualizarPaginasLidas(planos.indexOf(plano));
+        // Se o plano está no array global, chama a função, senão calcula localmente
+        const planoGlobalIndex = planos.findIndex(p => p.id === plano.id);
+        if (planoGlobalIndex !== -1) {
+             atualizarPaginasLidas(planoGlobalIndex);
         } else {
-             // Se for um plano novo (ainda não no array global), calcula localmente
-             plano.paginasLidas = diasDeLeitura.reduce((sum, dia) => sum + (dia.lido && typeof dia.paginas === 'number' ? dia.paginas : 0), 0);
+             plano.paginasLidas = plano.diasPlano.reduce((sum, dia) => sum + (dia && dia.lido && typeof dia.paginas === 'number' ? dia.paginas : 0), 0);
         }
-        console.log("Distribuição de páginas concluída para o plano:", plano.titulo);
+        console.log("[Calc] Distribuição de páginas concluída para o plano:", plano.titulo);
     }
 
     // Gera um array de objetos representando os dias de leitura com base em datas de início/fim
@@ -1520,7 +1781,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const dias = [];
         // Validação das entradas
         if (!(dataInicio instanceof Date) || !(dataFim instanceof Date) || isNaN(dataInicio) || isNaN(dataFim) || dataFim < dataInicio) {
-            console.error("Datas inválidas fornecidas para gerar dias:", dataInicio, dataFim);
+            console.error("[Calc] Datas inválidas fornecidas para gerarDiasPlanoPorDatas:", dataInicio, dataFim);
             return dias; // Retorna array vazio se inválido
         }
         // Normaliza as datas para evitar problemas com horas
@@ -1528,14 +1789,14 @@ document.addEventListener('DOMContentLoaded', () => {
         const dataFimNormalizada = new Date(dataFim); dataFimNormalizada.setHours(0, 0, 0, 0);
 
         let safetyCounter = 0;
-        const MAX_ITERATIONS = 3000; // Limite para evitar loops infinitos (aprox 8 anos diários)
+        const MAX_ITERATIONS = 365 * 10; // Limite generoso (10 anos)
 
         // Itera do início ao fim
         while (dataAtual <= dataFimNormalizada && safetyCounter < MAX_ITERATIONS) {
             const diaSemanaAtual = dataAtual.getDay(); // 0 = Domingo, ..., 6 = Sábado
             // Verifica se o dia atual deve ser incluído com base na periodicidade
             if (periodicidade === 'diario' || (periodicidade === 'semanal' && Array.isArray(diasSemana) && diasSemana.includes(diaSemanaAtual))) {
-                // Adiciona o dia ao array (com dados iniciais)
+                // Adiciona o dia ao array (com dados iniciais zerados)
                 dias.push({ data: new Date(dataAtual), paginaInicioDia: 0, paginaFimDia: 0, paginas: 0, lido: false });
             }
             // Avança para o próximo dia
@@ -1544,11 +1805,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
          if (safetyCounter >= MAX_ITERATIONS) {
-             console.error("Loop infinito provável detectado em gerarDiasPlanoPorDatas. Interrompido.");
+             console.error("[Calc] Loop infinito provável detectado em gerarDiasPlanoPorDatas. Interrompido.");
              alert("Erro: Não foi possível gerar os dias do plano. O intervalo de datas pode ser muito grande.");
              return []; // Retorna vazio em caso de erro
          }
-        console.log(`${dias.length} dias gerados por datas (${dataInicio.toLocaleDateString()} a ${dataFim.toLocaleDateString()})`);
+        console.log(`[Calc] ${dias.length} dias gerados por datas (${dataInicio.toLocaleDateString()} a ${dataFim.toLocaleDateString()})`);
         return dias;
     }
 
@@ -1557,15 +1818,15 @@ document.addEventListener('DOMContentLoaded', () => {
         const dias = [];
         // Validação das entradas
          if (!(dataInicio instanceof Date) || isNaN(dataInicio) || typeof numeroDias !== 'number' || numeroDias <= 0) {
-             console.error("Dados inválidos fornecidos para gerar dias por número:", dataInicio, numeroDias);
+             console.error("[Calc] Dados inválidos fornecidos para gerarDiasPlanoPorDias:", dataInicio, numeroDias);
              return dias;
          }
         // Normaliza a data inicial
         let dataAtual = new Date(dataInicio); dataAtual.setHours(0, 0, 0, 0);
         let diasAdicionados = 0;
         let safetyCounter = 0;
-        // Limite de segurança maior, pois depende da periodicidade
-        const MAX_ITERATIONS_DIAS = numeroDias * 7 + 366; // Ex: 100 dias semanais -> 700 + 366
+        // Limite de segurança maior, ajustado
+        const MAX_ITERATIONS_DIAS = numeroDias * 10 + 366; // Permite mais folga
 
         // Continua até adicionar o número de dias desejado ou atingir o limite de segurança
         while (diasAdicionados < numeroDias && safetyCounter < MAX_ITERATIONS_DIAS) {
@@ -1580,134 +1841,173 @@ document.addEventListener('DOMContentLoaded', () => {
              dataAtual.setDate(dataAtual.getDate() + 1);
              safetyCounter++;
              if (safetyCounter >= MAX_ITERATIONS_DIAS) {
-                 console.error("Loop infinito provável detectado em gerarDiasPlanoPorDias. Interrompido.");
-                 alert(`Erro: Não foi possível gerar os ${numeroDias} dias solicitados. A periodicidade pode ser muito restritiva ou o número de dias muito grande.`);
+                 console.error(`[Calc] Loop infinito provável detectado em gerarDiasPlanoPorDias (${MAX_ITERATIONS_DIAS} iterações). Interrompido.`);
+                 alert(`Erro: Não foi possível gerar os ${numeroDias} dias solicitados. A periodicidade (${periodicidade}) pode ser muito restritiva ou o número de dias muito grande.`);
                  // Retorna os dias que conseguiu gerar até o momento
                  return dias;
              }
         }
 
-        // Aviso se não conseguiu gerar todos os dias solicitados (geralmente devido ao limite de segurança)
+        // Aviso se não conseguiu gerar todos os dias solicitados
         if (diasAdicionados < numeroDias) {
-             console.warn(`Não foi possível gerar os ${numeroDias} dias solicitados com a periodicidade. Apenas ${diasAdicionados} foram gerados (limite de iteração atingido?).`);
+             console.warn(`[Calc] Não foi possível gerar os ${numeroDias} dias solicitados com a periodicidade '${periodicidade}'. Apenas ${diasAdicionados} foram gerados (limite de iteração atingido?).`);
+              // Decide se quer alertar o usuário ou apenas logar. Vamos alertar.
+              alert(`Atenção: Com a periodicidade selecionada, foi possível gerar apenas ${diasAdicionados} dos ${numeroDias} dias de leitura solicitados. O plano será criado com ${diasAdicionados} dias.`);
          }
-         console.log(`${dias.length} dias gerados por número (${numeroDias} solicitados) a partir de ${dataInicio.toLocaleDateString()}`);
+         console.log(`[Calc] ${dias.length} dias gerados por número (${numeroDias} solicitados) a partir de ${dataInicio.toLocaleDateString()}`);
         return dias;
     }
-
-    // (Função calcularDataFimReal removida pois gerarDiasPlanoPorDias já faz o necessário e retorna a lista de dias, da qual podemos pegar a data do último dia)
 
     // --- Listeners de Eventos da Interface ---
 
     // Botões de Autenticação
     if (showAuthButton) {
         showAuthButton.addEventListener('click', () => {
-            console.log("Botão 'Login/Cadastro' clicado.");
-            authFormDiv.style.display = 'flex'; // Mostra o formulário
-            showAuthButton.style.display = 'none';
-            cancelAuthButton.style.display = 'inline-block'; // Mostra botão Cancelar
-            logoutButton.style.display = 'none';
-            if (emailLoginInput) emailLoginInput.focus(); // Foca no campo de email
+            console.log("[Click] Botão 'Login/Cadastro' clicado.");
+            if(authFormDiv) authFormDiv.style.display = 'flex';
+            if(showAuthButton) showAuthButton.style.display = 'none';
+            if(cancelAuthButton) cancelAuthButton.style.display = 'inline-block';
+            if(logoutButton) logoutButton.style.display = 'none';
+            if (emailLoginInput) emailLoginInput.focus();
             atualizarVisibilidadeBotoesAcao();
         });
     }
     if (cancelAuthButton) {
         cancelAuthButton.addEventListener('click', () => {
-             console.log("Botão 'Cancelar Auth' clicado.");
-            authFormDiv.style.display = 'none'; // Esconde o formulário
-            showAuthButton.style.display = 'block'; // Mostra 'Login/Cadastro' de volta
-            cancelAuthButton.style.display = 'none';
-            if (emailLoginInput) emailLoginInput.value = ''; // Limpa campos
+             console.log("[Click] Botão 'Cancelar Auth' clicado.");
+            if(authFormDiv) authFormDiv.style.display = 'none';
+            if(showAuthButton) showAuthButton.style.display = 'block';
+            if(cancelAuthButton) cancelAuthButton.style.display = 'none';
+            if (emailLoginInput) emailLoginInput.value = '';
             if (passwordLoginInput) passwordLoginInput.value = '';
             atualizarVisibilidadeBotoesAcao();
         });
     }
-    // --- PROBLEMA AQUI ---
-    // Os listeners para login e signup SÃO adicionados, mas o clique não dispara as funções.
-    // Isso sugere que ou o clique não está chegando aos botões (overlay, etc.)
-    // ou algo está impedindo a execução DEPOIS do listener ser adicionado.
+    // Listener para o botão LOGIN
     if (loginEmailButton) {
         loginEmailButton.addEventListener('click', () => {
-            console.log(">>> Login Button CLICKED! (Listener Fired)"); // Log de disparo
-            loginWithEmailPassword();
+            // ESTE LOG É ESSENCIAL: Se ele não aparecer, o problema é ANTES daqui.
+            console.log("[Click] >>> Login Button CLICKED! (Listener Callback Executado) <<<");
+            loginWithEmailPassword(); // Chama a função de login
         });
-        console.log("DEBUG: Event Listener ADICIONADO ao Login Button.");
+        console.log("[Listener] Event Listener ADICIONADO ao #login-email-button.");
     } else {
-        console.error("ERRO: Botão de Login (#login-email-button) não encontrado no DOM!");
+        console.error("ERRO CRÍTICO: Botão #login-email-button não encontrado!");
     }
+    // Listener para o botão CADASTRO
     if (signupEmailButton) {
         signupEmailButton.addEventListener('click', () => {
-            console.log(">>> Signup Button CLICKED! (Listener Fired)"); // Log de disparo
-            signupWithEmailPassword();
+            // ESTE LOG É ESSENCIAL
+            console.log("[Click] >>> Signup Button CLICKED! (Listener Callback Executado) <<<");
+            signupWithEmailPassword(); // Chama a função de cadastro
         });
-        console.log("DEBUG: Event Listener ADICIONADO ao Signup Button.");
+        console.log("[Listener] Event Listener ADICIONADO ao #signup-email-button.");
     } else {
-        console.error("ERRO: Botão de Cadastro (#signup-email-button) não encontrado no DOM!");
+        console.error("ERRO CRÍTICO: Botão #signup-email-button não encontrado!");
     }
-    // --- FIM DO PROBLEMA ---
+    // Listener para o botão SAIR
     if (logoutButton) {
-        logoutButton.addEventListener('click', logout);
+        logoutButton.addEventListener('click', () => {
+            console.log("[Click] Botão Logout clicado.");
+            logout();
+        });
+         console.log("[Listener] Event Listener ADICIONADO ao #logout-button.");
+    } else {
+         console.error("ERRO: Botão #logout-button não encontrado!");
     }
+    // Listener de clique no CONTAINER do form (para depuração)
+    if (authFormDiv) {
+        authFormDiv.addEventListener('click', (event) => {
+            // Loga o clique e o elemento exato que foi clicado dentro do div
+            console.log(`[Click Debug] Clique detectado DENTRO de #auth-form. Target: <${event.target.tagName} id="${event.target.id}" class="${event.target.className}">`);
+        });
+         console.log("[Listener] Event Listener de DEBUG adicionado ao container #auth-form.");
+    } else {
+         console.error("ERRO: Container #auth-form não encontrado para listener de debug!");
+    }
+
 
     // Botões de Navegação Principal
     if (novoPlanoBtn) {
         novoPlanoBtn.addEventListener('click', function() {
-            console.log("Botão 'Novo Plano' clicado.");
+            console.log("[Click] Botão 'Novo Plano' clicado.");
             if (!user) {
                 alert("Faça login ou cadastre-se para criar um novo plano.");
-                if (showAuthButton.style.display !== 'none') showAuthButton.click(); // Abre o form de login se o botão estiver visível
+                // Tenta abrir o form de login se o botão estiver visível
+                if (showAuthButton && showAuthButton.style.display !== 'none') showAuthButton.click();
                 return;
             }
             // Mostra seção de cadastro, esconde outras
-            cadastroPlanoSection.style.display = 'block';
-            planosLeituraSection.style.display = 'none';
-            leiturasAtrasadasSection.style.display = 'none';
-            proximasLeiturasSection.style.display = 'none';
-            inicioCadastroBtn.style.display = 'block'; // Mostra botão 'Voltar' no form
+            if (cadastroPlanoSection) cadastroPlanoSection.style.display = 'block';
+            if (planosLeituraSection) planosLeituraSection.style.display = 'none';
+            if (leiturasAtrasadasSection) leiturasAtrasadasSection.style.display = 'none';
+            if (proximasLeiturasSection) proximasLeiturasSection.style.display = 'none';
+            if (inicioCadastroBtn) inicioCadastroBtn.style.display = 'block'; // Mostra botão 'Voltar' no form
 
             // Reseta o formulário apenas se não estiver vindo de uma edição
-            if (!preventFormReset) {
+            if (!preventFormReset && formPlano) {
+                console.log("[Form] Resetando formulário para novo plano.");
                 formPlano.reset(); // Limpa todos os campos
                 planoEditandoIndex = -1; // Garante que não está em modo de edição
-                formPlano.querySelector('button[type="submit"]').textContent = 'Salvar Plano';
+                const submitBtn = formPlano.querySelector('button[type="submit"]');
+                if (submitBtn) submitBtn.textContent = 'Salvar Plano';
                 // Reseta seletores para o padrão
-                 definirPorDatasRadio.checked = true;
-                 periodoPorDatasDiv.style.display = 'block';
-                 periodoPorDiasDiv.style.display = 'none';
-                 periodicidadeSelect.value = 'diario';
-                 diasSemanaSelecao.style.display = 'none';
+                 if (definirPorDatasRadio) definirPorDatasRadio.checked = true;
+                 if (periodoPorDatasDiv) periodoPorDatasDiv.style.display = 'block';
+                 if (periodoPorDiasDiv) periodoPorDiasDiv.style.display = 'none';
+                 if (periodicidadeSelect) periodicidadeSelect.value = 'diario';
+                 if (diasSemanaSelecao) diasSemanaSelecao.style.display = 'none';
                  document.querySelectorAll('input[name="dia-semana"]').forEach(cb => cb.checked = false);
+                 updateRequiredAttributes(); // Ajusta campos obrigatórios após reset
+            } else {
+                 console.log("[Form] Não resetando formulário (preventFormReset=true ou form não encontrado).");
             }
-            updateRequiredAttributes(); // Ajusta campos obrigatórios
+
             atualizarVisibilidadeBotoesAcao(); // Ajusta botões do header
-            if (document.getElementById('titulo-livro')) document.getElementById('titulo-livro').focus(); // Foca no título
+            const tituloInput = document.getElementById('titulo-livro');
+            if (tituloInput) tituloInput.focus(); // Foca no título
         });
+         console.log("[Listener] Event Listener ADICIONADO ao #novo-plano.");
+    } else {
+        console.error("ERRO: Botão #novo-plano não encontrado!");
     }
+
     // Botão 'Início' (visível apenas na tela de cadastro/edição)
     if (inicioBtn) {
         inicioBtn.addEventListener('click', function() {
-            console.log("Botão 'Início' (navegação) clicado.");
+            console.log("[Click] Botão 'Início' (navegação header) clicado.");
             // Mostra lista de planos, esconde cadastro
-            planosLeituraSection.style.display = 'block';
-            cadastroPlanoSection.style.display = 'none';
-            // inicioCadastroBtn.style.display = 'none'; // O botão de voltar no form já é escondido com a seção
+            if (planosLeituraSection) planosLeituraSection.style.display = 'block';
+            if (cadastroPlanoSection) cadastroPlanoSection.style.display = 'none';
             planoEditandoIndex = -1; // Sai do modo de edição
-            formPlano.querySelector('button[type="submit"]').textContent = 'Salvar Plano'; // Reseta texto botão submit
+            // Reseta texto botão submit do formulário
+            const submitBtn = formPlano ? formPlano.querySelector('button[type="submit"]') : null;
+            if (submitBtn) submitBtn.textContent = 'Salvar Plano';
+
             atualizarVisibilidadeBotoesAcao(); // Ajusta header
             renderizarPlanos(); // Re-renderiza a lista principal
         });
+         console.log("[Listener] Event Listener ADICIONADO ao #inicio.");
+    } else {
+        console.error("ERRO: Botão #inicio não encontrado!");
     }
+
     // Botão 'Voltar para Início' (dentro da seção de cadastro)
      if (inicioCadastroBtn) {
          inicioCadastroBtn.addEventListener('click', function() {
-              console.log("Botão 'Voltar para Início' (do form) clicado.");
+              console.log("[Click] Botão 'Voltar para Início' (do form) clicado.");
              // Simula o clique no botão 'Início' do header para centralizar a lógica
              if (inicioBtn) inicioBtn.click();
+             else console.error("ERRO: Botão #inicio não encontrado para ser clicado por #inicio-cadastro.");
          });
+          console.log("[Listener] Event Listener ADICIONADO ao #inicio-cadastro.");
+     } else {
+          console.error("ERRO: Botão #inicio-cadastro não encontrado!");
      }
 
+
     // Controles do Formulário (Radios de Período e Select de Periodicidade)
-    if (definirPorDatasRadio) {
+    if (definirPorDatasRadio && periodoPorDatasDiv && periodoPorDiasDiv) {
         definirPorDatasRadio.addEventListener('change', function() {
             if (this.checked) {
                 periodoPorDatasDiv.style.display = 'block';
@@ -1715,8 +2015,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRequiredAttributes();
             }
         });
+         console.log("[Listener] Event Listener ADICIONADO ao #definir-por-datas.");
+    } else {
+         console.error("ERRO: Elementos #definir-por-datas ou divs de período não encontrados!");
     }
-    if (definirPorDiasRadio) {
+    if (definirPorDiasRadio && periodoPorDatasDiv && periodoPorDiasDiv) {
         definirPorDiasRadio.addEventListener('change', function() {
             if (this.checked) {
                 periodoPorDatasDiv.style.display = 'none';
@@ -1724,8 +2027,11 @@ document.addEventListener('DOMContentLoaded', () => {
                 updateRequiredAttributes();
             }
         });
+         console.log("[Listener] Event Listener ADICIONADO ao #definir-por-dias.");
+    } else {
+         console.error("ERRO: Elementos #definir-por-dias ou divs de período não encontrados!");
     }
-    if (periodicidadeSelect) {
+    if (periodicidadeSelect && diasSemanaSelecao) {
         periodicidadeSelect.addEventListener('change', function() {
             // Mostra/esconde a seleção de dias da semana
             diasSemanaSelecao.style.display = this.value === 'semanal' ? 'block' : 'none';
@@ -1734,35 +2040,55 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.querySelectorAll('input[name="dia-semana"]').forEach(cb => cb.checked = false);
             }
         });
+         console.log("[Listener] Event Listener ADICIONADO ao #periodicidade.");
+    } else {
+         console.error("ERRO: Elementos #periodicidade ou #dias-semana-selecao não encontrados!");
     }
 
     // Submissão do formulário (Salvar/Atualizar Plano)
     if (formPlano) {
         formPlano.addEventListener('submit', function(event) {
             event.preventDefault(); // Previne recarregamento da página
-            console.log("Formulário de plano submetido.");
+            console.log("[Form] Formulário de plano submetido.");
 
             if (!user) {
                  alert("Erro: Você precisa estar logado para salvar um plano.");
-                 if (showAuthButton.style.display !== 'none') showAuthButton.click();
+                 // Tenta mostrar form de login
+                 if (showAuthButton && showAuthButton.style.display !== 'none') showAuthButton.click();
                  return;
              }
 
             // --- Coleta e Validação dos Dados do Formulário ---
-            const titulo = document.getElementById('titulo-livro').value.trim();
-            const linkDrive = document.getElementById('link-drive').value.trim();
-            const paginaInicioInput = document.getElementById('pagina-inicio').value;
-            const paginaFimInput = document.getElementById('pagina-fim').value;
-            const definicaoPeriodo = document.querySelector('input[name="definicao-periodo"]:checked')?.value;
-            const periodicidade = periodicidadeSelect.value;
+             // Adiciona verificação de existência dos elementos antes de pegar .value
+            const tituloInput = document.getElementById('titulo-livro');
+            const linkDriveInputForm = document.getElementById('link-drive'); // Renomeado para evitar conflito
+            const paginaInicioInput = document.getElementById('pagina-inicio');
+            const paginaFimInput = document.getElementById('pagina-fim');
+            const definicaoPeriodoRadio = document.querySelector('input[name="definicao-periodo"]:checked');
+            const periodicidadeSel = document.getElementById('periodicidade'); // Já selecionado antes
 
-            // Validações básicas
+            if (!tituloInput || !linkDriveInputForm || !paginaInicioInput || !paginaFimInput || !definicaoPeriodoRadio || !periodicidadeSel) {
+                console.error("[Form] ERRO: Campos essenciais do formulário não encontrados!");
+                alert("Erro interno no formulário. Recarregue a página.");
+                return;
+            }
+
+            const titulo = tituloInput.value.trim();
+            const linkDrive = linkDriveInputForm.value.trim();
+            const paginaInicioStr = paginaInicioInput.value;
+            const paginaFimStr = paginaFimInput.value;
+            const definicaoPeriodo = definicaoPeriodoRadio.value;
+            const periodicidade = periodicidadeSel.value;
+
+            // Validações
             if (!titulo) { alert('O título do livro é obrigatório.'); return; }
-            const paginaInicio = parseInt(paginaInicioInput);
-            const paginaFim = parseInt(paginaFimInput);
-            if (isNaN(paginaInicio) || paginaInicio < 1) { alert('Página de início inválida. Deve ser um número maior ou igual a 1.'); return; }
-            if (isNaN(paginaFim) || paginaFim < paginaInicio) { alert('Página de fim inválida. Deve ser um número maior ou igual à página de início.'); return; }
-            if (!definicaoPeriodo) { alert('Selecione como definir o período (Datas ou Dias).'); return; }
+            const paginaInicio = parseInt(paginaInicioStr);
+            const paginaFim = parseInt(paginaFimStr);
+            if (isNaN(paginaInicio) || paginaInicio < 1) { alert('Página de início inválida.'); return; }
+            if (isNaN(paginaFim) || paginaFim < paginaInicio) { alert('Página de fim inválida.'); return; }
+            if(linkDrive !== '' && !linkDrive.startsWith('http://') && !linkDrive.startsWith('https://')) {
+                alert("Link de anotações inválido. Deve começar com http:// ou https:// (ou deixe em branco)."); return;
+            }
 
             let dataInicio, dataFim;
             let diasPlano = [];
@@ -1771,65 +2097,71 @@ document.addEventListener('DOMContentLoaded', () => {
              // Coleta dias da semana se a periodicidade for semanal
              if (periodicidade === 'semanal') {
                  document.querySelectorAll('input[name="dia-semana"]:checked').forEach(cb => {
-                     diasSemana.push(parseInt(cb.value)); // Adiciona o valor numérico do dia
+                     diasSemana.push(parseInt(cb.value));
                  });
                  if (diasSemana.length === 0) {
-                     alert('Para periodicidade semanal, você deve selecionar pelo menos um dia da semana.'); return;
+                     alert('Para periodicidade semanal, selecione pelo menos um dia.'); return;
                  }
                  diasSemana.sort((a,b) => a - b); // Ordena os dias (0, 1, 2...)
              }
 
-            // --- Geração dos Dias de Leitura com base na definição do período ---
+            // --- Geração dos Dias de Leitura ---
             try {
+                console.log(`[Form] Gerando dias - Definição: ${definicaoPeriodo}, Periodicidade: ${periodicidade}, Dias Semana: ${diasSemana}`);
                 if (definicaoPeriodo === 'datas') {
-                    const dataInicioInputVal = document.getElementById('data-inicio').value;
-                    const dataFimInputVal = document.getElementById('data-fim').value;
-                    if (!dataInicioInputVal || !dataFimInputVal) { throw new Error('Datas de início e fim são obrigatórias ao definir por datas.'); }
-                    // Adiciona T00:00:00 para garantir que a data seja interpretada no fuso local sem deslocamento
+                    const dataInicioInputEl = document.getElementById('data-inicio');
+                    const dataFimInputEl = document.getElementById('data-fim');
+                    if (!dataInicioInputEl || !dataFimInputEl) throw new Error("Campos de data (datas) não encontrados.");
+                    const dataInicioInputVal = dataInicioInputEl.value;
+                    const dataFimInputVal = dataFimInputEl.value;
+                    if (!dataInicioInputVal || !dataFimInputVal) throw new Error('Datas início/fim obrigatórias.');
                     dataInicio = new Date(dataInicioInputVal + 'T00:00:00');
                     dataFim = new Date(dataFimInputVal + 'T00:00:00');
-                    if (isNaN(dataInicio) || isNaN(dataFim)) { throw new Error('Formato de data inválido. Use o seletor de datas.'); }
-                    if (dataFim < dataInicio) { throw new Error('A data de fim não pode ser anterior à data de início.'); }
+                    if (isNaN(dataInicio) || isNaN(dataFim)) throw new Error('Formato de data inválido.');
+                    dataInicio.setHours(0,0,0,0); dataFim.setHours(0,0,0,0); // Normaliza
+                    if (dataFim < dataInicio) throw new Error('Data fim anterior à data início.');
                     diasPlano = gerarDiasPlanoPorDatas(dataInicio, dataFim, periodicidade, diasSemana);
                 } else { // definicaoPeriodo === 'dias'
-                    const dataInicioDiasInputVal = document.getElementById('data-inicio-dias').value;
-                    const numeroDiasInputVal = document.getElementById('numero-dias').value;
-                    if (!dataInicioDiasInputVal) { throw new Error('Data de início é obrigatória ao definir por número de dias.'); }
+                    const dataInicioDiasInputEl = document.getElementById('data-inicio-dias');
+                    const numeroDiasInputEl = document.getElementById('numero-dias');
+                    if (!dataInicioDiasInputEl || !numeroDiasInputEl) throw new Error("Campos de data/número (dias) não encontrados.");
+                    const dataInicioDiasInputVal = dataInicioDiasInputEl.value;
+                    const numeroDiasInputVal = numeroDiasInputEl.value;
+                    if (!dataInicioDiasInputVal) throw new Error('Data início obrigatória.');
                     const numeroDiasInput = parseInt(numeroDiasInputVal);
-                    if (isNaN(numeroDiasInput) || numeroDiasInput < 1) { throw new Error('Número de dias inválido. Deve ser um número maior que 0.'); }
+                    if (isNaN(numeroDiasInput) || numeroDiasInput < 1) throw new Error('Número dias inválido.');
                     dataInicio = new Date(dataInicioDiasInputVal + 'T00:00:00');
-                    if (isNaN(dataInicio)) { throw new Error('Formato da data de início inválido.'); }
+                    if (isNaN(dataInicio)) throw new Error('Formato data início inválido.');
+                    dataInicio.setHours(0,0,0,0); // Normaliza
 
                     diasPlano = gerarDiasPlanoPorDias(dataInicio, numeroDiasInput, periodicidade, diasSemana);
 
-                    // Verifica se conseguiu gerar algum dia e se gerou o número esperado
                     if (diasPlano.length === 0) {
-                         throw new Error("Não foi possível gerar nenhum dia de leitura com as datas e periodicidade selecionadas. Verifique os dados.");
-                     } else if (diasPlano.length < numeroDiasInput) {
-                          alert(`Atenção: Com a periodicidade selecionada, foi possível gerar apenas ${diasPlano.length} dias de leitura, em vez dos ${numeroDiasInput} solicitados. O plano será criado/atualizado com ${diasPlano.length} dias.`);
+                         // gerarDiasPlanoPorDias já deve ter alertado se falhou em gerar
+                         throw new Error("Falha ao gerar dias de leitura."); // Apenas para interromper
                      }
-
                      // A data de fim é a data do último dia gerado
                      dataFim = diasPlano.length > 0 ? diasPlano[diasPlano.length - 1].data : null;
                      if (!dataFim || !(dataFim instanceof Date) || isNaN(dataFim)) {
-                         throw new Error("Erro interno ao calcular a data final do plano a partir dos dias gerados. Tente novamente.");
+                         console.error("[Form] Erro ao obter data fim dos dias gerados:", diasPlano);
+                         throw new Error("Erro interno ao calcular a data final do plano.");
                      }
+                     dataFim.setHours(0,0,0,0); // Normaliza data fim também
                 }
             } catch (error) {
-                 console.error("Erro ao gerar dias do plano:", error);
+                 console.error("[Form] Erro ao gerar dias do plano:", error);
                  alert("Erro ao processar período: " + error.message);
                  return; // Interrompe a submissão
             }
 
-
-            // Última verificação se dias foram gerados
-            if (diasPlano.length === 0) {
-                alert("Falha crítica ao gerar os dias de leitura para o plano. Verifique as datas, número de dias e a periodicidade."); return;
+            // Verificação final se dias foram gerados
+            if (!diasPlano || diasPlano.length === 0) {
+                alert("Não foi possível gerar nenhum dia de leitura para este plano com as configurações fornecidas. Verifique datas e periodicidade."); return;
             }
 
             // --- Criação ou Atualização do Objeto Plano ---
+            console.log("[Form] Criando/Atualizando objeto planoData...");
             const planoData = {
-                // Usa o ID existente se estiver editando, ou gera um novo UUID se for novo
                 id: planoEditandoIndex !== -1 ? planos[planoEditandoIndex].id : crypto.randomUUID(),
                 titulo: titulo,
                 linkDrive: linkDrive,
@@ -1837,69 +2169,82 @@ document.addEventListener('DOMContentLoaded', () => {
                 paginaFim: paginaFim,
                 totalPaginas: (paginaFim - paginaInicio + 1),
                 definicaoPeriodo: definicaoPeriodo,
-                dataInicio: dataInicio,
-                dataFim: dataFim, // Data fim real (calculada ou fornecida)
+                dataInicio: new Date(dataInicio), // Garante que são objetos Date
+                dataFim: new Date(dataFim),     // Garante que são objetos Date
                 periodicidade: periodicidade,
-                diasSemana: diasSemana, // Salva os dias selecionados (mesmo se diário, fica vazio)
+                diasSemana: diasSemana,
                 diasPlano: diasPlano, // O array de dias gerados
-                paginasLidas: 0 // Inicializa com 0, será atualizado pela distribuição/preservação
+                paginasLidas: 0 // Será recalculado
             };
 
             // Preserva o status 'lido' dos dias ao editar
             if (planoEditandoIndex !== -1) {
-                 console.log("Modo de edição: Preservando status 'lido' dos dias anteriores.");
+                 console.log("[Form] Modo Edição: Preservando status 'lido'...");
                  const diasLidosAntigosMap = new Map();
-                 // Mapeia os dias lidos do plano original pela data (string YYYY-MM-DD)
                  planos[planoEditandoIndex].diasPlano.forEach(diaAntigo => {
-                     if (diaAntigo.lido && diaAntigo.data instanceof Date && !isNaN(diaAntigo.data)) {
+                     if (diaAntigo && diaAntigo.lido && diaAntigo.data instanceof Date && !isNaN(diaAntigo.data)) {
                          diasLidosAntigosMap.set(diaAntigo.data.toISOString().split('T')[0], true);
                      }
                  });
-                 // Verifica os novos dias gerados e marca como lido se a data coincidir
                  planoData.diasPlano.forEach(diaNovo => {
-                     if (diaNovo.data instanceof Date && !isNaN(diaNovo.data)) {
+                     if (diaNovo && diaNovo.data instanceof Date && !isNaN(diaNovo.data)) {
                          const dataStr = diaNovo.data.toISOString().split('T')[0];
                          if (diasLidosAntigosMap.has(dataStr)) {
                              diaNovo.lido = true;
-                             console.log(`Dia ${dataStr} preservado como lido.`);
+                             // console.log(`  - Dia ${dataStr} preservado como lido.`);
                          }
                      }
                  });
+                 // Recalcula páginas lidas após preservar o status
+                 planoData.paginasLidas = planoData.diasPlano.reduce((sum, dia) => sum + (dia && dia.lido && typeof dia.paginas === 'number' ? dia.paginas : 0), 0);
+                 console.log("[Form] Páginas lidas preservadas:", planoData.paginasLidas);
             }
 
             // Distribui as páginas entre os dias gerados (ou atualizados)
-            distribuirPaginasPlano(planoData); // Isso também atualiza planoData.paginasLidas
+            console.log("[Form] Distribuindo páginas...");
+            distribuirPaginasPlano(planoData); // Isso também atualiza planoData.paginasLidas se não estava editando
 
             // --- Salva o Plano (Adiciona ou Substitui no Array Local) ---
             if (planoEditandoIndex !== -1) {
-                console.log("Atualizando plano existente no índice:", planoEditandoIndex);
-                planos[planoEditandoIndex] = planoData; // Substitui o plano antigo pelo novo
+                console.log("[Form] Atualizando plano existente no índice:", planoEditandoIndex);
+                planos[planoEditandoIndex] = planoData; // Substitui
             } else {
-                console.log("Adicionando novo plano.");
-                planos.unshift(planoData); // Adiciona o novo plano no início do array
+                console.log("[Form] Adicionando novo plano ao início do array.");
+                planos.unshift(planoData); // Adiciona no início
             }
 
             // --- Salva no Firebase e Atualiza a Interface ---
+            console.log("[Form] Chamando salvarPlanos...");
             salvarPlanos(planos, (salvoComSucesso) => {
                 if (salvoComSucesso) {
-                    console.log(`Plano "${planoData.titulo}" ${planoEditandoIndex !== -1 ? 'atualizado' : 'salvo'} com sucesso.`);
+                    const acao = planoEditandoIndex !== -1 ? 'atualizado' : 'salvo';
+                    console.log(`[Data] Plano "${planoData.titulo}" ${acao} com sucesso.`);
+                    const msgTitulo = planoData.titulo; // Salva título antes de resetar
                     planoEditandoIndex = -1; // Reseta o índice de edição
-                    formPlano.querySelector('button[type="submit"]').textContent = 'Salvar Plano'; // Reseta texto do botão
+                    const submitBtn = formPlano.querySelector('button[type="submit"]');
+                    if (submitBtn) submitBtn.textContent = 'Salvar Plano';
                     // Volta para a tela inicial (simula clique no botão 'Início')
-                    if(inicioBtn) inicioBtn.click();
-                    alert(`Plano "${planoData.titulo}" ${planoEditandoIndex !== -1 ? 'atualizado' : 'salvo'} com sucesso!`);
+                    if(inicioBtn) {
+                        inicioBtn.click(); // Volta para a lista
+                         alert(`Plano "${msgTitulo}" ${acao} com sucesso!`); // Mostra alerta APÓS voltar
+                    } else {
+                        console.error("[Form] Botão #inicio não encontrado para navegar após salvar.");
+                        renderizarPlanos(); // Apenas renderiza se não puder navegar
+                        alert(`Plano "${msgTitulo}" ${acao} com sucesso!`);
+                    }
                 } else {
-                    // Se falhou ao salvar, idealmente deveria reverter a adição/edição local.
-                    // Por simplicidade, apenas alertamos. O usuário pode tentar salvar novamente.
                     alert("Houve um erro ao salvar o plano no servidor. Verifique sua conexão e tente novamente. As alterações podem não ter sido salvas.");
-                    // Poderia tentar reverter: se era edição, voltar ao plano original; se era novo, remover do array 'planos'.
+                    // Considerar rollback local em futuras versões
                 }
             });
         });
+         console.log("[Listener] Event Listener ADICIONADO ao submit do #form-plano.");
+    } else {
+         console.error("ERRO CRÍTICO: Formulário #form-plano não encontrado!");
     }
 
     // --- Inicialização da Aplicação ---
-    console.log("DOM carregado. Inicializando aplicação...");
+    console.log("[App] DOM pronto. Chamando initApp...");
     initApp(); // Começa o fluxo da aplicação
 
 }); // --- Fim do DOMContentLoaded ---
