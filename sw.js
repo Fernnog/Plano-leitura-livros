@@ -1,52 +1,45 @@
-// --- START OF FILE sw.js (Corrigido) ---
+// --- START OF FILE sw.js (Atualizado com Bypass para Firebase Auth) ---
 
-// Nome do cache (opcional, mas útil para versionamento)
+// Nome do cache (mantenha ou atualize se precisar limpar tudo)
 const CACHE_NAME = 'gerenciador-leitura-cache-v1';
-// Arquivos essenciais para o app shell (com caminhos relativos corrigidos)
+// Arquivos essenciais para o app shell (verifique se todos os caminhos estão corretos)
 const urlsToCache = [
-  '.', // Representa o diretório atual (o root do projeto)
-  './index.html', // Ou './index.html'
-  './style.css',  // Ou './style.css'
-  './script.js',  // Ou './script.js'
-  './logo.png',   // Ou './logo.png'
-  './imagens/logo_192.png', // Ou './imagens/logo_192.png'
-  './imagens/logo_512.png', // Ou './imagens/logo_512.png'
-  './manifest.json', // Adicionado (Importante que o manifesto seja cacheado também)
-  './favicon.ico',   // Adicionado (Se você o referenciar)
-  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200', // Fonte externa
-  'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap' // Fonte externa
-  // Adicione outros CSS, JS, imagens ou fontes essenciais aqui, se necessário
+  '.', // Diretório raiz
+  './index.html',
+  './style.css',
+  './script.js',
+  './logo.png',
+  './imagens/logo_192.png',
+  './imagens/logo_512.png',
+  './manifest.json',
+  './favicon.ico',
+  'https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200',
+  'https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap'
+  // Adicione outros recursos que seu app precisa offline
 ];
 
-// Evento install: chamado quando o SW é registrado pela primeira vez
+// Evento install: Instala o SW e cacheia o App Shell
 self.addEventListener('install', event => {
   console.log('Service Worker: Instalando...');
-  // Espera até que o cache seja aberto e os arquivos sejam adicionados
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
         console.log('Service Worker: Abrindo cache e adicionando arquivos do app shell');
-        // Importante: `addAll` falhará se *qualquer* um dos arquivos não for encontrado (404)
-        // Verifique os caminhos cuidadosamente!
+        // Use catch para evitar que um único erro 404 impeça a instalação
         return cache.addAll(urlsToCache).catch(error => {
-            console.error('Service Worker: Falha ao adicionar arquivos ao cache durante a instalação:', error);
-            // Mesmo que falhe, não queremos quebrar a instalação do SW completamente
-            // Em um cenário real, você pode querer lidar com isso de forma diferente
+            console.error('Service Worker: Falha ao adicionar um ou mais arquivos ao cache durante a instalação:', error);
         });
       })
       .then(() => {
-        console.log('Service Worker: App shell cacheado com sucesso.');
-        // Força o novo Service Worker a se tornar ativo imediatamente
-        // (útil para desenvolvimento, pode ser removido em produção se preferir esperar)
-         return self.skipWaiting();
+        console.log('Service Worker: App shell cacheado.');
+        return self.skipWaiting(); // Força a ativação imediata do novo SW
       })
   );
 });
 
-// Evento activate: chamado após a instalação, quando o SW se torna ativo
+// Evento activate: Limpa caches antigos e assume controle das páginas
 self.addEventListener('activate', event => {
     console.log('Service Worker: Ativando...');
-    // Limpa caches antigos (se o CACHE_NAME mudou)
     event.waitUntil(
         caches.keys().then(cacheNames => {
             return Promise.all(
@@ -58,87 +51,101 @@ self.addEventListener('activate', event => {
                 })
             );
         }).then(() => {
-            // Assume o controle das páginas abertas imediatamente
-            return self.clients.claim();
+            console.log('Service Worker: Cache antigo limpo.');
+            return self.clients.claim(); // Assume o controle das abas abertas
         })
     );
-     console.log('Service Worker: Ativado e pronto para controlar a página.');
+    console.log('Service Worker: Ativado e pronto para controlar a página.');
 });
 
 
-// Evento fetch: intercepta todas as requisições de rede da página
+// Evento fetch: Intercepta as requisições de rede
 self.addEventListener('fetch', event => {
-  // Ignora requisições que não são http/https (ex: chrome-extension://)
+  // Ignora requisições que não sejam HTTP/HTTPS
   if (!event.request.url.startsWith('http')) {
     return;
   }
 
-  console.log('Service Worker: Interceptando fetch para:', event.request.url);
+  // --- INÍCIO: Lógica de Bypass para Autenticação Firebase ---
+  // Verifica se a URL da requisição pertence aos serviços de autenticação do Firebase
+  // Ajuste essas strings se o Firebase mudar os endpoints ou se você notar outros no DevTools Network tab
+  const isFirebaseAuthRequest =
+    event.request.url.includes('identitytoolkit.googleapis.com') || // Login, Signup, etc.
+    event.request.url.includes('securetoken.googleapis.com');      // Obtenção/refresh de tokens
 
-  // Estratégia: Cache first, then network
+  if (isFirebaseAuthRequest) {
+    console.log('[SW Bypass] Ignorando interceptação para requisição de Auth Firebase:', event.request.url);
+    // NÃO chama event.respondWith(). Isso permite que a requisição vá direto para a rede.
+    return;
+  }
+  // --- FIM: Lógica de Bypass ---
+
+  // Se não for uma requisição de Auth, aplica a estratégia de cache
+  console.log('[SW Intercept] Interceptando requisição:', event.request.url);
+
+  // Estratégia: Cache first, then network (para os demais recursos)
   event.respondWith(
-    caches.match(event.request) // Tenta encontrar a requisição no cache
-      .then(response => {
-        // Se encontrar no cache, retorna a resposta do cache
-        if (response) {
-          console.log('Service Worker: Encontrado no cache:', event.request.url);
-          return response;
+    caches.match(event.request) // 1. Tenta encontrar no cache
+      .then(cachedResponse => {
+        if (cachedResponse) {
+          // 1a. Encontrado no cache, retorna a resposta cacheada
+          console.log('[SW Cache Hit] Servindo do cache:', event.request.url);
+          return cachedResponse;
         }
 
-        // Se não encontrar no cache, busca na rede
-        console.log('Service Worker: Não encontrado no cache, buscando na rede:', event.request.url);
-
-        // Clona a requisição para usar separadamente no fetch e no cache.put
-        // É necessário porque Request/Response são streams e só podem ser consumidos uma vez.
-        const fetchRequest = event.request.clone();
-
-        return fetch(fetchRequest).then(
+        // 2. Não encontrado no cache, busca na rede
+        console.log('[SW Cache Miss] Buscando na rede:', event.request.url);
+        return fetch(event.request.clone()).then( // Clona a requisição para poder usá-la e cacheá-la
             networkResponse => {
-                // Verifica se a resposta da rede é válida antes de cachear
-                if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic' && !networkResponse.type.startsWith('cors')) {
-                    // Não cacheia respostas inválidas (erros, respostas opacas que não queremos, etc.)
-                    // Exceto as fontes do gstatic que são 'cors'
-                     if(!(networkResponse && networkResponse.url.includes('fonts.gstatic.com'))) {
-                        console.log('Service Worker: Resposta da rede NÃO cacheada (status/tipo inválido):', event.request.url, networkResponse ? networkResponse.status : 'No Response');
-                        return networkResponse; // Retorna a resposta (mesmo inválida) para o navegador
-                     }
-                }
+                // 2a. Resposta da rede recebida
 
-                // Clona a resposta da rede para poder usá-la no cache e retorná-la ao navegador
-                const responseToCache = networkResponse.clone();
+                // Verifica se a resposta é válida para cachear
+                const isValidResponse = networkResponse && networkResponse.status === 200 &&
+                                        (networkResponse.type === 'basic' || networkResponse.type === 'cors'); // Aceita 'basic' e 'cors'
 
-                // Decide se deve cachear
-                const isFirebaseRequest = event.request.url.includes('firestore.googleapis.com') || event.request.url.includes('firebaseapp.com');
-                const isFontRequest = event.request.url.includes('fonts.gstatic.com'); // Cachear fontes é ok
+                // Define o que NÃO deve ser cacheado explicitamente (além do Auth já tratado)
+                const isFirebaseDataRequest = event.request.url.includes('firestore.googleapis.com'); // Ex: Firestore
 
-                if (!isFirebaseRequest || isFontRequest) { // Cacheia se NÃO for Firebase ou SE FOR fonte
-                     caches.open(CACHE_NAME)
+                // Define o que PODE ser cacheado mesmo vindo de fora (ex: fontes)
+                const isFontRequest = event.request.url.includes('fonts.gstatic.com') || event.request.url.includes('fonts.googleapis.com');
+
+                // Decide se vai cachear: Resposta válida E (NÃO é Firestore OU É uma Fonte)
+                const shouldCache = isValidResponse && (!isFirebaseDataRequest || isFontRequest);
+
+                if (shouldCache) {
+                    // Clona a resposta para poder cachear e retornar ao navegador
+                    const responseToCache = networkResponse.clone();
+                    caches.open(CACHE_NAME)
                         .then(cache => {
-                            console.log('Service Worker: Cacheando nova resposta de:', event.request.url);
-                            cache.put(event.request, responseToCache); // Usa a requisição original (event.request) como chave
+                            console.log('[SW Caching] Cacheando nova resposta de:', event.request.url);
+                            cache.put(event.request, responseToCache); // Salva a requisição/resposta no cache
+                        })
+                        .catch(cacheError => {
+                            console.error('[SW Cache Put Error] Erro ao salvar no cache:', event.request.url, cacheError);
                         });
+                } else if (isValidResponse && isFirebaseDataRequest && !isFontRequest) {
+                     console.log('[SW No Cache] Não cacheando API Firestore Data:', event.request.url);
+                } else if (!isValidResponse) {
+                     console.log('[SW No Cache] Resposta inválida da rede, não cacheada:', event.request.url, networkResponse ? networkResponse.status : 'Sem Resposta');
                 }
 
-                return networkResponse; // Retorna a resposta original da rede para o navegador
+                // Retorna a resposta original da rede para o navegador
+                return networkResponse;
             }
-        ).catch(error => { // --- BLOCO CATCH CORRIGIDO ---
-            console.error('Service Worker: Erro ao buscar na rede para:', event.request.url, error);
-
-            // Retorna uma resposta de erro genérica para satisfazer o event.respondWith
-            // Isso evita o TypeError "Failed to convert value to Response"
-            // O navegador provavelmente mostrará seu erro de rede padrão para o recurso que falhou.
+        ).catch(fetchError => { // 2b. Erro ao buscar na rede
+            console.error('[SW Fetch Error] Falha ao buscar na rede:', event.request.url, fetchError);
+            // Retorna uma resposta de erro genérica (poderia ser uma página offline customizada)
             return new Response(
-                `Erro de Rede ao buscar: ${event.request.url}. Verifique sua conexão. Detalhes: ${error.message}`,
+                `Erro de Rede: Não foi possível buscar ${event.request.url}. Verifique sua conexão.`,
                 {
                     status: 503, // Service Unavailable
                     statusText: 'Network Error',
                     headers: { 'Content-Type': 'text/plain; charset=utf-8' }
                 }
             );
-            // --- FIM DA CORREÇÃO ---
         });
       })
   );
 });
 
-// --- END OF FILE sw.js (Corrigido) ---
+// --- END OF FILE sw.js (Atualizado com Bypass para Firebase Auth) ---
