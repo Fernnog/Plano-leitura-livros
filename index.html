@@ -13,61 +13,70 @@
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap" rel="stylesheet">
     <!-- Favicon -->
     <link rel="icon" href="favicon.ico" type="image/x-icon">
-    <!-- Firebase SDK (Módulos ES6) -->
+    <!-- Firebase SDK (Módulos ES6) - Atualizado -->
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-app.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-auth.js" type="module"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js" type="module"></script>
     <!-- Link para o Manifest do PWA -->
     <link rel="manifest" href="manifest.json">
-    <!-- script.js será carregado no final do body -->
+    <!-- O script.js será carregado no final do body -->
 </head>
 <body>
     <header>
         <div class="header-top">
-            <img src="logo.png" alt="Logo do Gerenciador de Planos de Leitura, um livro aberto com um calendário ao lado, em gradiente de vermelho, rosa, roxo e azul" class="logo">
+            <!-- Logo com texto alternativo descritivo -->
+            <img src="logo.png" alt="Logo do Gerenciador de Planos de Leitura: livro aberto com calendário, gradiente vermelho-rosa-roxo-azul" class="logo">
             <h1>Gerenciador de Planos de Leitura</h1>
         </div>
         <hr class="header-separator">
         <div class="acoes-dados">
             <!-- Botões Principais -->
-            <button id="novo-plano">
-                <span class="material-symbols-outlined align-text-bottom">description</span> Novo
+            <!-- Botão Novo Plano (visível se logado, fora da tela de cadastro) -->
+            <button id="novo-plano" style="display: none;">
+                <span class="material-symbols-outlined">description</span> Novo
             </button>
+            <!-- Botão Início (visível se logado, DENTRO da tela de cadastro) -->
             <button id="inicio" style="display: none;">
-                <span class="material-symbols-outlined align-text-bottom">home</span> Início
+                <span class="material-symbols-outlined">home</span> Início
             </button>
-            <button id="exportar-agenda">
-                <span class="material-symbols-outlined align-text-bottom">event_note</span> Agenda
+            <!-- Botão Exportar Agenda (visível se logado, com planos, fora da tela de cadastro) -->
+            <button id="exportar-agenda" style="display: none;">
+                <span class="material-symbols-outlined">event_note</span> Agenda
             </button>
 
-            <!-- Formulário de Autenticação (inicialmente oculto) -->
+            <!-- Formulário de Autenticação (inicialmente oculto, controlado por JS) -->
             <div id="auth-form" style="display: none;">
-                <input type="email" id="email-login" placeholder="Email" required>
-                <input type="password" id="password-login" placeholder="Senha" required>
-                <button id="login-email-button">Login</button>
-                <button id="signup-email-button">Cadastrar</button>
-                <button id="cancel-auth-button" style="display: none;">Cancelar</button>
+                <input type="email" id="email-login" placeholder="Seu Email" required title="Digite seu email para login ou cadastro">
+                <input type="password" id="password-login" placeholder="Sua Senha" required title="Digite sua senha (mínimo 6 caracteres para cadastro)">
+                <!-- Botão de Login -->
+                <button id="login-email-button" title="Entrar com seu email e senha">Login</button>
+                <!-- Botão de Cadastro -->
+                <button id="signup-email-button" title="Criar uma nova conta com seu email e senha">Cadastrar</button>
+                <!-- Botão Cancelar (visível quando o form está aberto) -->
+                <button id="cancel-auth-button" style="display: none;" title="Fechar formulário de login/cadastro">Cancelar</button>
             </div>
 
             <!-- Botões de Controle de Autenticação -->
+            <!-- Botão Mostrar Formulário (visível se deslogado e form oculto) -->
             <button id="show-auth-button" style="display: block;">
-                <span class="material-symbols-outlined align-text-bottom">login</span> Login/Cadastro
+                <span class="material-symbols-outlined">login</span> Login/Cadastro
             </button>
+            <!-- Botão Logout (visível se logado) -->
             <button id="logout-button" style="display: none;">
-                <span class="material-symbols-outlined align-text-bottom">logout</span> Sair
+                <span class="material-symbols-outlined">logout</span> Sair
             </button>
 
-            <!-- Botão de Sincronização (opcional, mantido oculto por enquanto) -->
+            <!-- Botão de Sincronização (mantido oculto por enquanto) -->
             <button id="sync-firebase" style="display: none;">
-                <span class="material-symbols-outlined align-text-bottom">cloud_sync</span> Sincronizar com Firebase
+                <span class="material-symbols-outlined">cloud_sync</span> Sincronizar com Firebase
             </button>
         </div>
     </header>
 
     <main>
-        <!-- Seção: Leituras Atrasadas -->
+        <!-- Seção: Leituras Atrasadas (Controlada por JS) -->
         <section id="leituras-atrasadas-section" style="display: none;">
-            <h2><span class="material-symbols-outlined align-text-bottom">warning</span> Leituras Atrasadas</h2>
+            <h2><span class="material-symbols-outlined">warning</span> Leituras Atrasadas</h2>
             <div id="lista-leituras-atrasadas">
                 <!-- Conteúdo gerado pelo JavaScript -->
             </div>
@@ -75,9 +84,9 @@
         </section>
         <!-- Fim da Seção Atrasadas -->
 
-        <!-- Seção: Próximas Leituras -->
+        <!-- Seção: Próximas Leituras (Controlada por JS) -->
         <section id="proximas-leituras-section" style="display: none;">
-            <h2><span class="material-symbols-outlined align-text-bottom">event_upcoming</span> Próximas Leituras Agendadas</h2>
+            <h2><span class="material-symbols-outlined">event_upcoming</span> Próximas Leituras Agendadas</h2>
             <div id="lista-proximas-leituras">
                 <!-- Conteúdo gerado pelo JavaScript -->
             </div>
@@ -85,127 +94,131 @@
         </section>
         <!-- Fim da Seção Próximas Leituras -->
 
-        <!-- Seção de Cadastro/Edição de Plano (Inicialmente oculta) -->
+        <!-- Seção de Cadastro/Edição de Plano (Inicialmente oculta, controlada por JS) -->
         <section id="cadastro-plano" style="display: none;">
+            <!-- Botão para voltar para a lista de planos (dentro da seção de cadastro) -->
             <button id="inicio-cadastro" style="display: block;">
-                <span class="material-symbols-outlined align-text-bottom">arrow_back</span> Início
+                <span class="material-symbols-outlined">arrow_back</span> Voltar para Início
             </button>
-            <h2>Novo Plano de Leitura</h2>
+            <h2>Novo Plano de Leitura</h2> <!-- Título será atualizado por JS na edição -->
             <form id="form-plano">
                 <div class="form-group">
                     <label for="titulo-livro">Título do Livro:</label>
                     <input type="text" id="titulo-livro" name="titulo-livro" required title="Digite o nome do livro que você deseja ler">
                 </div>
 
-                <!-- Campo Link Anotações -->
+                <!-- Campo Link Anotações (Opcional) -->
                 <div class="form-group">
-                    <label for="link-drive">Link Anotações (Drive/URL, Opcional):</label>
-                    <input type="url" id="link-drive" name="link-drive" title="Cole o link do seu documento de anotações (Google Drive, Notion, etc.)" placeholder="https://...">
+                    <label for="link-drive">Link Anotações (Drive, Notion, URL, Opcional):</label>
+                    <input type="url" id="link-drive" name="link-drive" title="Cole o link do seu documento de anotações (Google Drive, Notion, etc.). Ex: https://..." placeholder="https://...">
                 </div>
 
                 <div class="form-group">
-                    <label for="pagina-inicio">Página de Início:</label>
-                    <input type="number" id="pagina-inicio" name="pagina-inicio" min="1" required title="Página onde você começará a leitura">
+                    <label for="pagina-inicio">Página de Início da Leitura:</label>
+                    <input type="number" id="pagina-inicio" name="pagina-inicio" min="1" required title="Página onde você começará a leitura do livro/seção">
                 </div>
 
                 <div class="form-group">
-                    <label for="pagina-fim">Página de Fim:</label>
-                    <input type="number" id="pagina-fim" name="pagina-fim" min="1" required title="Página onde você terminará a leitura">
+                    <label for="pagina-fim">Página Final da Leitura:</label>
+                    <input type="number" id="pagina-fim" name="pagina-fim" min="1" required title="Última página que você planeja ler neste plano">
                 </div>
 
+                <!-- Seleção do Método de Definição do Período -->
                 <div class="form-group">
-                    <label>Definir Período por:</label>
+                    <label>Definir Período Por:</label>
                     <div>
-                        <input type="radio" id="definir-por-datas" name="definicao-periodo" value="datas" checked>
+                        <input type="radio" id="definir-por-datas" name="definicao-periodo" value="datas" checked title="Definir o início e o fim exatos do plano">
                         <label for="definir-por-datas">Datas de Início e Fim</label>
-                        <input type="radio" id="definir-por-dias" name="definicao-periodo" value="dias">
-                        <label for="definir-por-dias">Data de Início e Nº de Dias</label>
+                        <input type="radio" id="definir-por-dias" name="definicao-periodo" value="dias" title="Definir o início e quantos dias de leitura você quer ter">
+                        <label for="definir-por-dias">Data de Início e Nº de Dias de Leitura</label>
                     </div>
                 </div>
 
+                <!-- Campos para Definição por Datas (Controlado por JS) -->
                 <div id="periodo-por-datas" style="display: block;">
                     <div class="form-group">
                         <label for="data-inicio">Data de Início:</label>
                         <input type="date" id="data-inicio" name="data-inicio" required title="Escolha a data em que você começará a leitura">
                     </div>
-
                     <div class="form-group">
                         <label for="data-fim">Data de Fim:</label>
-                        <input type="date" id="data-fim" name="data-fim" required title="Escolha a data em que você planeja terminar">
+                        <input type="date" id="data-fim" name="data-fim" required title="Escolha a data em que você planeja terminar a leitura">
                     </div>
                 </div>
 
+                <!-- Campos para Definição por Dias (Controlado por JS) -->
                 <div id="periodo-por-dias" style="display: none;">
                     <div class="form-group">
                         <label for="data-inicio-dias">Data de Início:</label>
                         <input type="date" id="data-inicio-dias" name="data-inicio-dias" required title="Escolha a data em que você começará a leitura">
                     </div>
-
                     <div class="form-group">
-                        <label for="numero-dias">Número de Dias:</label>
-                        <input type="number" id="numero-dias" name="numero-dias" min="1" required title="Quantos dias você planeja levar para completar a leitura">
+                        <label for="numero-dias">Número de Dias de Leitura:</label>
+                        <input type="number" id="numero-dias" name="numero-dias" min="1" required title="Quantos dias EFETIVOS de leitura você planeja ter (ex: 30 dias lendo de seg-sex)">
                     </div>
                 </div>
 
+                <!-- Seleção da Periodicidade -->
                 <div class="form-group">
-                    <label for="periodicidade">Periodicidade:</label>
+                    <label for="periodicidade">Ler Em Quais Dias:</label>
                     <select id="periodicidade" name="periodicidade" required title="Selecione a frequência de leitura">
-                        <option value="diario">Diariamente</option>
-                        <option value="semanal">Dias da Semana (Selecionar)</option>
+                        <option value="diario">Todos os Dias</option>
+                        <option value="semanal">Apenas Dias da Semana Selecionados</option>
                     </select>
                 </div>
 
+                <!-- Seleção dos Dias da Semana (Controlado por JS, visível se 'semanal' selecionado) -->
                 <div id="dias-semana-selecao" class="form-group" style="display: none;">
-                    <label>Dias da Semana para Leitura:</label>
+                    <label>Selecione os Dias da Semana para Leitura:</label>
                     <div class="dias-semana-lista">
                         <div>
-                            <input type="checkbox" id="domingo" name="dia-semana" value="0" title="Selecionar domingo para leitura">
+                            <input type="checkbox" id="domingo" name="dia-semana" value="0" title="Incluir Domingo nos dias de leitura">
                             <label for="domingo">Domingo</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="segunda" name="dia-semana" value="1" title="Selecionar segunda-feira para leitura">
+                            <input type="checkbox" id="segunda" name="dia-semana" value="1" title="Incluir Segunda-feira nos dias de leitura">
                             <label for="segunda">Segunda</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="terca" name="dia-semana" value="2" title="Selecionar terça-feira para leitura">
+                            <input type="checkbox" id="terca" name="dia-semana" value="2" title="Incluir Terça-feira nos dias de leitura">
                             <label for="terca">Terça</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="quarta" name="dia-semana" value="3" title="Selecionar quarta-feira para leitura">
+                            <input type="checkbox" id="quarta" name="dia-semana" value="3" title="Incluir Quarta-feira nos dias de leitura">
                             <label for="quarta">Quarta</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="quinta" name="dia-semana" value="4" title="Selecionar quinta-feira para leitura">
+                            <input type="checkbox" id="quinta" name="dia-semana" value="4" title="Incluir Quinta-feira nos dias de leitura">
                             <label for="quinta">Quinta</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="sexta" name="dia-semana" value="5" title="Selecionar sexta-feira para leitura">
+                            <input type="checkbox" id="sexta" name="dia-semana" value="5" title="Incluir Sexta-feira nos dias de leitura">
                             <label for="sexta">Sexta</label>
                         </div>
                         <div>
-                            <input type="checkbox" id="sabado" name="dia-semana" value="6" title="Selecionar sábado para leitura">
+                            <input type="checkbox" id="sabado" name="dia-semana" value="6" title="Incluir Sábado nos dias de leitura">
                             <label for="sabado">Sábado</label>
                         </div>
                     </div>
                 </div>
 
+                <!-- Botão de Submissão (Texto muda para 'Atualizar Plano' na edição) -->
                 <button type="submit">Salvar Plano</button>
             </form>
         </section>
         <!-- Fim da Seção Cadastro/Edição -->
 
-        <!-- Seção da Lista de Planos Ativos -->
+        <!-- Seção da Lista de Planos Ativos (Conteúdo principal) -->
         <section id="planos-leitura">
-            <h2>Planos de Leitura Ativos</h2>
-             <!-- Div que conterá o paginador flutuante (gerado por JS e estilizado por CSS) -->
-             <!-- É importante que esta div exista para o JS e CSS encontrarem -->
+            <h2>Meus Planos de Leitura</h2>
+             <!-- Div para o Paginador Flutuante (gerado por JS, controlado por CSS/JS) -->
             <div id="paginador-planos" class="hidden">
-                <!-- Links do paginador serão inseridos aqui pelo JavaScript -->
+                <!-- Links/botões do paginador serão inseridos aqui pelo JavaScript -->
             </div>
-            <!-- Lista onde os cards dos planos são inseridos -->
+            <!-- Container onde os cards dos planos são inseridos pelo JS -->
             <div id="lista-planos">
-                <!-- Planos de leitura serão inseridos aqui por JavaScript -->
-                <p>Carregando planos...</p> <!-- Mensagem inicial -->
+                <!-- Mensagem inicial ou planos de leitura serão inseridos aqui -->
+                <p>Carregando seus planos...</p>
             </div>
         </section>
         <!-- Fim da Seção Lista Planos -->
@@ -213,12 +226,12 @@
     </main>
 
     <footer>
-        <p>© 2025 Gerenciador de Planos de Leitura</p>
+        <p>© 2024-2025 Gerenciador de Planos de Leitura</p>
+        <!-- Pode adicionar links úteis aqui se desejar -->
     </footer>
 
-    <!-- Carrega o script principal como módulo no final do body -->
+    <!-- Carrega o script principal como módulo ES6 no final do body para melhor performance -->
     <script src="script.js" type="module"></script>
 
-   
 </body>
 </html>
