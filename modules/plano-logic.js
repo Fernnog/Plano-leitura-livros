@@ -284,7 +284,7 @@ export function analisarCargaSemanal(planos, totalPlanos) {
         const diasSemanaPlano = plano.diasSemana || [];
         const numeroDoPlano = totalPlanos - index;
         
-        // MODIFICAÇÃO: O objeto agora inclui o 'planoIndex' para permitir a interatividade na UI.
+        // MELHORIA APLICADA: O objeto agora inclui o 'planoIndex' para permitir a interatividade na UI.
         const infoPlano = { numero: numeroDoPlano, media: mediaPaginasDia, planoIndex: index };
 
         if (plano.periodicidade === 'diario') {
