@@ -172,12 +172,26 @@
     <div id="recalculo-modal" class="reavaliacao-modal-overlay">
         <div class="reavaliacao-modal-content">
             <div class="reavaliacao-modal-header">
-                <h2><span class="material-symbols-outlined">restart_alt</span> Recalcular Plano Atrasado</h2>
+                <h2><span class="material-symbols-outlined">restart_alt</span> Remanejar e Recalcular Plano</h2>
                 <button id="recalculo-modal-close-btn" class="reavaliacao-modal-close">×</button>
             </div>
             <p class="reavaliacao-descricao">
-                Seu plano <strong id="recalculo-plano-titulo"></strong> está atrasado. Escolha como deseja redistribuir as páginas não lidas.
+                O plano <strong id="recalculo-plano-titulo"></strong> será recalculado. Ajuste os dias da semana e escolha como redistribuir as páginas não lidas.
             </p>
+            <!-- INÍCIO DA MODIFICAÇÃO: Seção para remanejar dias no modal -->
+            <div class="form-group">
+                <label>Remanejar Dias de Leitura:</label>
+                <div id="recalculo-dias-semana-selecao" class="dias-semana-lista">
+                    <div><input type="checkbox" id="recalculo-domingo" name="recalculo-dia-semana" value="0"><label for="recalculo-domingo">Dom</label></div>
+                    <div><input type="checkbox" id="recalculo-segunda" name="recalculo-dia-semana" value="1"><label for="recalculo-segunda">Seg</label></div>
+                    <div><input type="checkbox" id="recalculo-terca" name="recalculo-dia-semana" value="2"><label for="recalculo-terca">Ter</label></div>
+                    <div><input type="checkbox" id="recalculo-quarta" name="recalculo-dia-semana" value="3"><label for="recalculo-quarta">Qua</label></div>
+                    <div><input type="checkbox" id="recalculo-quinta" name="recalculo-dia-semana" value="4"><label for="recalculo-quinta">Qui</label></div>
+                    <div><input type="checkbox" id="recalculo-sexta" name="recalculo-dia-semana" value="5"><label for="recalculo-sexta">Sex</label></div>
+                    <div><input type="checkbox" id="recalculo-sabado" name="recalculo-dia-semana" value="6"><label for="recalculo-sabado">Sáb</label></div>
+                </div>
+            </div>
+            <!-- FIM DA MODIFICAÇÃO -->
             <div class="form-group">
                 <label>Método de Recálculo:</label>
                 <div>
@@ -197,12 +211,12 @@
             </div>
             <div class="recalculo-modal-actions">
                 <button id="cancel-recalculo-btn" class="button-cancel">Cancelar</button>
-                <button id="confirm-recalculo-btn" class="button-confirm">Confirmar Recálculo</button>
+                <button id="confirm-recalculo-btn" class="button-confirm">Confirmar Remanejamento</button>
             </div>
         </div>
     </div>
 
-    <!-- MODAL DE REAVALIAÇÃO (COM A MELHORIA APLICADA) -->
+    <!-- MODAL DE REAVALIAÇÃO -->
     <div id="reavaliacao-modal" class="reavaliacao-modal-overlay">
         <div class="reavaliacao-modal-content">
             <div class="reavaliacao-modal-header">
@@ -226,11 +240,9 @@
                     </tbody>
                 </table>
             </div>
-            <!-- INÍCIO DA MELHORIA: LEGENDA NO MODAL -->
             <div id="reavaliacao-legenda" class="reavaliacao-legenda-container">
                 <!-- A legenda será gerada dinamicamente via JavaScript -->
             </div>
-            <!-- FIM DA MELHORIA -->
         </div>
     </div>
 
