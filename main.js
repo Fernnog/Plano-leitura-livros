@@ -49,7 +49,7 @@ function setupEventHandlers() {
     DOMElements.cancelAuthButton.addEventListener('click', ui.hideAuthForm);
 
     // Navegação Principal
-    DOMElements.novoPlanoBtn.addEventListener('click', ui.showCadastroForm);
+    DOMElements.novoPlanoBtn.addEventListener('click', () => ui.showCadastroForm());
     DOMElements.inicioBtn.addEventListener('click', () => ui.showPlanosList(state.getPlanos(), state.getCurrentUser()));
     DOMElements.inicioCadastroBtn.addEventListener('click', () => ui.showPlanosList(state.getPlanos(), state.getCurrentUser()));
     
@@ -69,8 +69,7 @@ function setupEventHandlers() {
             ui.hideReavaliacaoModal();
             return;
         }
-        // AQUI ESTÁ A LIGAÇÃO COM A NOVA LÓGICA
-        handleModalReavaliacaoAction(e); 
+        handleModalReavaliacaoAction(e); // Delega ações internas para o handler
     });
     
     // Modal de Recálculo
@@ -138,7 +137,7 @@ async function handleFormSubmit(event) {
         
         await firestoreService.salvarPlanos(currentUser, state.getPlanos());
 
-        const acao = indexEditando !== -1 ? 'remanejado/atualizado' : 'criado';
+        const acao = indexEditando !== -1 ? 'atualizado' : 'criado';
         alert(`Plano "${planoData.titulo}" ${acao} com sucesso!`);
         
         state.setPlanoEditando(-1);
@@ -196,6 +195,7 @@ async function handleCardAction(event) {
     }
 }
 
+// INÍCIO DA MODIFICAÇÃO: Função de recálculo/remanejamento totalmente nova
 async function handleConfirmRecalculo() {
     const planoIndex = parseInt(DOMElements.confirmRecalculoBtn.dataset.planoIndex, 10);
     const planoOriginal = state.getPlanoByIndex(planoIndex);
@@ -204,40 +204,52 @@ async function handleConfirmRecalculo() {
     if (!planoOriginal || !currentUser) return;
 
     try {
-        let planoRecalculado;
+        // Cria uma cópia do plano para modificar antes de passar para a lógica de recálculo.
+        const planoModificado = JSON.parse(JSON.stringify(planoOriginal));
+        
+        // 1. Lê os novos dias da semana selecionados no modal
+        const recalculoCheckboxes = document.querySelectorAll('#recalculo-dias-semana-selecao input[type="checkbox"]:checked');
+        const novosDiasSemana = Array.from(recalculoCheckboxes).map(cb => parseInt(cb.value));
 
+        if (novosDiasSemana.length === 0) {
+            throw new Error("Selecione pelo menos um dia da semana para o remanejamento.");
+        }
+
+        // 2. Atualiza a configuração do plano copiado
+        planoModificado.diasSemana = novosDiasSemana;
+        planoModificado.periodicidade = 'semanal'; // Força a periodicidade para semanal, já que dias foram escolhidos
+
+        // A lógica de recálculo (data ou páginas/dia) agora usará a nova configuração de dias
+        let planoRecalculado;
         if (DOMElements.recalculoPorDataRadio.checked) {
             const novaDataFimStr = DOMElements.novaDataFimInput.value;
             if (!novaDataFimStr) throw new Error("Por favor, selecione uma nova data de fim.");
-
             const novaDataFim = new Date(novaDataFimStr + 'T00:00:00');
-            if (isNaN(novaDataFim.getTime()) || novaDataFim <= new Date()) {
-                throw new Error("Data inválida. Por favor, insira uma data futura.");
-            }
-            planoRecalculado = planoLogic.recalcularPlanoComNovaData(planoOriginal, novaDataFim);
-
+            // Passa o plano com a nova configuração de dias para a lógica de recálculo
+            planoRecalculado = planoLogic.recalcularPlanoComNovaData(planoModificado, novaDataFim);
         } else {
             const paginasPorDia = parseInt(DOMElements.novaPaginasPorDiaInput.value, 10);
-            if (!paginasPorDia || paginasPorDia <= 0) {
-                throw new Error("Por favor, insira um número de páginas por dia válido.");
-            }
-            planoRecalculado = planoLogic.recalcularPlanoPorPaginasDia(planoOriginal, paginasPorDia);
+            if (!paginasPorDia || paginasPorDia <= 0) throw new Error("Insira um número válido de páginas por dia.");
+            // Passa o plano com a nova configuração de dias para a lógica de recálculo
+            planoRecalculado = planoLogic.recalcularPlanoPorPaginasDia(planoModificado, paginasPorDia);
         }
-
+        
+        // 3. Atualiza o estado e salva no Firestore
         state.updatePlano(planoIndex, planoRecalculado);
         await firestoreService.salvarPlanos(currentUser, state.getPlanos());
         
         ui.hideRecalculoModal();
-        alert(`Plano "${planoOriginal.titulo}" recalculado com sucesso!`);
+        alert(`Plano "${planoOriginal.titulo}" remanejado e recalculado com sucesso!`);
         
         ui.renderApp(state.getPlanos(), currentUser);
         ui.highlightAndScrollToPlano(planoIndex);
 
     } catch (error) {
-        console.error('[Main] Erro ao confirmar recálculo:', error);
-        alert('Erro ao recalcular: ' + error.message);
+        console.error('[Main] Erro ao confirmar recálculo/remanejamento:', error);
+        alert('Erro ao remanejar: ' + error.message);
     }
 }
+// FIM DA MODIFICAÇÃO
 
 function handleReavaliarCarga() {
     const planosAtuais = state.getPlanos();
@@ -249,27 +261,18 @@ function handleReavaliarCarga() {
     ui.showReavaliacaoModal();
 }
 
-// Esta função agora implementa o fluxo correto que você solicitou.
 function handleModalReavaliacaoAction(event) {
-    // 1. Identifica se o clique foi em um plano para remanejar
     const target = event.target.closest('[data-action="remanejar-plano"]');
     if (!target) return;
 
-    // 2. Obtém os dados do plano clicado
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const plano = state.getPlanoByIndex(planoIndex);
 
     if (isNaN(planoIndex) || !plano) return;
     
-    // 3. Fecha o modal de reavaliação
+    // MUDANÇA DE FLUXO: Agora abre o modal de recálculo, que é o correto para remanejamento.
     ui.hideReavaliacaoModal();
-    
-    // 4. Após um breve intervalo, abre o formulário de EDIÇÃO
     setTimeout(() => {
-        // Esta é a ação correta para "remanejar", pois permite ao usuário
-        // alterar os dias da semana (ex: desmarcar sexta e marcar sábado).
-        // Ao salvar, a lógica de `handleFormSubmit` já fará a redistribuição.
-        ui.showCadastroForm(plano);
-        state.setPlanoEditando(planoIndex); // Informa ao estado que estamos editando
-    }, 300); // Timeout para a animação de fechamento do modal ser suave
+        ui.showRecalculoModal(plano, planoIndex);
+    }, 300);
 }
