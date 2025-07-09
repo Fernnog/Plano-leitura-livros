@@ -715,6 +715,8 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     gap: 8px;
     align-items: center;
 }
+
+/* --- INÍCIO DA MELHORIA: Interatividade para Remanejamento --- */
 .plano-carga-tag {
     display: inline-flex;
     align-items: center;
@@ -724,9 +726,8 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     border-radius: 5px;
     padding: 3px 8px;
     font-size: 0.9em;
-    /* --- INÍCIO DA MELHORIA: Interatividade para Remanejamento --- */
     cursor: pointer;
-    transition: background-color 0.2s ease, transform 0.2s ease;
+    transition: background-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 .plano-carga-tag:hover {
     background-color: #e0e0e0;
@@ -734,6 +735,7 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     box-shadow: 0 2px 4px rgba(0,0,0,0.1);
 }
 /* --- FIM DA MELHORIA --- */
+
 .plano-carga-tag .numero-plano-tag {
     margin: 0;
 }
