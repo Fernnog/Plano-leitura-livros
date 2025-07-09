@@ -57,7 +57,8 @@ export function showCadastroForm(planoParaEditar = null) {
     DOMElements.formPlano.reset();
 
     if (planoParaEditar) {
-        DOMElements.formPlano.querySelector('h2').textContent = 'Editar Plano de Leitura';
+        // CORREÇÃO DO BUG: O seletor agora busca o h2 no elemento pai correto.
+        DOMElements.cadastroPlanoSection.querySelector('h2').textContent = 'Editar Plano de Leitura';
         DOMElements.tituloLivroInput.value = planoParaEditar.titulo;
         DOMElements.linkDriveInput.value = planoParaEditar.linkDrive || '';
         DOMElements.paginaInicioInput.value = planoParaEditar.paginaInicio;
@@ -85,7 +86,7 @@ export function showCadastroForm(planoParaEditar = null) {
             DOMElements.diasSemanaSelecao.style.display = 'none';
         }
     } else {
-        DOMElements.formPlano.querySelector('h2').textContent = 'Novo Plano de Leitura';
+        DOMElements.cadastroPlanoSection.querySelector('h2').textContent = 'Novo Plano de Leitura';
     }
 }
 
@@ -135,7 +136,16 @@ export function showRecalculoModal(plano, planoIndex) {
     DOMElements.recalculoPlanoTitulo.textContent = `"${plano.titulo}"`;
     DOMElements.confirmRecalculoBtn.dataset.planoIndex = planoIndex;
 
-    // Reseta o modal para o estado padrão (por data)
+    // --- INÍCIO DA MODIFICAÇÃO ---
+    // Preenche os checkboxes de dias da semana do modal com os dados do plano
+    const recalculoCheckboxes = document.querySelectorAll('#recalculo-dias-semana-selecao input[type="checkbox"]');
+    recalculoCheckboxes.forEach(cb => {
+        // O plano.diasSemana é um array de números [0, 1, 2...]. Verificamos se o valor do checkbox está nesse array.
+        cb.checked = plano.diasSemana.includes(parseInt(cb.value));
+    });
+    // --- FIM DA MODIFICAÇÃO ---
+
+    // Reseta o resto do modal para o estado padrão (por data)
     DOMElements.recalculoPorDataRadio.checked = true;
     DOMElements.recalculoOpcaoDataDiv.style.display = 'block';
     DOMElements.recalculoOpcaoPaginasDiv.style.display = 'none';
@@ -355,13 +365,11 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
     }
 }
 
-// Esta função é interna ao módulo (sem `export`)
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
     dadosCarga.forEach(dia => {
         const planosDoDia = dia.planos.map(p => 
-            // MELHORIA APLICADA: Adiciona os atributos para tornar a tag clicável e identificável.
-            `<span class="plano-carga-tag" data-action="remanejar-plano" data-plano-index="${p.planoIndex}" title="Clique para editar e remanejar o plano '${p.numero}'">
+            `<span class="plano-carga-tag" data-action="remanejar-plano" data-plano-index="${p.planoIndex}" title="Remanejar plano '${p.numero}'">
                 <span class="numero-plano-tag">${p.numero}</span> ${p.media} pág.
             </span>`
         ).join('') || 'Nenhum plano ativo';
@@ -377,7 +385,6 @@ function renderizarQuadroReavaliacao(dadosCarga) {
     DOMElements.tabelaReavaliacaoBody.innerHTML = html;
 }
 
-// Esta função também é interna (sem `export`)
 function renderizarLegendaReavaliacao(planos, totalPlanos) {
     const legendaContainer = DOMElements.reavaliacaoLegenda;
     if (!planos || planos.length === 0 || !legendaContainer) {
@@ -415,8 +422,6 @@ function renderizarLegendaReavaliacao(planos, totalPlanos) {
     legendaContainer.innerHTML = legendaHTML;
 }
 
-// Esta é a ÚNICA função exportada para o modal de reavaliação.
-// Ela atua como um "wrapper" que orquestra a renderização completa do modal.
 export function renderizarModalReavaliacaoCompleto(dadosCarga, planos, totalPlanos) {
     renderizarQuadroReavaliacao(dadosCarga);
     renderizarLegendaReavaliacao(planos, totalPlanos);
