@@ -8,10 +8,6 @@ import * as firestoreService from './modules/firestore-service.js';
 import * as ui from './modules/ui.js';
 import * as planoLogic from './modules/plano-logic.js';
 
-// --- Variáveis de Controle de Fluxo da UI ---
-// NOVA MELHORIA: Flag para controlar o fluxo de recálculo e reabrir o modal de reavaliação.
-let recalculoIniciadoPorReavaliacao = false;
-
 // --- Inicialização da Aplicação ---
 document.addEventListener('DOMContentLoaded', initApp);
 
@@ -66,26 +62,25 @@ function setupEventHandlers() {
     // Modal de Reavaliação de Carga
     DOMElements.reavaliarCargaBtn.addEventListener('click', handleReavaliarCarga);
     DOMElements.fecharReavaliacaoBtn.addEventListener('click', ui.hideReavaliacaoModal);
-    // NOVA MELHORIA: Delegação de eventos para ações dentro do modal de reavaliação
-    DOMElements.reavaliacaoModal.addEventListener('click', handleModalReavaliacaoAction);
+    
+    // Listener para o modal que lida com o fechamento do overlay e ações internas
+    DOMElements.reavaliacaoModal.addEventListener('click', (e) => {
+        if (e.target === DOMElements.reavaliacaoModal) {
+            ui.hideReavaliacaoModal();
+            return;
+        }
+        handleModalReavaliacaoAction(e); // Delega ações internas para o handler
+    });
     
     // Modal de Recálculo
     DOMElements.confirmRecalculoBtn.addEventListener('click', handleConfirmRecalculo);
-    DOMElements.recalculoModalCloseBtn.addEventListener('click', () => {
-        recalculoIniciadoPorReavaliacao = false; // NOVA MELHORIA: Reseta a flag ao fechar
-        ui.hideRecalculoModal();
-    });
-    DOMElements.cancelRecalculoBtn.addEventListener('click', () => {
-        recalculoIniciadoPorReavaliacao = false; // NOVA MELHORIA: Reseta a flag ao cancelar
-        ui.hideRecalculoModal();
-    });
+    DOMElements.recalculoModalCloseBtn.addEventListener('click', ui.hideRecalculoModal);
+    DOMElements.cancelRecalculoBtn.addEventListener('click', ui.hideRecalculoModal);
     DOMElements.recalculoModal.addEventListener('click', (e) => {
-        if (e.target === DOMElements.recalculoModal) {
-            recalculoIniciadoPorReavaliacao = false; // NOVA MELHORIA: Reseta a flag ao clicar fora
-            ui.hideRecalculoModal();
-        }
+        if (e.target === DOMElements.recalculoModal) ui.hideRecalculoModal();
     });
 }
+
 
 // --- Manipuladores de Ações (Handlers) ---
 
@@ -200,30 +195,6 @@ async function handleCardAction(event) {
     }
 }
 
-// NOVA MELHORIA: Função para lidar com ações dentro do Modal de Reavaliação
-async function handleModalReavaliacaoAction(event) {
-    const target = event.target.closest('[data-action="remanejar-plano"]');
-    if (target) {
-        const planoIndex = parseInt(target.dataset.planoIndex, 10);
-        const plano = state.getPlanoByIndex(planoIndex);
-
-        if (isNaN(planoIndex) || !plano) return;
-
-        // Ativa a flag para indicar que o fluxo de remanejamento começou
-        recalculoIniciadoPorReavaliacao = true;
-        
-        // Esconde o modal atual e abre o de recálculo
-        ui.hideReavaliacaoModal();
-        setTimeout(() => {
-            ui.showRecalculoModal(plano, planoIndex);
-        }, 300); // Timeout para uma transição suave entre modais
-    } else if (event.target === DOMElements.reavaliacaoModal) {
-        // Lógica para fechar o modal clicando fora (já existente, mas agora dentro desta função)
-        ui.hideReavaliacaoModal();
-    }
-}
-
-
 async function handleConfirmRecalculo() {
     const planoIndex = parseInt(DOMElements.confirmRecalculoBtn.dataset.planoIndex, 10);
     const planoOriginal = state.getPlanoByIndex(planoIndex);
@@ -258,35 +229,41 @@ async function handleConfirmRecalculo() {
         ui.hideRecalculoModal();
         alert(`Plano "${planoOriginal.titulo}" recalculado com sucesso!`);
         
-        // NOVA MELHORIA: Lógica de feedback instantâneo
-        if (recalculoIniciadoPorReavaliacao) {
-            // Se o fluxo veio do modal de reavaliação, reabra-o com os dados atualizados
-            recalculoIniciadoPorReavaliacao = false; // Reseta a flag
-            handleReavaliarCarga(); // Reabre o modal de reavaliação
-        } else {
-            // Comportamento padrão: renderiza a lista de planos e destaca o plano alterado
-            ui.renderApp(state.getPlanos(), currentUser);
-            ui.highlightAndScrollToPlano(planoIndex);
-        }
+        ui.renderApp(state.getPlanos(), currentUser);
+        ui.highlightAndScrollToPlano(planoIndex);
 
     } catch (error) {
-        recalculoIniciadoPorReavaliacao = false; // Garante que a flag seja resetada em caso de erro
         console.error('[Main] Erro ao confirmar recálculo:', error);
         alert('Erro ao recalcular: ' + error.message);
     }
 }
 
-// NOVA MELHORIA: A função agora orquestra a renderização da tabela E da legenda
+// CORREÇÃO: Esta função agora chama a função correta e exportada de ui.js
 function handleReavaliarCarga() {
     const planosAtuais = state.getPlanos();
     const totalPlanos = planosAtuais.length; 
     const dadosCarga = planoLogic.analisarCargaSemanal(planosAtuais, totalPlanos);
     
-    // Delega para a UI a renderização completa do modal (tabela e legenda)
-    ui.renderizarQuadroReavaliacao(dadosCarga);
-    // Assumindo que ui.js exportará uma função para renderizar a legenda, conforme o plano.
-    // O nome da função no plano era `renderizarLegendaReavaliacaoUI`
-    ui.renderizarLegendaReavaliacaoUI(planosAtuais, totalPlanos);
-
+    // Chama a nova função wrapper que renderiza tanto a tabela quanto a legenda
+    ui.renderizarModalReavaliacaoCompleto(dadosCarga, planosAtuais, totalPlanos); 
+    
     ui.showReavaliacaoModal();
+}
+
+// CORREÇÃO: Esta nova função lida com o clique para remanejar o plano
+function handleModalReavaliacaoAction(event) {
+    const target = event.target.closest('[data-action="remanejar-plano"]');
+    if (!target) return;
+
+    const planoIndex = parseInt(target.dataset.planoIndex, 10);
+    const plano = state.getPlanoByIndex(planoIndex);
+
+    if (isNaN(planoIndex) || !plano) return;
+    
+    // Encadeia os modais para criar o fluxo de remanejamento
+    ui.hideReavaliacaoModal();
+    // Um pequeno timeout para a transição do CSS ficar mais suave
+    setTimeout(() => {
+        ui.showRecalculoModal(plano, planoIndex);
+    }, 300);
 }
