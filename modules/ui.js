@@ -355,12 +355,13 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
     }
 }
 
-// CORREÇÃO: Esta função é agora interna ao módulo (sem `export`)
+// Esta função é interna ao módulo (sem `export`)
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
     dadosCarga.forEach(dia => {
         const planosDoDia = dia.planos.map(p => 
-            `<span class="plano-carga-tag" data-action="remanejar-plano" data-plano-index="${p.planoIndex}" title="Remanejar plano '${p.numero}'">
+            // MELHORIA APLICADA: Adiciona os atributos para tornar a tag clicável e identificável.
+            `<span class="plano-carga-tag" data-action="remanejar-plano" data-plano-index="${p.planoIndex}" title="Clique para editar e remanejar o plano '${p.numero}'">
                 <span class="numero-plano-tag">${p.numero}</span> ${p.media} pág.
             </span>`
         ).join('') || 'Nenhum plano ativo';
@@ -376,7 +377,7 @@ function renderizarQuadroReavaliacao(dadosCarga) {
     DOMElements.tabelaReavaliacaoBody.innerHTML = html;
 }
 
-// CORREÇÃO: Esta função também é interna (sem `export`)
+// Esta função também é interna (sem `export`)
 function renderizarLegendaReavaliacao(planos, totalPlanos) {
     const legendaContainer = DOMElements.reavaliacaoLegenda;
     if (!planos || planos.length === 0 || !legendaContainer) {
@@ -414,7 +415,8 @@ function renderizarLegendaReavaliacao(planos, totalPlanos) {
     legendaContainer.innerHTML = legendaHTML;
 }
 
-// CORREÇÃO: Esta é a ÚNICA função exportada para o modal de reavaliação.
+// Esta é a ÚNICA função exportada para o modal de reavaliação.
+// Ela atua como um "wrapper" que orquestra a renderização completa do modal.
 export function renderizarModalReavaliacaoCompleto(dadosCarga, planos, totalPlanos) {
     renderizarQuadroReavaliacao(dadosCarga);
     renderizarLegendaReavaliacao(planos, totalPlanos);
