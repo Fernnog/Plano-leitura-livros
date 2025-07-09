@@ -1,0 +1,57 @@
+// modules/dom-elements.js
+// RESPONSABILIDADE ÚNICA: Selecionar e exportar todos os elementos do DOM
+// que a aplicação precisa para interagir.
+
+// --- Seções e Layout ---
+export const cadastroPlanoSection = document.getElementById('cadastro-plano');
+export const planosLeituraSection = document.getElementById('planos-leitura');
+export const listaPlanos = document.getElementById('lista-planos');
+export const paginadorPlanosDiv = document.getElementById('paginador-planos');
+export const proximasLeiturasSection = document.getElementById('proximas-leituras-section');
+export const listaProximasLeiturasDiv = document.getElementById('lista-proximas-leituras');
+export const semProximasLeiturasP = document.getElementById('sem-proximas-leituras');
+export const leiturasAtrasadasSection = document.getElementById('leituras-atrasadas-section');
+export const listaLeiturasAtrasadasDiv = document.getElementById('lista-leituras-atrasadas');
+export const semLeiturasAtrasadasP = document.getElementById('sem-leituras-atrasadas');
+
+// --- Header e Botões de Ação ---
+export const novoPlanoBtn = document.getElementById('novo-plano');
+export const inicioBtn = document.getElementById('inicio');
+export const exportarAgendaBtn = document.getElementById('exportar-agenda');
+export const inicioCadastroBtn = document.getElementById('inicio-cadastro'); // Botão 'voltar' do form
+// ADIÇÃO: Botão de Reavaliação
+export const reavaliarCargaBtn = document.getElementById('reavaliar-carga-btn');
+
+// --- Autenticação ---
+export const authFormDiv = document.getElementById('auth-form');
+export const showAuthButton = document.getElementById('show-auth-button');
+export const cancelAuthButton = document.getElementById('cancel-auth-button');
+export const loginEmailButton = document.getElementById('login-email-button');
+export const signupEmailButton = document.getElementById('signup-email-button');
+export const emailLoginInput = document.getElementById('email-login');
+export const passwordLoginInput = document.getElementById('password-login');
+export const logoutButton = document.getElementById('logout-button');
+
+// --- Formulário de Cadastro/Edição de Plano ---
+export const formPlano = document.getElementById('form-plano');
+export const periodicidadeSelect = document.getElementById('periodicidade');
+export const diasSemanaSelecao = document.getElementById('dias-semana-selecao');
+export const definirPorDatasRadio = document.getElementById('definir-por-datas');
+export const definirPorDiasRadio = document.getElementById('definir-por-dias');
+export const periodoPorDatasDiv = document.getElementById('periodo-por-datas');
+export const periodoPorDiasDiv = document.getElementById('periodo-por-dias');
+
+// Campos de data e número do formulário
+export const dataInicio = document.getElementById('data-inicio');
+export const dataFim = document.getElementById('data-fim');
+export const dataInicioDias = document.getElementById('data-inicio-dias');
+export const numeroDias = document.getElementById('numero-dias');
+export const linkDriveInput = document.getElementById('link-drive');
+export const tituloLivroInput = document.getElementById('titulo-livro');
+export const paginaInicioInput = document.getElementById('pagina-inicio');
+export const paginaFimInput = document.getElementById('pagina-fim');
+
+// --- Modal de Reavaliação ---
+export const reavaliacaoModal = document.getElementById('reavaliacao-modal');
+export const fecharReavaliacaoBtn = document.getElementById('fechar-reavaliacao-btn');
+export const tabelaReavaliacaoBody = document.querySelector('#tabela-reavaliacao tbody');
