@@ -69,7 +69,8 @@ function setupEventHandlers() {
             ui.hideReavaliacaoModal();
             return;
         }
-        handleModalReavaliacaoAction(e); // Delega ações internas para o handler
+        // AQUI ESTÁ A LIGAÇÃO COM A NOVA LÓGICA
+        handleModalReavaliacaoAction(e); 
     });
     
     // Modal de Recálculo
@@ -137,7 +138,7 @@ async function handleFormSubmit(event) {
         
         await firestoreService.salvarPlanos(currentUser, state.getPlanos());
 
-        const acao = indexEditando !== -1 ? 'atualizado' : 'criado';
+        const acao = indexEditando !== -1 ? 'remanejado/atualizado' : 'criado';
         alert(`Plano "${planoData.titulo}" ${acao} com sucesso!`);
         
         state.setPlanoEditando(-1);
@@ -238,32 +239,37 @@ async function handleConfirmRecalculo() {
     }
 }
 
-// CORREÇÃO: Esta função agora chama a função correta e exportada de ui.js
 function handleReavaliarCarga() {
     const planosAtuais = state.getPlanos();
     const totalPlanos = planosAtuais.length; 
     const dadosCarga = planoLogic.analisarCargaSemanal(planosAtuais, totalPlanos);
     
-    // Chama a nova função wrapper que renderiza tanto a tabela quanto a legenda
     ui.renderizarModalReavaliacaoCompleto(dadosCarga, planosAtuais, totalPlanos); 
     
     ui.showReavaliacaoModal();
 }
 
-// CORREÇÃO: Esta nova função lida com o clique para remanejar o plano
+// Esta função agora implementa o fluxo correto que você solicitou.
 function handleModalReavaliacaoAction(event) {
+    // 1. Identifica se o clique foi em um plano para remanejar
     const target = event.target.closest('[data-action="remanejar-plano"]');
     if (!target) return;
 
+    // 2. Obtém os dados do plano clicado
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const plano = state.getPlanoByIndex(planoIndex);
 
     if (isNaN(planoIndex) || !plano) return;
     
-    // Encadeia os modais para criar o fluxo de remanejamento
+    // 3. Fecha o modal de reavaliação
     ui.hideReavaliacaoModal();
-    // Um pequeno timeout para a transição do CSS ficar mais suave
+    
+    // 4. Após um breve intervalo, abre o formulário de EDIÇÃO
     setTimeout(() => {
-        ui.showRecalculoModal(plano, planoIndex);
-    }, 300);
+        // Esta é a ação correta para "remanejar", pois permite ao usuário
+        // alterar os dias da semana (ex: desmarcar sexta e marcar sábado).
+        // Ao salvar, a lógica de `handleFormSubmit` já fará a redistribuição.
+        ui.showCadastroForm(plano);
+        state.setPlanoEditando(planoIndex); // Informa ao estado que estamos editando
+    }, 300); // Timeout para a animação de fechamento do modal ser suave
 }
