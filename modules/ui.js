@@ -8,7 +8,7 @@ import * as planoLogic from './plano-logic.js';
 // Registra os eventos de interação do modal de recálculo assim que o módulo é carregado.
 setupRecalculoInteractions();
 
-// --- Funções de Formatação e Helpers ---
+// --- Funções de Formatação e Helpers (Internas) ---
 
 /**
  * Formata um objeto Date para uma string legível (dd/mm/aaaa).
@@ -21,6 +21,8 @@ function formatarData(date) {
     }
     return '';
 }
+
+// --- Funções de Controle de Visibilidade e UI (Exportadas) ---
 
 /**
  * Rola a tela até o card do plano e aplica um destaque visual temporário.
@@ -37,8 +39,6 @@ export function highlightAndScrollToPlano(planoIndex) {
         planoCard.classList.remove('flash-highlight');
     }, 1500);
 }
-
-// --- Funções de Controle de Visibilidade ---
 
 /** Mostra a seção principal com a lista de planos. */
 export function showPlanosList(planos, user) {
@@ -115,9 +115,7 @@ export function hideReavaliacaoModal() {
     DOMElements.reavaliacaoModal.classList.remove('visivel');
 }
 
-/**
- * Configura os eventos de interação para o modal de recálculo.
- */
+/** Configura os eventos de interação para o modal de recálculo. (Interna) */
 function setupRecalculoInteractions() {
     DOMElements.recalculoPorDataRadio.addEventListener('change', () => {
         DOMElements.recalculoOpcaoDataDiv.style.display = 'block';
@@ -135,13 +133,11 @@ export function showRecalculoModal(plano, planoIndex) {
     DOMElements.recalculoPlanoTitulo.textContent = `"${plano.titulo}"`;
     DOMElements.confirmRecalculoBtn.dataset.planoIndex = planoIndex;
 
-    // Reseta o modal para o estado padrão (por data)
     DOMElements.recalculoPorDataRadio.checked = true;
     DOMElements.recalculoOpcaoDataDiv.style.display = 'block';
     DOMElements.recalculoOpcaoPaginasDiv.style.display = 'none';
     DOMElements.novaPaginasPorDiaInput.value = '';
 
-    // Define a data mínima para o input de data
     const hoje = new Date();
     const amanha = new Date(hoje.setDate(hoje.getDate() + 1));
     DOMElements.novaDataFimInput.min = amanha.toISOString().split('T')[0];
@@ -154,8 +150,6 @@ export function showRecalculoModal(plano, planoIndex) {
 export function hideRecalculoModal() {
     DOMElements.recalculoModal.classList.remove('visivel');
 }
-
-// --- Funções de Leitura de Dados da UI (Formulário) ---
 
 /**
  * Coleta e valida os dados do formulário de plano.
@@ -198,13 +192,9 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização ---
+// --- Funções de Renderização (Internas, exceto wrappers) ---
 
-/**
- * Renderiza a lista principal de planos de leitura.
- * @param {Array} planos - A lista de planos a serem renderizados.
- * @param {object|null} user - O objeto de usuário do Firebase.
- */
+/** Renderiza a lista principal de planos de leitura. (Interna) */
 function renderizarPlanos(planos, user) {
     if (!user) {
         DOMElements.listaPlanos.innerHTML = '<p>Faça login ou cadastre-se para ver e criar seus planos de leitura.</p>';
@@ -281,23 +271,25 @@ function renderizarPlanos(planos, user) {
     DOMElements.listaPlanos.innerHTML = html;
 }
 
-/** Renderiza os botões do paginador flutuante. */
+/** Renderiza os botões do paginador flutuante. (Interna) */
 function renderizarPaginador(planos) {
-    const totalPlanos = planos.length;
-    if (totalPlanos <= 1) {
+    if (planos.length <= 1) {
         DOMElements.paginadorPlanosDiv.innerHTML = '';
+        DOMElements.paginadorPlanosDiv.classList.add('hidden');
         return;
     }
     
     let paginadorHTML = '';
     planos.forEach((plano, index) => {
-        const numeroPlano = totalPlanos - index;
+        const numeroPlano = planos.length - index;
         paginadorHTML += `<a href="#plano-${index}" title="Ir para o plano '${plano.titulo}'">${numeroPlano}</a>`;
     });
 
     DOMElements.paginadorPlanosDiv.innerHTML = paginadorHTML;
+    DOMElements.paginadorPlanosDiv.classList.remove('hidden');
 }
 
+/** Renderiza o painel de próximas leituras. (Interna) */
 function renderizarPainelProximasLeituras(planos, totalPlanos) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -326,6 +318,8 @@ function renderizarPainelProximasLeituras(planos, totalPlanos) {
         DOMElements.proximasLeiturasSection.style.display = 'none';
     }
 }
+
+/** Renderiza o painel de leituras atrasadas. (Interna) */
 function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -355,10 +349,7 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
     }
 }
 
-/**
- * [INTERNA] Renderiza a tabela de carga semanal no modal.
- * @param {Array} dadosCarga - Dados da carga semanal.
- */
+/** Renderiza a tabela de carga semanal no modal. (Interna) */
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
     dadosCarga.forEach(dia => {
@@ -379,33 +370,25 @@ function renderizarQuadroReavaliacao(dadosCarga) {
     DOMElements.tabelaReavaliacaoBody.innerHTML = html;
 }
 
-/**
- * [INTERNA] Renderiza a legenda de planos no modal de reavaliação.
- * @param {Array} planos - Lista completa de planos.
- * @param {number} totalPlanos - Número total de planos.
- */
-function renderizarLegendaReavaliacao(planos, totalPlanos) {
-    const legendaContainer = DOMElements.reavaliacaoLegenda;
-    if (!planos || planos.length === 0 || !legendaContainer) {
-        if (legendaContainer) legendaContainer.innerHTML = '';
+/** Renderiza a legenda de planos no modal de reavaliação. (Interna) */
+function renderizarLegendaReavaliacao(planos) {
+    if (!planos || planos.length === 0 || !DOMElements.reavaliacaoLegenda) {
+        if(DOMElements.reavaliacaoLegenda) DOMElements.reavaliacaoLegenda.innerHTML = '';
         return;
     }
 
-    const planosAtivos = planos.filter(p => {
-        const status = planoLogic.determinarStatusPlano(p);
-        return status !== 'concluido' && status !== 'invalido';
-    });
-
-    planosAtivos.sort((a, b) => {
-        const indexA = planos.findIndex(p => p.id === a.id);
-        const indexB = planos.findIndex(p => p.id === b.id);
-        return indexB - indexA;
-    });
-
+    const planosAtivos = planos.filter(p => planoLogic.determinarStatusPlano(p) !== 'concluido' && planoLogic.determinarStatusPlano(p) !== 'invalido');
+    
+    if (planosAtivos.length === 0) {
+        DOMElements.reavaliacaoLegenda.innerHTML = '';
+        return;
+    }
+    
     let legendaHTML = '<h4>Legenda de Planos</h4><ul class="reavaliacao-legenda-lista">';
+    
     planosAtivos.forEach((plano) => {
-        const planoIndexOriginal = planos.findIndex(p => p.id === plano.id);
-        const numeroPlano = totalPlanos - planoIndexOriginal;
+        const originalIndex = planos.findIndex(p => p.id === plano.id);
+        const numeroPlano = planos.length - originalIndex;
         
         legendaHTML += `
             <li class="reavaliacao-legenda-item">
@@ -416,21 +399,26 @@ function renderizarLegendaReavaliacao(planos, totalPlanos) {
     });
     legendaHTML += '</ul>';
 
-    legendaContainer.innerHTML = legendaHTML;
+    DOMElements.reavaliacaoLegenda.innerHTML = legendaHTML;
 }
 
 /**
- * [NOVO - EXPORTADO] Renderiza o conteúdo completo do modal de reavaliação (tabela e legenda).
- * @param {Array} dadosCarga - Os dados da carga semanal gerados por plano-logic.
- * @param {Array} planos - A lista completa de planos do usuário.
- * @param {number} totalPlanos - O número total de planos.
+ * Função wrapper que renderiza todo o conteúdo do modal de reavaliação.
+ * @param {Array} dadosCarga - Os dados da carga semanal processados.
+ * @param {Array} planos - A lista completa de planos.
  */
-export function renderizarModalReavaliacao(dadosCarga, planos, totalPlanos) {
+export function renderizarModalReavaliacaoCompleto(dadosCarga, planos) {
     renderizarQuadroReavaliacao(dadosCarga);
-    renderizarLegendaReavaliacao(planos, totalPlanos);
+    renderizarLegendaReavaliacao(planos);
 }
 
-// --- Função Principal de Renderização da Aplicação ---
+// --- Função Principal de Renderização da Aplicação (Exportada) ---
+
+/**
+ * Renderiza ou atualiza toda a interface da aplicação com base no estado atual.
+ * @param {Array} planos - A lista de planos do usuário.
+ * @param {object|null} user - O objeto de usuário do Firebase.
+ */
 export function renderApp(planos, user) {
     console.log('[UI] Renderizando a aplicação completa...');
 
@@ -440,34 +428,31 @@ export function renderApp(planos, user) {
         DOMElements.logoutButton.style.display = 'inline-flex';
         DOMElements.novoPlanoBtn.style.display = 'inline-flex';
         DOMElements.inicioBtn.style.display = 'inline-flex';
-        DOMElements.exportarAgendaBtn.style.display = 'inline-flex';
         DOMElements.reavaliarCargaBtn.style.display = 'inline-flex';
     } else {
         DOMElements.showAuthButton.style.display = 'inline-flex';
         DOMElements.logoutButton.style.display = 'none';
         DOMElements.novoPlanoBtn.style.display = 'none';
         DOMElements.inicioBtn.style.display = 'none';
-        DOMElements.exportarAgendaBtn.style.display = 'none';
         DOMElements.reavaliarCargaBtn.style.display = 'none';
         hideAuthForm();
     }
 
-    if (planos && planos.length > 0) {
-        renderizarPainelProximasLeituras(planos, planos.length);
-        renderizarPainelLeiturasAtrasadas(planos, planos.length);
+    const totalPlanos = planos ? planos.length : 0;
+    if (totalPlanos > 0) {
+        renderizarPainelProximasLeituras(planos, totalPlanos);
+        renderizarPainelLeiturasAtrasadas(planos, totalPlanos);
         renderizarPlanos(planos, user);
         renderizarPaginador(planos);
-        DOMElements.paginadorPlanosDiv.classList.remove('hidden');
     } else {
         DOMElements.listaPlanos.innerHTML = user ? '<p>Você ainda não tem planos. Clique em "Novo" para criar o seu primeiro!</p>' : '<p>Faça login ou cadastre-se para ver e criar seus planos de leitura.</p>';
         DOMElements.proximasLeiturasSection.style.display = 'none';
         DOMElements.leiturasAtrasadasSection.style.display = 'none';
-        DOMElements.paginadorPlanosDiv.innerHTML = '';
-        DOMElements.paginadorPlanosDiv.classList.add('hidden');
+        renderizarPaginador([]); // Esconde o paginador
     }
 }
 
-// --- Funções Auxiliares (PWA, Loading, etc) ---
+// --- Funções Auxiliares (PWA, Loading, etc - Exportadas) ---
 
 export function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
