@@ -288,13 +288,16 @@ function renderizarPaginador(planos) {
         DOMElements.paginadorPlanosDiv.innerHTML = '';
         return;
     }
+
+    let paginadorHTML = `<a href="#" id="paginador-home-btn" title="Ir para o topo">
+                            <span class="material-symbols-outlined">home</span>
+                         </a>`;
     
-    let paginadorHTML = '';
     planos.forEach((plano, index) => {
         const numeroPlano = totalPlanos - index;
         paginadorHTML += `<a href="#plano-${index}" title="Ir para o plano '${plano.titulo}'">${numeroPlano}</a>`;
     });
-
+    
     DOMElements.paginadorPlanosDiv.innerHTML = paginadorHTML;
 }
 
