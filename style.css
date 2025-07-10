@@ -605,6 +605,18 @@ section h2 {
 }
 #paginador-planos a:hover { background-color: #6a006a; transform: scale(1.05); }
 
+#paginador-planos a#paginador-home-btn {
+    background-color: #6c757d; /* Um cinza neutro para diferenciar */
+}
+
+#paginador-planos a#paginador-home-btn:hover {
+    background-color: #5a6268;
+}
+
+#paginador-planos a#paginador-home-btn .material-symbols-outlined {
+    font-size: 1.4em; /* Opcional: Deixar o ícone de casa um pouco maior */
+}
+
 /* Footer */
 footer { text-align: center; padding: 15px 0; background-color: #343a40; color: rgba(255, 255, 255, 0.7); font-size: 0.9em; margin-top: 30px; }
 
