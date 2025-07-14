@@ -1,3 +1,5 @@
+// --- START OF FILE ui.js ---
+
 // modules/ui.js
 // RESPONSABILIDADE ÚNICA: Manipular o DOM, renderizar elementos, ler dados de formulários
 // e gerenciar a visibilidade das seções da UI. Não contém lógica de negócio.
@@ -136,6 +138,9 @@ export function showRecalculoModal(plano, planoIndex) {
     DOMElements.recalculoPlanoTitulo.textContent = `"${plano.titulo}"`;
     DOMElements.confirmRecalculoBtn.dataset.planoIndex = planoIndex;
 
+    // MODIFICAÇÃO: Altera o texto do botão para o contexto de recálculo.
+    DOMElements.confirmRecalculoBtn.textContent = 'Confirmar Recálculo';
+
     const recalculoCheckboxes = document.querySelectorAll('#recalculo-dias-semana-selecao input[type="checkbox"]');
     recalculoCheckboxes.forEach(cb => {
         cb.checked = plano.diasSemana.includes(parseInt(cb.value));
@@ -157,6 +162,11 @@ export function showRecalculoModal(plano, planoIndex) {
 /** Esconde o modal de recálculo. */
 export function hideRecalculoModal() {
     DOMElements.recalculoModal.classList.remove('visivel');
+    // MODIFICAÇÃO: Restaura o texto original do botão ao fechar o modal.
+    // Isso garante que se o modal for usado em outro contexto, ele estará com o texto correto.
+    setTimeout(() => {
+        DOMElements.confirmRecalculoBtn.textContent = 'Confirmar Remanejamento';
+    }, 300); // Atraso para a mudança não ser visível durante a animação de fechar.
 }
 
 // --- Funções de Leitura de Dados da UI (Formulário) ---
@@ -282,10 +292,12 @@ function renderizarPlanos(planos, user) {
     DOMElements.listaPlanos.innerHTML = html;
 }
 
+// MODIFICAÇÃO: A função foi reescrita para adicionar a classe 'paginador-pausado' e gerenciar melhor a visibilidade.
 function renderizarPaginador(planos) {
     const totalPlanos = planos.length;
     if (totalPlanos <= 1) {
         DOMElements.paginadorPlanosDiv.innerHTML = '';
+        DOMElements.paginadorPlanosDiv.classList.add('hidden'); // Garante que fique oculto
         return;
     }
 
@@ -295,10 +307,14 @@ function renderizarPaginador(planos) {
     
     planos.forEach((plano, index) => {
         const numeroPlano = totalPlanos - index;
-        paginadorHTML += `<a href="#plano-${index}" title="Ir para o plano '${plano.titulo}'">${numeroPlano}</a>`;
+        const status = planoLogic.determinarStatusPlano(plano);
+        const classePausado = status === 'pausado' ? 'paginador-pausado' : '';
+
+        paginadorHTML += `<a href="#plano-${index}" title="Ir para o plano '${plano.titulo}'" class="${classePausado}">${numeroPlano}</a>`;
     });
     
     DOMElements.paginadorPlanosDiv.innerHTML = paginadorHTML;
+    DOMElements.paginadorPlanosDiv.classList.remove('hidden'); // Garante que seja exibido
 }
 
 function renderizarPainelProximasLeituras(planos, totalPlanos) {
