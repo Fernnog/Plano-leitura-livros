@@ -1,3 +1,5 @@
+// --- START OF FILE main.js ---
+
 // main.js - O Orquestrador da Aplicação
 
 // --- Importações dos Módulos ---
@@ -209,7 +211,8 @@ async function handleCardAction(event) {
             break;
 
         case 'recalcular':
-            ui.showRecalculoModal(plano, planoIndex);
+            // MODIFICAÇÃO: Passa o texto específico para este contexto.
+            ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
             break;
     }
 }
@@ -281,6 +284,7 @@ function handleModalReavaliacaoAction(event) {
     
     ui.hideReavaliacaoModal();
     setTimeout(() => {
-        ui.showRecalculoModal(plano, planoIndex);
+        // MODIFICAÇÃO: Passa o texto específico para este contexto.
+        ui.showRecalculoModal(plano, planoIndex, 'Confirmar Remanejamento');
     }, 300);
 }
