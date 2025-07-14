@@ -133,13 +133,15 @@ function setupRecalculoInteractions() {
     });
 }
 
-/** Mostra o modal de recálculo com os dados do plano. */
-export function showRecalculoModal(plano, planoIndex) {
+// MODIFICAÇÃO: A função agora aceita um parâmetro para o texto do botão.
+/** Mostra o modal de recálculo com os dados do plano e texto do botão customizável. */
+export function showRecalculoModal(plano, planoIndex, buttonText) {
     DOMElements.recalculoPlanoTitulo.textContent = `"${plano.titulo}"`;
     DOMElements.confirmRecalculoBtn.dataset.planoIndex = planoIndex;
 
-    // MODIFICAÇÃO: Altera o texto do botão para o contexto de recálculo.
-    DOMElements.confirmRecalculoBtn.textContent = 'Confirmar Recálculo';
+    // O texto do botão agora é definido pelo parâmetro recebido.
+    // Usamos um valor padrão ('Confirmar Remanejamento') como segurança.
+    DOMElements.confirmRecalculoBtn.textContent = buttonText || 'Confirmar Remanejamento';
 
     const recalculoCheckboxes = document.querySelectorAll('#recalculo-dias-semana-selecao input[type="checkbox"]');
     recalculoCheckboxes.forEach(cb => {
@@ -159,14 +161,10 @@ export function showRecalculoModal(plano, planoIndex) {
     DOMElements.recalculoModal.classList.add('visivel');
 }
 
+// MODIFICAÇÃO: Simplificada, pois a lógica de restaurar texto não é mais necessária.
 /** Esconde o modal de recálculo. */
 export function hideRecalculoModal() {
     DOMElements.recalculoModal.classList.remove('visivel');
-    // MODIFICAÇÃO: Restaura o texto original do botão ao fechar o modal.
-    // Isso garante que se o modal for usado em outro contexto, ele estará com o texto correto.
-    setTimeout(() => {
-        DOMElements.confirmRecalculoBtn.textContent = 'Confirmar Remanejamento';
-    }, 300); // Atraso para a mudança não ser visível durante a animação de fechar.
 }
 
 // --- Funções de Leitura de Dados da UI (Formulário) ---
@@ -297,7 +295,7 @@ function renderizarPaginador(planos) {
     const totalPlanos = planos.length;
     if (totalPlanos <= 1) {
         DOMElements.paginadorPlanosDiv.innerHTML = '';
-        DOMElements.paginadorPlanosDiv.classList.add('hidden'); // Garante que fique oculto
+        DOMElements.paginadorPlanosDiv.classList.add('hidden');
         return;
     }
 
@@ -314,8 +312,9 @@ function renderizarPaginador(planos) {
     });
     
     DOMElements.paginadorPlanosDiv.innerHTML = paginadorHTML;
-    DOMElements.paginadorPlanosDiv.classList.remove('hidden'); // Garante que seja exibido
+    DOMElements.paginadorPlanosDiv.classList.remove('hidden');
 }
+
 
 function renderizarPainelProximasLeituras(planos, totalPlanos) {
     const planosAtivos = planos.filter(p => !p.isPaused);
