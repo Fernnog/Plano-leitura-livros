@@ -51,7 +51,13 @@ export async function carregarPlanos(user) {
                         console.warn("[Firestore] Dia com data inválida no plano:", plano.titulo);
                         return { ...dia, data: null };
                     }
-                    return { ...dia, data: dataDia, lido: Boolean(dia.lido || false) };
+                    return {
+                        ...dia,
+                        data: dataDia,
+                        lido: Boolean(dia.lido || false),
+                        // NOVA LINHA: Carrega o campo de leitura parcial
+                        ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null
+                    };
                 }) : [],
                 paginaInicio: Number(plano.paginaInicio) || 1,
                 paginaFim: Number(plano.paginaFim) || 1,
@@ -101,7 +107,9 @@ export async function salvarPlanos(user, planosParaSalvar) {
             diasPlano: plano.diasPlano.map(dia => ({
                 ...dia,
                 data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null,
-                lido: Boolean(dia.lido || false)
+                lido: Boolean(dia.lido || false),
+                // NOVA LINHA: Salva o campo de leitura parcial
+                ultimaPaginaLida: dia.ultimaPaginaLida || null
             })),
             // MODIFICAÇÃO: Salva os novos campos de pausa no banco de dados
             isPaused: plano.isPaused || false,
