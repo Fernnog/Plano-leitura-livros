@@ -1,3 +1,5 @@
+// --- START OF FILE style.css ---
+
 /* style.css (Completo, Corrigido e Corretamente Formatado) */
 
 /* Importando fontes do Google Fonts */
@@ -615,6 +617,18 @@ section h2 {
 
 #paginador-planos a#paginador-home-btn .material-symbols-outlined {
     font-size: 1.4em; /* Opcional: Deixar o ícone de casa um pouco maior */
+}
+
+/* MODIFICAÇÃO: Estilo para paginador de planos pausados */
+#paginador-planos a.paginador-pausado {
+    background-color: #cccccc;
+    opacity: 0.7;
+    cursor: not-allowed;
+}
+
+#paginador-planos a.paginador-pausado:hover {
+    background-color: #cccccc;
+    transform: none;
 }
 
 /* Footer */
