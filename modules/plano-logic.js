@@ -68,7 +68,18 @@ export function verificarAtraso(plano) {
 }
 
 /**
- * Recalcula e atualiza a propriedade `paginasLidas` de um objeto de plano.
+ * Encontra o índice do primeiro dia de leitura não concluído no plano.
+ * @param {object} plano - O objeto do plano.
+ * @returns {number} O índice do próximo dia a ser lido, ou -1 se todos estiverem lidos.
+ */
+export function encontrarProximoDiaDeLeituraIndex(plano) {
+    if (!plano || !plano.diasPlano) return -1;
+    return plano.diasPlano.findIndex(dia => !dia.lido);
+}
+
+/**
+ * Recalcula e atualiza a propriedade `paginasLidas` de um plano.
+ * Agora considera leituras parciais registradas em `ultimaPaginaLida`.
  * @param {object} plano - O objeto do plano a ser modificado.
  */
 export function atualizarPaginasLidas(plano) {
@@ -76,8 +87,22 @@ export function atualizarPaginasLidas(plano) {
         if(plano) plano.paginasLidas = 0;
         return;
     };
+
     plano.paginasLidas = plano.diasPlano.reduce((sum, dia) => {
-        return sum + (dia && dia.lido && typeof dia.paginas === 'number' && dia.paginas > 0 ? dia.paginas : 0);
+        if (!dia) return sum;
+
+        // Se o dia foi marcado como completamente lido, conta todas as páginas do dia.
+        if (dia.lido) {
+            return sum + (typeof dia.paginas === 'number' ? dia.paginas : 0);
+        }
+
+        // Se houve uma leitura parcial registrada, calcula as páginas lidas nesse dia.
+        if (dia.ultimaPaginaLida && dia.ultimaPaginaLida >= dia.paginaInicioDia) {
+            const paginasParciais = (dia.ultimaPaginaLida - dia.paginaInicioDia) + 1;
+            return sum + paginasParciais;
+        }
+
+        return sum; // Nenhuma página lida neste dia.
     }, 0);
 }
 
