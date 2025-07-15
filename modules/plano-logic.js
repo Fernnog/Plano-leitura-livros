@@ -1,5 +1,3 @@
---- START OF FILE plano-logic.js ---
-
 // modules/plano-logic.js
 // RESPONSABILIDADE ÚNICA: Conter toda a lógica de negócio, cálculos e manipulação
 // de dados dos planos. Funções "puras" que não tocam no DOM.
@@ -24,6 +22,7 @@ export function determinarStatusPlano(plano) {
         return 'invalido';
     }
     
+    // MODIFICAÇÃO: Status 'pausado' tem a maior prioridade.
     if (plano.isPaused) {
         return 'pausado';
     }
@@ -69,8 +68,7 @@ export function verificarAtraso(plano) {
 }
 
 /**
- * Recalcula e atualiza a propriedade `paginasLidas` de um plano.
- * Agora considera leituras parciais registradas em `ultimaPaginaLida`.
+ * Recalcula e atualiza a propriedade `paginasLidas` de um objeto de plano.
  * @param {object} plano - O objeto do plano a ser modificado.
  */
 export function atualizarPaginasLidas(plano) {
@@ -78,31 +76,9 @@ export function atualizarPaginasLidas(plano) {
         if(plano) plano.paginasLidas = 0;
         return;
     };
-
     plano.paginasLidas = plano.diasPlano.reduce((sum, dia) => {
-        if (!dia) return sum;
-
-        if (dia.lido) {
-            return sum + (typeof dia.paginas === 'number' ? dia.paginas : 0);
-        }
-
-        if (dia.ultimaPaginaLida && dia.ultimaPaginaLida >= dia.paginaInicioDia) {
-            const paginasParciais = (dia.ultimaPaginaLida - dia.paginaInicioDia) + 1;
-            return sum + paginasParciais;
-        }
-
-        return sum;
+        return sum + (dia && dia.lido && typeof dia.paginas === 'number' && dia.paginas > 0 ? dia.paginas : 0);
     }, 0);
-}
-
-/**
- * Encontra o índice do primeiro dia de leitura não concluído no plano.
- * @param {object} plano - O objeto do plano.
- * @returns {number} O índice do próximo dia a ser lido, ou -1 se todos estiverem lidos.
- */
-export function encontrarProximoDiaDeLeituraIndex(plano) {
-    if (!plano || !plano.diasPlano) return -1;
-    return plano.diasPlano.findIndex(dia => !dia.lido);
 }
 
 /**
@@ -246,7 +222,7 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
     }
     
     if (novaDataFim < dataInicioRecalculo) {
-        throw new Error(`A nova data de fim (${novaDataFim.toLocaleDateString('pt-BR')}) não pode ser anterior ao próximo dia de leitura válido (${dataInicioRecalculado.toLocaleDateString('pt-BR')}).`);
+        throw new Error(`A nova data de fim (${novaDataFim.toLocaleDateString('pt-BR')}) não pode ser anterior ao próximo dia de leitura válido (${dataInicioRecalculo.toLocaleDateString('pt-BR')}).`);
     }
 
     const novosDiasGerados = gerarDiasPlanoPorDatas(dataInicioRecalculo, novaDataFim, periodicidadePlano, diasSemanaPlano);
@@ -296,10 +272,12 @@ export function analisarCargaSemanal(planos, totalPlanos) {
         return diasDaSemana;
     }
 
+    // MODIFICAÇÃO: Filtra planos pausados para que não entrem na análise de carga.
     const planosAtivos = planos.filter(p => !p.isPaused);
 
     planosAtivos.forEach((plano, index) => {
         const status = determinarStatusPlano(plano);
+        // A verificação `!p.isPaused` já foi feita, mas mantemos o resto como segurança.
         if (status === 'concluido' || status === 'invalido') {
             return;
         }
@@ -313,6 +291,7 @@ export function analisarCargaSemanal(planos, totalPlanos) {
         const mediaPaginasDia = Math.round(paginasRestantes / diasDeLeituraRestantes);
         
         const diasSemanaPlano = plano.diasSemana || [];
+        // Encontra o índice original para manter a numeração consistente.
         const originalIndex = planos.findIndex(p => p.id === plano.id);
         const numeroDoPlano = totalPlanos - originalIndex;
         
@@ -367,7 +346,7 @@ export function construirObjetoPlano(formData, planoEditado) {
         diasPlano: diasPlano,
         paginasLidas: 0,
         totalPaginas: formData.paginaFim - formData.paginaInicio + 1,
-        isPaused: planoEditado ? planoEditado.isPaused : false,
+        isPaused: planoEditado ? planoEditado.isPaused : false, // Preserva o estado de pausa na edição
         dataPausa: planoEditado ? planoEditado.dataPausa : null,
     };
 }
@@ -428,6 +407,7 @@ export function retomarPlano(plano) {
     const dataPausa = new Date(plano.dataPausa);
     dataPausa.setHours(0, 0, 0, 0);
 
+    // Calcula quantos dias o plano ficou pausado
     const tempoPausaMs = dataRetomada.getTime() - dataPausa.getTime();
 
     if (tempoPausaMs > 0) {
@@ -438,6 +418,7 @@ export function retomarPlano(plano) {
             if (dia.data && !dia.lido) {
                 const dataDia = new Date(dia.data);
                 dataDia.setHours(0, 0, 0, 0);
+                // Adiciona o tempo de pausa apenas aos dias de leitura futuros (ou a partir da data de pausa)
                 if (dataDia.getTime() >= dataPausa.getTime()) {
                      const novaData = new Date(dia.data);
                      novaData.setDate(novaData.getDate() + diasDePausa);
@@ -446,6 +427,7 @@ export function retomarPlano(plano) {
             }
         });
 
+        // Atualiza a data final do plano
         if (plano.dataFim) {
             const novaDataFim = new Date(plano.dataFim);
             novaDataFim.setDate(novaDataFim.getDate() + diasDePausa);
@@ -460,7 +442,7 @@ export function retomarPlano(plano) {
 }
 
 /**
- * MODIFICAÇÃO: Gera o conteúdo de um arquivo .ics a partir de uma lista de planos e horários definidos.
+ * Gera o conteúdo de um arquivo .ics a partir de uma lista de planos e horários definidos.
  * @param {Array<object>} planos - Um array de objetos de plano a serem convertidos.
  * @param {string} horaInicio - A hora de início no formato "HH:mm".
  * @param {string} horaFim - A hora de fim no formato "HH:mm".
@@ -484,7 +466,7 @@ export function gerarConteudoICS(planos, horaInicio, horaFim) {
 
     planos.forEach(plano => {
         plano.diasPlano.forEach(dia => {
-            if (!dia.data || dia.lido) return; // Não exporta dias sem data ou já lidos
+            if (!dia.data || dia.lido) return;
 
             const dataInicioEvento = new Date(dia.data);
             dataInicioEvento.setUTCHours(startHour, startMinute, 0, 0);
@@ -508,4 +490,3 @@ export function gerarConteudoICS(planos, horaInicio, horaFim) {
     icsContent.push('END:VCALENDAR');
     return icsContent.join('\r\n');
 }
---- END OF FILE plano-logic.js ---
