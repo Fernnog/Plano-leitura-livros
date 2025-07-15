@@ -223,6 +223,8 @@ function renderizarPlanos(planos, user) {
         const progresso = plano.totalPaginas > 0 ? (plano.paginasLidas / plano.totalPaginas) * 100 : 0;
         const numeroPlano = planos.length - index;
         const isPausado = status === 'pausado';
+        // MODIFICAÇÃO PRIORIDADE 1: Identifica o próximo dia de leitura para exibir o input parcial.
+        const proximoDiaIndex = planoLogic.encontrarProximoDiaDeLeituraIndex(plano);
 
         let statusTagHTML = '';
         switch (status) {
@@ -236,15 +238,38 @@ function renderizarPlanos(planos, user) {
         const botaoPausarRetomarHTML = isPausado
             ? `<button data-action="retomar" data-plano-index="${index}" title="Retomar Plano" class="acao-retomar"><span class="material-symbols-outlined">play_circle</span></button>`
             : `<button data-action="pausar" data-plano-index="${index}" title="Pausar Plano"><span class="material-symbols-outlined">pause</span></button>`;
+        
+        // MODIFICAÇÃO PRIORIDADE 1: Lógica para gerar dinamicamente o cronograma de dias com o input parcial.
+        const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
+            let acoesDiaHTML = '';
+            // LÓGICA DE EXIBIÇÃO: Mostra o input apenas no próximo dia a ser lido E se o plano não estiver pausado.
+            if (diaIndex === proximoDiaIndex && !isPausado) {
+                acoesDiaHTML = `
+                    <div class="dia-leitura-acoes">
+                        <div class="leitura-parcial-container">
+                            <label for="parcial-${index}-${diaIndex}">Parei na pág:</label>
+                            <input type="number" id="parcial-${index}-${diaIndex}" class="leitura-parcial-input" 
+                                   min="${dia.paginaInicioDia}" max="${dia.paginaFimDia}"
+                                   placeholder="${dia.paginaInicioDia}"
+                                   value="${dia.ultimaPaginaLida || ''}">
+                            <button class="leitura-parcial-save-btn" data-action="salvar-parcial" 
+                                    data-plano-index="${index}" data-dia-index="${diaIndex}">
+                                <span class="material-symbols-outlined">save</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }
 
-        const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => `
+            return `
             <div class="dia-leitura ${dia.lido ? 'lido' : ''}">
                 <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
                 <label for="dia-${index}-${diaIndex}">
                     <strong>${formatarData(dia.data)}:</strong> Pág. ${dia.paginaInicioDia} a ${dia.paginaFimDia} (${dia.paginas} pág.)
                 </label>
+                ${acoesDiaHTML}
             </div>
-        `).join('');
+        `}).join('');
 
         const podeRecalcular = status === 'atrasado' || status === 'em_dia';
         const avisoAtrasoHTML = podeRecalcular ? `
@@ -290,7 +315,7 @@ function renderizarPlanos(planos, user) {
     DOMElements.listaPlanos.innerHTML = html;
 }
 
-// MODIFICAÇÃO: A função foi reescrita para adicionar a classe 'paginador-pausado' e gerenciar melhor a visibilidade.
+
 function renderizarPaginador(planos) {
     const totalPlanos = planos.length;
     if (totalPlanos <= 1) {
