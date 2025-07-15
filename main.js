@@ -59,6 +59,7 @@ function setupEventHandlers() {
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
     // Ações nos Cards (Event Delegation)
+    // MODIFICAÇÃO: A lógica do switch foi refatorada para funções menores e mais claras.
     DOMElements.listaPlanos.addEventListener('click', handleCardAction);
 
     // Modal de Reavaliação de Carga
@@ -84,7 +85,7 @@ function setupEventHandlers() {
 }
 
 
-// --- Manipuladores de Ações (Handlers) ---
+// --- Manipuladores de Ações de Autenticação e Formulário (Handlers) ---
 
 async function handleLogin() {
     try {
@@ -156,7 +157,26 @@ async function handleFormSubmit(event) {
     }
 }
 
-async function handleCardAction(event) {
+
+// --- INÍCIO DA MODIFICAÇÃO: Refatoração de handleCardAction ---
+
+// Mapeamento de ações para suas respectivas funções de tratamento
+const actionHandlers = {
+    'editar': handleEditarPlano,
+    'excluir': handleExcluirPlano,
+    'marcar-lido': handleMarcarLido,
+    'pausar': handlePausarPlano,
+    'retomar': handleRetomarPlano,
+    'recalcular': handleRecalcularPlano,
+    'salvar-parcial': handleSalvarParcial // NOVA AÇÃO
+};
+
+/**
+ * Função principal que delega as ações executadas nos cards dos planos.
+ * Atua como um "dispatcher", chamando a função de tratamento correta.
+ * @param {Event} event - O evento de clique.
+ */
+function handleCardAction(event) {
     const target = event.target.closest('[data-action]');
     if (!target) return;
 
@@ -167,55 +187,102 @@ async function handleCardAction(event) {
 
     if (isNaN(planoIndex) || !plano || !currentUser) return;
 
-    switch (action) {
-        case 'editar':
-            state.setPlanoEditando(planoIndex);
-            ui.showCadastroForm(plano);
-            break;
-
-        case 'excluir':
-            if (confirm(`Tem certeza que deseja excluir o plano "${plano.titulo}"?`)) {
-                state.removePlano(planoIndex);
-                await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-                alert(`Plano excluído.`);
-                ui.renderApp(state.getPlanos(), currentUser);
-            }
-            break;
-            
-        case 'marcar-lido':
-            const diaIndex = parseInt(target.dataset.diaIndex, 10);
-            plano.diasPlano[diaIndex].lido = target.checked;
-            planoLogic.atualizarPaginasLidas(plano);
-            state.updatePlano(planoIndex, plano);
-            await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-            ui.renderApp(state.getPlanos(), currentUser);
-            break;
-        
-        case 'pausar':
-            if (confirm(`Tem certeza que deseja pausar o plano "${plano.titulo}"? O cronograma será congelado.`)) {
-                plano.isPaused = true;
-                plano.dataPausa = new Date(); // Registra a data da pausa
-                state.updatePlano(planoIndex, plano);
-                await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-                alert(`Plano pausado.`);
-                ui.renderApp(state.getPlanos(), currentUser);
-            }
-            break;
-
-        case 'retomar':
-            const planoRetomado = planoLogic.retomarPlano(plano);
-            state.updatePlano(planoIndex, planoRetomado);
-            await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-            alert(`Plano "${plano.titulo}" retomado! As datas futuras foram ajustadas.`);
-            ui.renderApp(state.getPlanos(), currentUser);
-            break;
-
-        case 'recalcular':
-            // MODIFICAÇÃO: Passa o texto específico para este contexto.
-            ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
-            break;
+    // Chama o handler correspondente à ação, se ele existir
+    if (actionHandlers[action]) {
+        actionHandlers[action](target, plano, planoIndex, currentUser);
     }
 }
+
+// --- Funções de Tratamento de Ações do Card ---
+
+function handleEditarPlano(target, plano, planoIndex, currentUser) {
+    state.setPlanoEditando(planoIndex);
+    ui.showCadastroForm(plano);
+}
+
+async function handleExcluirPlano(target, plano, planoIndex, currentUser) {
+    if (confirm(`Tem certeza que deseja excluir o plano "${plano.titulo}"?`)) {
+        state.removePlano(planoIndex);
+        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        alert(`Plano excluído.`);
+        ui.renderApp(state.getPlanos(), currentUser);
+    }
+}
+
+async function handleMarcarLido(target, plano, planoIndex, currentUser) {
+    const diaIndex = parseInt(target.dataset.diaIndex, 10);
+    const dia = plano.diasPlano[diaIndex];
+    
+    dia.lido = target.checked;
+
+    // Se o dia for marcado como lido, limpamos o registro parcial para evitar contagem dupla
+    if (dia.lido) {
+        dia.ultimaPaginaLida = null;
+    }
+
+    planoLogic.atualizarPaginasLidas(plano);
+    state.updatePlano(planoIndex, plano);
+    await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+    ui.renderApp(state.getPlanos(), currentUser);
+}
+
+async function handleSalvarParcial(target, plano, planoIndex, currentUser) {
+    const diaIndex = parseInt(target.dataset.diaIndex, 10);
+    const dia = plano.diasPlano[diaIndex];
+    const inputParcial = document.getElementById(`parcial-${planoIndex}-${diaIndex}`);
+    const ultimaPagina = parseInt(inputParcial.value, 10);
+
+    // Validação do input
+    if (!ultimaPagina || isNaN(ultimaPagina) || ultimaPagina < dia.paginaInicioDia || ultimaPagina > dia.paginaFimDia) {
+        alert(`Por favor, insira um número de página válido entre ${dia.paginaInicioDia} e ${dia.paginaFimDia}.`);
+        inputParcial.focus();
+        return;
+    }
+
+    dia.ultimaPaginaLida = ultimaPagina;
+
+    // Lógica inteligente: se o usuário inseriu a última página, o dia é concluído.
+    if (ultimaPagina === dia.paginaFimDia) {
+        dia.lido = true;
+        dia.ultimaPaginaLida = null; // Limpa para evitar contagem dupla
+    } else {
+        dia.lido = false; // Garante que o dia não seja considerado lido se for uma leitura parcial
+    }
+
+    planoLogic.atualizarPaginasLidas(plano);
+    state.updatePlano(planoIndex, plano);
+    await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+    ui.renderApp(state.getPlanos(), currentUser);
+}
+
+
+async function handlePausarPlano(target, plano, planoIndex, currentUser) {
+    if (confirm(`Tem certeza que deseja pausar o plano "${plano.titulo}"? O cronograma será congelado.`)) {
+        plano.isPaused = true;
+        plano.dataPausa = new Date(); // Registra a data da pausa
+        state.updatePlano(planoIndex, plano);
+        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        alert(`Plano pausado.`);
+        ui.renderApp(state.getPlanos(), currentUser);
+    }
+}
+
+async function handleRetomarPlano(target, plano, planoIndex, currentUser) {
+    const planoRetomado = planoLogic.retomarPlano(plano);
+    state.updatePlano(planoIndex, planoRetomado);
+    await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+    alert(`Plano "${plano.titulo}" retomado! As datas futuras foram ajustadas.`);
+    ui.renderApp(state.getPlanos(), currentUser);
+}
+
+function handleRecalcularPlano(target, plano, planoIndex, currentUser) {
+    ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
+}
+
+// --- FIM DA MODIFICAÇÃO ---
+
+
+// --- Handlers de Modais ---
 
 async function handleConfirmRecalculo() {
     const planoIndex = parseInt(DOMElements.confirmRecalculoBtn.dataset.planoIndex, 10);
@@ -284,7 +351,6 @@ function handleModalReavaliacaoAction(event) {
     
     ui.hideReavaliacaoModal();
     setTimeout(() => {
-        // MODIFICAÇÃO: Passa o texto específico para este contexto.
         ui.showRecalculoModal(plano, planoIndex, 'Confirmar Remanejamento');
     }, 300);
 }
