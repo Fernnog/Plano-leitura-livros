@@ -13,7 +13,6 @@ export const semProximasLeiturasP = document.getElementById('sem-proximas-leitur
 export const leiturasAtrasadasSection = document.getElementById('leituras-atrasadas-section');
 export const listaLeiturasAtrasadasDiv = document.getElementById('lista-leituras-atrasadas');
 export const semLeiturasAtrasadasP = document.getElementById('sem-leituras-atrasadas');
-// MODIFICAÇÃO: Exporta os novos elementos da seção de planos pausados.
 export const planosPausadosSection = document.getElementById('planos-pausados-section');
 export const listaPlanosPausadosDiv = document.getElementById('lista-planos-pausados');
 export const semPlanosPausadosP = document.getElementById('sem-planos-pausados');
@@ -73,3 +72,12 @@ export const recalculoPorPaginasRadio = document.getElementById('recalculo-por-p
 export const recalculoOpcaoDataDiv = document.getElementById('recalculo-opcao-data');
 export const recalculoOpcaoPaginasDiv = document.getElementById('recalculo-opcao-paginas');
 export const novaPaginasPorDiaInput = document.getElementById('nova-paginas-por-dia-input');
+
+// --- Modal de Exportação de Agenda ---
+export const exportModal = document.getElementById('export-modal');
+export const exportModalCloseBtn = document.getElementById('export-modal-close-btn');
+export const exportPlanosListContainer = document.getElementById('export-planos-list-container');
+export const exportHoraInicioInput = document.getElementById('export-hora-inicio');
+export const exportHoraFimInput = document.getElementById('export-hora-fim');
+export const cancelExportBtn = document.getElementById('cancel-export-btn');
+export const confirmExportBtn = document.getElementById('confirm-export-btn');
