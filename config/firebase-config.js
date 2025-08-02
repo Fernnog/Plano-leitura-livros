@@ -8,7 +8,7 @@ import { getAuth } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-auth
 import { getFirestore } from 'https://www.gstatic.com/firebasejs/9.22.2/firebase-firestore.js';
 
 // Your web app's Firebase configuration
-// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+// Para o Firebase JS SDK v7.20.0 e posterior, o measurementId é opcional
 const firebaseConfig = {
   apiKey: "AIzaSyAMaAx8Pal440RksEnVGiVI57w1H_dcEV0",
   authDomain: "plano-de-leitura-de-livros.firebaseapp.com",
@@ -20,11 +20,7 @@ const firebaseConfig = {
   measurementId: "G-XEK0TWRC98"
 };
 
-// Initialize Firebase
-const app = initializeApp(firebaseConfig);
-const analytics = getAnalytics(app);
-
-// Inicializa o Firebase App
+// Inicializa o Firebase App UMA ÚNICA VEZ
 const app = initializeApp(firebaseConfig);
 
 // Inicializa e exporta os serviços que serão usados pela aplicação.
