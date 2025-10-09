@@ -498,7 +498,15 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
                 <span class="leitura-atrasada-paginas">Pág. ${dia.paginaInicioDia}-${dia.paginaFimDia}</span>
             </div>
         `).join('');
-        DOMElements.listaLeiturasAtrasadasDiv.innerHTML = html;
+        
+        // CORREÇÃO PARA O BUG:
+        // Verificamos se o elemento existe ANTES de tentar usá-lo.
+        if (DOMElements.listaLeiturasAtrasadasDiv) {
+            DOMElements.listaLeiturasAtrasadasDiv.innerHTML = html;
+        } else {
+            console.error("ARQUITETO AVISA: O elemento 'lista-leituras-atrasadas' não foi encontrado no DOM. Verifique se o ID está correto no seu arquivo index.html.");
+        }
+        
         DOMElements.semLeiturasAtrasadasP.style.display = 'none';
         DOMElements.leiturasAtrasadasSection.style.display = 'block';
     } else {
@@ -603,11 +611,10 @@ export function renderApp(planos, user) {
         DOMElements.exportarAgendaBtn.style.display = 'inline-flex';
         DOMElements.reavaliarCargaBtn.style.display = 'inline-flex';
 
-        // INÍCIO DA MODIFICAÇÃO
+        // LÓGICA DO CABEÇALHO
         DOMElements.userEmailDisplaySpan.textContent = user.email;
         DOMElements.versionInfoDiv.style.display = 'inline-flex';
         DOMElements.userEmailInfoDiv.style.display = 'inline-flex';
-        // FIM DA MODIFICAÇÃO
 
     } else {
         DOMElements.showAuthButton.style.display = 'inline-flex';
@@ -618,10 +625,9 @@ export function renderApp(planos, user) {
         DOMElements.reavaliarCargaBtn.style.display = 'none';
         hideAuthForm();
         
-        // INÍCIO DA MODIFICAÇÃO
+        // LÓGICA DO CABEÇALHO
         DOMElements.versionInfoDiv.style.display = 'none';
         DOMElements.userEmailInfoDiv.style.display = 'none';
-        // FIM DA MODIFICAÇÃO
     }
 
     if (planos && planos.length > 0) {
