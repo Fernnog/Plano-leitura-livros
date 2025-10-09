@@ -1,4 +1,4 @@
-/* style.css (Completo, Corrigido e Corretamente Formatado) */
+/* style.css (Completo, com as correções de layout do cabeçalho) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -55,6 +55,67 @@ header h1 {
     background: rgba(255, 255, 255, 0.7);
     margin: 10px 0;
 }
+
+/* --- INÍCIO: NOVOS ESTILOS PARA CORREÇÃO DO CABEÇALHO --- */
+.header-controls-wrapper {
+    padding: 0 10px; /* Adiciona um respiro nas laterais */
+}
+
+.user-session-controls {
+    display: flex;
+    justify-content: flex-end; /* Alinha tudo à direita */
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 12px;
+}
+
+.user-session-controls #logout-button {
+    padding: 8px 12px;
+    border: none;
+    border-radius: 5px;
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    cursor: pointer;
+    font-size: 0.9em;
+    transition: background-color 0.3s ease, transform 0.1s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    text-decoration: none;
+    white-space: nowrap;
+}
+
+.user-session-controls #logout-button:hover {
+    background-color: rgba(255, 255, 255, 0.4);
+    transform: translateY(-1px);
+}
+
+.header-info-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 6px 10px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+#version-info {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#version-info:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.header-info-tag .material-symbols-outlined {
+    font-size: 1.1em;
+    opacity: 0.8;
+}
+/* --- FIM: NOVOS ESTILOS PARA CORREÇÃO DO CABEÇALHO --- */
 
 /* Botões de Ação do Header */
 .acoes-dados {
@@ -195,7 +256,6 @@ section h2 {
     outline: none;
 }
 
-/* --- INÍCIO DA MODIFICAÇÃO DE ESTILO --- */
 /* Agrupa as opções de período para melhor controle de layout */
 .periodo-opcoes {
     display: flex;
@@ -229,7 +289,6 @@ section h2 {
     min-height: 1.2em; /* Evita que o layout "salte" quando o texto aparece */
     transition: opacity 0.3s ease;
 }
-/* --- FIM DA MODIFICAÇÃO DE ESTILO --- */
 
 /* Botão de Salvar Plano */
 #form-plano button[type="submit"] {
@@ -444,7 +503,6 @@ section h2 {
     border-bottom: 1px dotted #e0e0e0;
     font-size: 0.9em;
     transition: background-color 0.2s ease;
-    /* Alteração: Permite que o container de ações fique abaixo */
     flex-wrap: wrap; 
 }
 
@@ -480,9 +538,8 @@ section h2 {
     background-color: #e9f5e9;
 }
 
-/* --- INÍCIO: NOVOS ESTILOS PARA LEITURA PARCIAL --- */
 .dia-leitura-acoes {
-    width: 100%; /* Ocupa a largura total para ficar abaixo do checkbox/label */
+    width: 100%;
     display: flex;
     flex-direction: column;
     margin-top: 8px;
@@ -529,7 +586,6 @@ section h2 {
 .leitura-parcial-save-btn:hover {
     background-color: #6a006a;
 }
-/* --- FIM: NOVOS ESTILOS PARA LEITURA PARCIAL --- */
 
 
 /* Aviso de Atraso & Recálculo */
@@ -572,7 +628,7 @@ section h2 {
     background-color: #e0a800;
 }
 
-/* --- Seção de Leituras Atrasadas --- */
+/* Seção de Leituras Atrasadas */
 #leituras-atrasadas-section { background-color: #fff8e1; padding: 15px 20px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #ffecb3; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
 #leituras-atrasadas-section h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.3em; font-family: 'Ubuntu', sans-serif; color: #e65100; border-bottom: 1px solid #ffe0b2; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 #leituras-atrasadas-section h2 .material-symbols-outlined { font-size: 1.3em; vertical-align: bottom; color: #e65100; }
@@ -585,7 +641,7 @@ section h2 {
 .leitura-atrasada-paginas { color: #666; font-size: 0.9em; flex-shrink: 0; background-color: #f1f1f1; padding: 3px 8px; border-radius: 4px; white-space: nowrap; order: 3; margin-left: auto; }
 #sem-leituras-atrasadas { text-align: center; color: #584400; font-style: italic; margin-top: 10px; padding: 10px; background-color: #fff; border: 1px dashed #ddd; border-radius: 5px; }
 
-/* --- Seção de Próximas Leituras --- */
+/* Seção de Próximas Leituras */
 #proximas-leituras-section { background-color: #f0f8ff; padding: 15px 20px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #d6eaff; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
 #proximas-leituras-section h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.3em; font-family: 'Ubuntu', sans-serif; color: #0056b3; border-bottom: 1px solid #d6eaff; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 #proximas-leituras-section h2 .material-symbols-outlined { font-size: 1.3em; vertical-align: bottom; }
@@ -598,7 +654,7 @@ section h2 {
 .proxima-leitura-paginas { color: #666; font-size: 0.9em; flex-shrink: 0; background-color: #f1f1f1; padding: 3px 8px; border-radius: 4px; white-space: nowrap; order: 3; margin-left: auto; }
 #sem-proximas-leituras { text-align: center; color: #777; font-style: italic; margin-top: 10px; padding: 10px; background-color: #fff; border: 1px dashed #ddd; border-radius: 5px; }
 
-/* --- Seção de Planos Pausados --- */
+/* Seção de Planos Pausados */
 #planos-pausados-section { background-color: #f5f5f5; padding: 15px 20px; margin-bottom: 25px; border-radius: 8px; border: 1px solid #e0e0e0; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06); }
 #planos-pausados-section h2 { margin-top: 0; margin-bottom: 15px; font-size: 1.3em; font-family: 'Ubuntu', sans-serif; color: #616161; border-bottom: 1px solid #e0e0e0; padding-bottom: 8px; display: flex; align-items: center; gap: 8px; }
 #planos-pausados-section h2 .material-symbols-outlined { font-size: 1.3em; vertical-align: bottom; }
@@ -609,7 +665,7 @@ section h2 {
 .plano-pausado-titulo { color: #555; flex-grow: 1; }
 #sem-planos-pausados { text-align: center; color: #777; font-style: italic; margin-top: 10px; padding: 10px; background-color: #fff; border: 1px dashed #ddd; border-radius: 5px; }
 
-/* --- Estado Visual para Card Pausado --- */
+/* Estado Visual para Card Pausado */
 .plano-leitura.card-pausado {
     border-left-color: #bdbdbd;
     background-color: #f9f9f9;
@@ -628,10 +684,10 @@ section h2 {
     background-color: #43a047;
 }
 
-/* --- Tag Numérica nos Painéis --- */
+/* Tag Numérica nos Painéis */
 .numero-plano-tag { display: inline-flex; justify-content: center; align-items: center; background-color: #800080; color: #fff; padding: 0 6px; border-radius: 6px; font-size: 0.8em; font-weight: bold; margin-right: 8px; min-width: 22px; height: 22px; line-height: 22px; text-align: center; vertical-align: middle; flex-shrink: 0; order: 1; box-sizing: border-box; }
 
-/* --- Paginador Flutuante --- */
+/* Paginador Flutuante */
 #paginador-planos {
     display: flex;
     justify-content: center;
@@ -689,10 +745,9 @@ section h2 {
 }
 
 #paginador-planos a#paginador-home-btn .material-symbols-outlined {
-    font-size: 1.4em; /* Opcional: Deixar o ícone de casa um pouco maior */
+    font-size: 1.4em;
 }
 
-/* MODIFICAÇÃO: Estilo para paginador de planos pausados */
 #paginador-planos a.paginador-pausado {
     background-color: #cccccc;
     opacity: 0.7;
@@ -718,7 +773,7 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
 #inicio-cadastro:hover { color: #800080; }
 #inicio-cadastro .material-symbols-outlined { font-size: 1.2em; vertical-align: middle; }
 
-/* --- Tags de Status do Plano --- */
+/* Tags de Status do Plano */
 .status-tag { display: inline-block; padding: 3px 10px; font-size: 0.75em; font-weight: bold; border-radius: 12px; vertical-align: middle; white-space: nowrap; line-height: 1.3; text-transform: uppercase; letter-spacing: 0.5px; order: 1; flex-shrink: 0; }
 .status-proximo { background-color: #e0f7fa; color: #00778a; border: 1px solid #b2ebf2; }
 .status-em-dia { background-color: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
@@ -931,13 +986,45 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     background-color: #6a006a;
 }
 
+/* Estilos para Modal de Changelog (se necessário) */
+.changelog-content {
+    line-height: 1.7;
+}
+
+.changelog-content h3 {
+    font-family: 'Ubuntu', sans-serif;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #800080;
+}
+
+.changelog-content ul {
+    list-style-type: none;
+    padding-left: 10px;
+}
+
+.changelog-content li {
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.changelog-content li::before {
+    content: '✓';
+    position: absolute;
+    left: 0;
+    color: #4caf50;
+    font-weight: bold;
+}
+
+
 /* Animação de feedback visual (flash) */
 @keyframes flash-highlight {
     0% {
-        background-color: #fff9c4; /* Amarelo claro */
+        background-color: #fff9c4;
     }
     100% {
-        background-color: #fff; /* Cor de fundo original do card */
+        background-color: #fff;
     }
 }
 
@@ -993,65 +1080,4 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     .reavaliacao-modal-header h2 { font-size: 1.2em; }
     #tabela-reavaliacao th, #tabela-reavaliacao td { padding: 8px 10px; font-size: 0.9em; }
     .total-paginas-dia { font-size: 1em; }
-}
-
-/* ===== NOVOS ESTILOS PARA A PRIORIDADE 1 ===== */
-
-/* Estilo para os novos cards de informação no header */
-.header-info-tag {
-    display: inline-flex;
-    align-items: center;
-    gap: 6px;
-    background-color: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    padding: 5px 10px;
-    border-radius: 15px;
-    font-size: 0.85em;
-    white-space: nowrap;
-}
-
-/* Efeito de clique para o card de versão */
-#version-info {
-    cursor: pointer;
-    transition: background-color 0.3s ease;
-}
-
-#version-info:hover {
-    background-color: rgba(255, 255, 255, 0.3);
-}
-
-.header-info-tag .material-symbols-outlined {
-    font-size: 1.1em;
-    opacity: 0.8;
-}
-
-/* Estilo para o conteúdo do modal de changelog */
-.changelog-content {
-    line-height: 1.7;
-}
-
-.changelog-content h3 {
-    font-family: 'Ubuntu', sans-serif;
-    margin-top: 20px;
-    margin-bottom: 10px;
-    color: #800080;
-}
-
-.changelog-content ul {
-    list-style-type: none;
-    padding-left: 10px;
-}
-
-.changelog-content li {
-    margin-bottom: 8px;
-    padding-left: 20px;
-    position: relative;
-}
-
-.changelog-content li::before {
-    content: '✓'; /* Ou outro ícone */
-    position: absolute;
-    left: 0;
-    color: #4caf50;
-    font-weight: bold;
 }
