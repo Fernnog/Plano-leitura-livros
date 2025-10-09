@@ -994,3 +994,64 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     #tabela-reavaliacao th, #tabela-reavaliacao td { padding: 8px 10px; font-size: 0.9em; }
     .total-paginas-dia { font-size: 1em; }
 }
+
+/* ===== NOVOS ESTILOS PARA A PRIORIDADE 1 ===== */
+
+/* Estilo para os novos cards de informação no header */
+.header-info-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background-color: rgba(255, 255, 255, 0.15);
+    color: #fff;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 0.85em;
+    white-space: nowrap;
+}
+
+/* Efeito de clique para o card de versão */
+#version-info {
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+}
+
+#version-info:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+}
+
+.header-info-tag .material-symbols-outlined {
+    font-size: 1.1em;
+    opacity: 0.8;
+}
+
+/* Estilo para o conteúdo do modal de changelog */
+.changelog-content {
+    line-height: 1.7;
+}
+
+.changelog-content h3 {
+    font-family: 'Ubuntu', sans-serif;
+    margin-top: 20px;
+    margin-bottom: 10px;
+    color: #800080;
+}
+
+.changelog-content ul {
+    list-style-type: none;
+    padding-left: 10px;
+}
+
+.changelog-content li {
+    margin-bottom: 8px;
+    padding-left: 20px;
+    position: relative;
+}
+
+.changelog-content li::before {
+    content: '✓'; /* Ou outro ícone */
+    position: absolute;
+    left: 0;
+    color: #4caf50;
+    font-weight: bold;
+}
