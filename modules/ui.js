@@ -6,6 +6,7 @@
 
 import * as DOMElements from './dom-elements.js';
 import * as planoLogic from './plano-logic.js';
+import { versionConfig } from '../config/version-config.js'; // IMPORTAÇÃO DA NOVA CONFIGURAÇÃO
 
 // --- Funções de Formatação e Helpers ---
 
@@ -55,8 +56,8 @@ export function showCadastroForm(planoParaEditar = null) {
     DOMElements.cadastroPlanoSection.style.display = 'block';
 
     DOMElements.formPlano.reset();
-    togglePeriodoFields(); // MODIFICAÇÃO: Garante o estado visual inicial correto
-    toggleDiasSemana();   // MODIFICAÇÃO: Garante o estado visual inicial correto
+    togglePeriodoFields();
+    toggleDiasSemana();
 
     if (planoParaEditar) {
         DOMElements.cadastroPlanoSection.querySelector('h2').textContent = 'Editar Plano de Leitura';
@@ -68,6 +69,7 @@ export function showCadastroForm(planoParaEditar = null) {
         DOMElements.definirPorDatasRadio.checked = true;
         DOMElements.periodoPorDatasDiv.style.display = 'block';
         DOMElements.periodoPorDiasDiv.style.display = 'none';
+        DOMElements.periodoPorPaginasDiv.style.display = 'none';
 
         if (planoParaEditar.dataInicio) {
             DOMElements.dataInicio.value = planoParaEditar.dataInicio.toISOString().split('T')[0];
@@ -91,11 +93,6 @@ export function showCadastroForm(planoParaEditar = null) {
     }
 }
 
-// --- NOVAS FUNÇÕES PARA CONTROLE DO FORMULÁRIO ---
-/**
- * Controla a visibilidade dos campos de definição de período no formulário.
- * Esta função corrige os bugs de interface reportados.
- */
 export function togglePeriodoFields() {
     const isPorDatas = DOMElements.definirPorDatasRadio.checked;
     const isPorDias = DOMElements.definirPorDiasRadio.checked;
@@ -105,7 +102,6 @@ export function togglePeriodoFields() {
     DOMElements.periodoPorDiasDiv.style.display = isPorDias ? 'block' : 'none';
     DOMElements.periodoPorPaginasDiv.style.display = isPorPaginas ? 'block' : 'none';
 
-    // Garante que os inputs 'required' só sejam exigidos se estiverem visíveis
     DOMElements.dataInicio.required = isPorDatas;
     DOMElements.dataFim.required = isPorDatas;
     DOMElements.dataInicioDias.required = isPorDias;
@@ -114,10 +110,6 @@ export function togglePeriodoFields() {
     DOMElements.paginasPorDiaInput.required = isPorPaginas;
 }
 
-/**
- * Controla a visibilidade da seleção de dias da semana.
- * Corrige o bug em que a seleção não aparecia.
- */
 export function toggleDiasSemana() {
     if (DOMElements.periodicidadeSelect.value === 'semanal') {
         DOMElements.diasSemanaSelecao.style.display = 'block';
@@ -126,24 +118,23 @@ export function toggleDiasSemana() {
     }
 }
 
-/**
- * Renderiza a estimativa da data de término no formulário.
- * Implementa a melhoria de UX (2.B).
- * @param {Date | null} data - A data estimada ou null se não puder ser calculada.
- */
-export function renderizarDataFimEstimada(data) {
-    const feedbackElement = DOMElements.estimativaDataFimP; // Supondo que você adicionará este elemento no HTML e dom-elements.js
+export function renderizarDataFimEstimada(data, erroMsg = '') {
+    const feedbackElement = DOMElements.estimativaDataFimP;
     if (!feedbackElement) return;
+
+    if (erroMsg) {
+        feedbackElement.textContent = erroMsg;
+        feedbackElement.style.color = '#dc3545'; // Cor de erro
+        return;
+    }
 
     if (data instanceof Date && !isNaN(data)) {
         feedbackElement.textContent = `Estimativa de término: ${formatarData(data)}`;
-        feedbackElement.style.display = 'block';
+        feedbackElement.style.color = '#555'; // Cor padrão
     } else {
         feedbackElement.textContent = '';
-        feedbackElement.style.display = 'none';
     }
 }
-// --- FIM DAS NOVAS FUNÇÕES ---
 
 /** Mostra o formulário de autenticação. */
 export function showAuthForm() {
@@ -171,9 +162,6 @@ export function hideReavaliacaoModal() {
     DOMElements.reavaliacaoModal.classList.remove('visivel');
 }
 
-/**
- * Configura os eventos de interação para o modal de recálculo.
- */
 function setupRecalculoInteractions() {
     DOMElements.recalculoPorDataRadio.addEventListener('change', () => {
         DOMElements.recalculoOpcaoDataDiv.style.display = 'block';
@@ -185,9 +173,8 @@ function setupRecalculoInteractions() {
         DOMElements.recalculoOpcaoPaginasDiv.style.display = 'block';
     });
 }
-setupRecalculoInteractions(); // Chamada da função movida para dentro do módulo
+setupRecalculoInteractions();
 
-/** Mostra o modal de recálculo com os dados do plano e texto do botão customizável. */
 export function showRecalculoModal(plano, planoIndex, buttonText) {
     DOMElements.recalculoPlanoTitulo.textContent = `"${plano.titulo}"`;
     DOMElements.confirmRecalculoBtn.dataset.planoIndex = planoIndex;
@@ -211,38 +198,47 @@ export function showRecalculoModal(plano, planoIndex, buttonText) {
     DOMElements.recalculoModal.classList.add('visivel');
 }
 
-/** Esconde o modal de recálculo. */
 export function hideRecalculoModal() {
     DOMElements.recalculoModal.classList.remove('visivel');
 }
 
-/** Mostra o modal de exportação para agenda. */
 export function showAgendaModal() {
     DOMElements.agendaStartTimeInput.value = "16:30";
     DOMElements.agendaEndTimeInput.value = "17:00";
     DOMElements.agendaModal.classList.add('visivel');
 }
 
-/** Esconde o modal de exportação para agenda. */
 export function hideAgendaModal() {
     DOMElements.agendaModal.classList.remove('visivel');
 }
 
-/** Mostra o modal de changelog. */
+// --- INÍCIO: MODIFICAÇÕES NO MODAL DE CHANGELOG ---
+/** Mostra o modal de changelog, preenchendo-o com dados do versionConfig. */
 export function showChangelogModal() {
+    if (!DOMElements.changelogModal || !DOMElements.changelogModalTitle || !DOMElements.changelogModalContent) return;
+
+    DOMElements.changelogModalTitle.innerHTML = `<span class="material-symbols-outlined">rocket_launch</span> ${versionConfig.changelog.title}`;
+    
+    let contentHTML = '';
+    versionConfig.changelog.sections.forEach(section => {
+        contentHTML += `<h3>${section.title}</h3><ul>`;
+        section.points.forEach(point => {
+            contentHTML += `<li>${point}</li>`;
+        });
+        contentHTML += `</ul>`;
+    });
+    DOMElements.changelogModalContent.innerHTML = contentHTML;
+
     DOMElements.changelogModal.classList.add('visivel');
 }
 
 /** Esconde o modal de changelog. */
 export function hideChangelogModal() {
+    if (!DOMElements.changelogModal) return;
     DOMElements.changelogModal.classList.remove('visivel');
 }
+// --- FIM: MODIFICAÇÕES NO MODAL DE CHANGELOG ---
 
-/**
- * Cria um arquivo em memória e aciona o download no navegador.
- * @param {string} filename - O nome do arquivo a ser baixado.
- * @param {string} content - O conteúdo do arquivo.
- */
 export function triggerDownload(filename, content) {
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content));
@@ -257,10 +253,6 @@ export function triggerDownload(filename, content) {
 }
 
 // --- Funções de Leitura de Dados da UI (Formulário) ---
-/**
- * Coleta e valida os dados do formulário de plano.
- * Versão atualizada para lidar com as 3 opções de período.
- */
 export function getFormData() {
     const definicaoPeriodo = document.querySelector('input[name="definicao-periodo"]:checked').value;
     
@@ -269,7 +261,7 @@ export function getFormData() {
         dataInicio = new Date(DOMElements.dataInicio.value + 'T00:00:00');
     } else if (definicaoPeriodo === 'dias') {
         dataInicio = new Date(DOMElements.dataInicioDias.value + 'T00:00:00');
-    } else { // 'paginas'
+    } else {
         dataInicio = new Date(DOMElements.dataInicioPaginas.value + 'T00:00:00');
     }
 
@@ -288,7 +280,7 @@ export function getFormData() {
         formData.dataFim = new Date(DOMElements.dataFim.value + 'T00:00:00');
     } else if (formData.definicaoPeriodo === 'dias') {
         formData.numeroDias = parseInt(DOMElements.numeroDias.value, 10);
-    } else { // 'paginas'
+    } else {
         formData.paginasPorDia = parseInt(DOMElements.paginasPorDiaInput.value, 10);
     }
 
@@ -443,8 +435,10 @@ function renderizarPaginador(planos) {
     DOMElements.paginadorPlanosDiv.classList.remove('hidden');
 }
 
-
+// --- INÍCIO: CORREÇÃO DE BUG CRÍTICO ---
 function renderizarPainelProximasLeituras(planos, totalPlanos) {
+    if (!DOMElements.proximasLeiturasSection) return; // GUARDA DE SEGURANÇA
+
     const planosAtivos = planos.filter(p => !p.isPaused);
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -476,6 +470,8 @@ function renderizarPainelProximasLeituras(planos, totalPlanos) {
 }
 
 function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
+    if (!DOMElements.leiturasAtrasadasSection) return; // GUARDA DE SEGURANÇA
+
     const planosAtivos = planos.filter(p => !p.isPaused);
     const hoje = new Date();
     hoje.setHours(0, 0, 0, 0);
@@ -498,15 +494,7 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
                 <span class="leitura-atrasada-paginas">Pág. ${dia.paginaInicioDia}-${dia.paginaFimDia}</span>
             </div>
         `).join('');
-        
-        // CORREÇÃO PARA O BUG:
-        // Verificamos se o elemento existe ANTES de tentar usá-lo.
-        if (DOMElements.listaLeiturasAtrasadasDiv) {
-            DOMElements.listaLeiturasAtrasadasDiv.innerHTML = html;
-        } else {
-            console.error("ARQUITETO AVISA: O elemento 'lista-leituras-atrasadas' não foi encontrado no DOM. Verifique se o ID está correto no seu arquivo index.html.");
-        }
-        
+        DOMElements.listaLeiturasAtrasadasDiv.innerHTML = html;
         DOMElements.semLeiturasAtrasadasP.style.display = 'none';
         DOMElements.leiturasAtrasadasSection.style.display = 'block';
     } else {
@@ -515,6 +503,8 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
 }
 
 function renderizarPainelPlanosPausados(planos, totalPlanos) {
+    if (!DOMElements.planosPausadosSection) return; // GUARDA DE SEGURANÇA
+
     const planosPausados = planos.filter(plano => plano.isPaused);
 
     if (planosPausados.length > 0) {
@@ -535,6 +525,7 @@ function renderizarPainelPlanosPausados(planos, totalPlanos) {
         DOMElements.planosPausadosSection.style.display = 'none';
     }
 }
+// --- FIM: CORREÇÃO DE BUG CRÍTICO ---
 
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
@@ -602,6 +593,7 @@ export function renderizarModalReavaliacaoCompleto(dadosCarga, planos, totalPlan
 export function renderApp(planos, user) {
     console.log('[UI] Renderizando a aplicação completa...');
 
+    // --- INÍCIO: MODIFICAÇÃO LÓGICA DO HEADER ---
     if (user) {
         DOMElements.showAuthButton.style.display = 'none';
         DOMElements.authFormDiv.style.display = 'none';
@@ -611,10 +603,12 @@ export function renderApp(planos, user) {
         DOMElements.exportarAgendaBtn.style.display = 'inline-flex';
         DOMElements.reavaliarCargaBtn.style.display = 'inline-flex';
 
-        // LÓGICA DO CABEÇALHO
-        DOMElements.userEmailDisplaySpan.textContent = user.email;
-        DOMElements.versionInfoDiv.style.display = 'inline-flex';
-        DOMElements.userEmailInfoDiv.style.display = 'inline-flex';
+        // Lógica para o novo header
+        if (DOMElements.headerMetaInfoDiv) {
+            DOMElements.userEmailDisplaySpan.textContent = user.email;
+            DOMElements.versionDisplaySpan.textContent = `v${versionConfig.version}`;
+            DOMElements.headerMetaInfoDiv.style.display = 'flex';
+        }
 
     } else {
         DOMElements.showAuthButton.style.display = 'inline-flex';
@@ -625,10 +619,12 @@ export function renderApp(planos, user) {
         DOMElements.reavaliarCargaBtn.style.display = 'none';
         hideAuthForm();
         
-        // LÓGICA DO CABEÇALHO
-        DOMElements.versionInfoDiv.style.display = 'none';
-        DOMElements.userEmailInfoDiv.style.display = 'none';
+        // Esconde o novo header se não houver usuário
+        if (DOMElements.headerMetaInfoDiv) {
+            DOMElements.headerMetaInfoDiv.style.display = 'none';
+        }
     }
+    // --- FIM: MODIFICAÇÃO LÓGICA DO HEADER ---
 
     if (planos && planos.length > 0) {
         renderizarPainelProximasLeituras(planos, planos.length);
@@ -663,3 +659,4 @@ export function toggleLoading(isLoading) {
     console.log(`[UI] Carregamento: ${isLoading ? 'ON' : 'OFF'}`);
     document.body.style.cursor = isLoading ? 'wait' : 'default';
 }
+// --- END OF FILE ui.js ---
