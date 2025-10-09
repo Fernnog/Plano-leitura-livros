@@ -1,4 +1,4 @@
-// --- START OF FILE modules/dom-elements.js (COMPLETO E MODIFICADO) ---
+// --- START OF FILE modules/dom-elements.js ---
 
 // modules/dom-elements.js
 // RESPONSABILIDADE ÚNICA: Selecionar e exportar todos os elementos do DOM
@@ -13,7 +13,7 @@ export const proximasLeiturasSection = document.getElementById('proximas-leitura
 export const listaProximasLeiturasDiv = document.getElementById('lista-proximas-leituras');
 export const semProximasLeiturasP = document.getElementById('sem-proximas-leituras');
 export const leiturasAtrasadasSection = document.getElementById('leituras-atrasadas-section');
-export const listaLeiturasAtrasadasDiv = document.getElementById('lista-leitures-atrasadas');
+export const listaLeiturasAtrasadasDiv = document.getElementById('lista-leituras-atrasadas');
 export const semLeiturasAtrasadasP = document.getElementById('sem-leituras-atrasadas');
 export const planosPausadosSection = document.getElementById('planos-pausados-section');
 export const listaPlanosPausadosDiv = document.getElementById('lista-planos-pausados');
@@ -27,6 +27,14 @@ export const exportarAgendaBtn = document.getElementById('exportar-agenda');
 export const inicioCadastroBtn = document.getElementById('inicio-cadastro');
 export const reavaliarCargaBtn = document.getElementById('reavaliar-carga-btn');
 
+// --- Informações de Versão e Usuário no Header (NOVO) ---
+export const headerMetaInfoDiv = document.getElementById('header-meta-info');
+export const versionInfoDiv = document.getElementById('version-info');
+export const versionDisplaySpan = document.getElementById('version-display');
+export const userEmailInfoDiv = document.getElementById('user-email-info');
+export const userEmailDisplaySpan = document.getElementById('user-email-display');
+
+
 // --- Autenticação ---
 export const authFormDiv = document.getElementById('auth-form');
 export const showAuthButton = document.getElementById('show-auth-button');
@@ -36,17 +44,6 @@ export const signupEmailButton = document.getElementById('signup-email-button');
 export const emailLoginInput = document.getElementById('email-login');
 export const passwordLoginInput = document.getElementById('password-login');
 export const logoutButton = document.getElementById('logout-button');
-
-// --- INÍCIO DA MODIFICAÇÃO (Prioridade 1) ---
-// Info do Header
-export const versionInfoDiv = document.getElementById('version-info');
-export const userEmailInfoDiv = document.getElementById('user-email-info');
-export const userEmailDisplaySpan = document.getElementById('user-email-display');
-
-// Modal de Changelog
-export const changelogModal = document.getElementById('changelog-modal');
-export const changelogModalCloseBtn = document.getElementById('changelog-modal-close-btn');
-// --- FIM DA MODIFICAÇÃO ---
 
 // --- Formulário de Cadastro/Edição de Plano ---
 export const formPlano = document.getElementById('form-plano');
@@ -69,6 +66,13 @@ export const tituloLivroInput = document.getElementById('titulo-livro');
 export const paginaInicioInput = document.getElementById('pagina-inicio');
 export const paginaFimInput = document.getElementById('pagina-fim');
 export const estimativaDataFimP = document.getElementById('estimativa-data-fim');
+
+// --- Modal de Changelog (NOVO) ---
+export const changelogModal = document.getElementById('changelog-modal');
+export const changelogModalCloseBtn = document.getElementById('changelog-modal-close-btn');
+export const changelogModalTitle = document.getElementById('changelog-modal-title');
+export const changelogModalContent = document.getElementById('changelog-modal-content');
+
 
 // --- Modal de Reavaliação ---
 export const reavaliacaoModal = document.getElementById('reavaliacao-modal');
@@ -94,7 +98,9 @@ export const novaPaginasPorDiaInput = document.getElementById('nova-paginas-por-
 // --- Modal de Exportação de Agenda ---
 export const agendaModal = document.getElementById('agenda-modal');
 export const confirmAgendaExportBtn = document.getElementById('confirm-agenda-export');
-export const cancelAgendaExportBtn = document.getElementById('cancel-agenda-export'); 
+export const cancelAgendaExportBtn = document.getElementById('cancel-agenda-export');
 export const cancelAgendaExportBtnBottom = document.getElementById('cancel-agenda-export-btn');
 export const agendaStartTimeInput = document.getElementById('agenda-start-time');
 export const agendaEndTimeInput = document.getElementById('agenda-end-time');
+
+// --- END OF FILE modules/dom-elements.js ---
