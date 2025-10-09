@@ -60,9 +60,6 @@ function setupEventHandlers() {
     // Formulário de Plano
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
-    // MODIFICAÇÃO: Listeners de interação do formulário foram REMOVIDOS daqui
-    // e movidos para o novo módulo form-handler.js, conforme a melhoria de arquitetura.
-
     // Ações nos Cards (Event Delegation)
     DOMElements.listaPlanos.addEventListener('click', handleCardAction);
 
@@ -95,6 +92,45 @@ function setupEventHandlers() {
     DOMElements.agendaModal.addEventListener('click', (e) => {
         if (e.target === DOMElements.agendaModal) ui.hideAgendaModal();
     });
+
+    // --- INÍCIO DA CORREÇÃO E MELHORIAS ---
+    
+    // Modal de Changelog (Novidades da Versão)
+    if (DOMElements.versionInfoDiv) {
+        DOMElements.versionInfoDiv.addEventListener('click', ui.showChangelogModal);
+    }
+    if (DOMElements.changelogModalCloseBtn) {
+        DOMElements.changelogModalCloseBtn.addEventListener('click', ui.hideChangelogModal);
+    }
+    if (DOMElements.changelogModal) {
+        DOMElements.changelogModal.addEventListener('click', (e) => {
+            if (e.target === DOMElements.changelogModal) {
+                ui.hideChangelogModal();
+            }
+        });
+    }
+
+    // MELHORIA DE UX: Fechar modais com a tecla 'Escape'
+    document.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+            // Verifica qual modal está visível e o fecha
+            if (DOMElements.reavaliacaoModal.classList.contains('visivel')) {
+                ui.hideReavaliacaoModal();
+            }
+            if (DOMElements.recalculoModal.classList.contains('visivel')) {
+                ui.hideRecalculoModal();
+            }
+            if (DOMElements.agendaModal.classList.contains('visivel')) {
+                ui.hideAgendaModal();
+            }
+            // A verificação 'DOMElements.changelogModal' é importante caso o elemento não exista
+            if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) {
+                ui.hideChangelogModal();
+            }
+        }
+    });
+
+    // --- FIM DA CORREÇÃO E MELHORIAS ---
 }
 
 
@@ -386,5 +422,3 @@ function handleModalReavaliacaoAction(event) {
         ui.showRecalculoModal(plano, planoIndex, 'Confirmar Remanejamento');
     }, 300);
 }
-
-// --- END OF FILE main.js ---
