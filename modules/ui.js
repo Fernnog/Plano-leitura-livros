@@ -132,7 +132,7 @@ export function toggleDiasSemana() {
  * @param {Date | null} data - A data estimada ou null se não puder ser calculada.
  */
 export function renderizarDataFimEstimada(data) {
-    const feedbackElement = DOMElements.estimativaDataFim; // Supondo que você adicionará este elemento no HTML e dom-elements.js
+    const feedbackElement = DOMElements.estimativaDataFimP; // Supondo que você adicionará este elemento no HTML e dom-elements.js
     if (!feedbackElement) return;
 
     if (data instanceof Date && !isNaN(data)) {
@@ -226,6 +226,16 @@ export function showAgendaModal() {
 /** Esconde o modal de exportação para agenda. */
 export function hideAgendaModal() {
     DOMElements.agendaModal.classList.remove('visivel');
+}
+
+/** Mostra o modal de changelog. */
+export function showChangelogModal() {
+    DOMElements.changelogModal.classList.add('visivel');
+}
+
+/** Esconde o modal de changelog. */
+export function hideChangelogModal() {
+    DOMElements.changelogModal.classList.remove('visivel');
 }
 
 /**
@@ -592,6 +602,13 @@ export function renderApp(planos, user) {
         DOMElements.inicioBtn.style.display = 'inline-flex';
         DOMElements.exportarAgendaBtn.style.display = 'inline-flex';
         DOMElements.reavaliarCargaBtn.style.display = 'inline-flex';
+
+        // INÍCIO DA MODIFICAÇÃO
+        DOMElements.userEmailDisplaySpan.textContent = user.email;
+        DOMElements.versionInfoDiv.style.display = 'inline-flex';
+        DOMElements.userEmailInfoDiv.style.display = 'inline-flex';
+        // FIM DA MODIFICAÇÃO
+
     } else {
         DOMElements.showAuthButton.style.display = 'inline-flex';
         DOMElements.logoutButton.style.display = 'none';
@@ -600,6 +617,11 @@ export function renderApp(planos, user) {
         DOMElements.exportarAgendaBtn.style.display = 'none';
         DOMElements.reavaliarCargaBtn.style.display = 'none';
         hideAuthForm();
+        
+        // INÍCIO DA MODIFICAÇÃO
+        DOMElements.versionInfoDiv.style.display = 'none';
+        DOMElements.userEmailInfoDiv.style.display = 'none';
+        // FIM DA MODIFICAÇÃO
     }
 
     if (planos && planos.length > 0) {
@@ -635,5 +657,3 @@ export function toggleLoading(isLoading) {
     console.log(`[UI] Carregamento: ${isLoading ? 'ON' : 'OFF'}`);
     document.body.style.cursor = isLoading ? 'wait' : 'default';
 }
-
-// --- END OF FILE ui.js ---
