@@ -22,59 +22,58 @@
 </head>
 <body>
     <header>
+        <!-- NOVO CONTAINER PARA INFORMAÇÕES DE VERSÃO E USUÁRIO -->
+        <div id="header-meta-info" style="display: none;">
+            <div id="version-info" class="header-info-tag">
+                <span class="material-symbols-outlined">info</span>
+                <span id="version-display"></span> <!-- O número da versão virá aqui -->
+            </div>
+            <div id="user-email-info" class="header-info-tag">
+                <span class="material-symbols-outlined">person</span>
+                <span id="user-email-display"></span>
+            </div>
+        </div>
+
         <div class="header-top">
             <img src="logo.png" alt="Logo do Gerenciador de Planos de Leitura: livro aberto com calendário, gradiente vermelho-rosa-roxo-azul" class="logo">
             <h1>Gerenciador de Planos de Leitura</h1>
         </div>
         <hr class="header-separator">
+        <div class="acoes-dados">
+            <!-- Botões Principais -->
+            <button id="novo-plano" style="display: none;">
+                <span class="material-symbols-outlined">description</span> Novo
+            </button>
+            <button id="inicio" style="display: none;">
+                <span class="material-symbols-outlined">home</span> Início
+            </button>
+            <button id="exportar-agenda" style="display: none;">
+                <span class="material-symbols-outlined">event_note</span> Agenda
+            </button>
+            <button id="reavaliar-carga-btn" style="display: none;">
+                <span class="material-symbols-outlined">balance</span> Reavaliar
+            </button>
 
-        <!-- NOVA ESTRUTURA PARA ORGANIZAÇÃO -->
-        <div class="header-controls-wrapper">
-            <!-- NOVA LINHA: Controles de sessão e usuário alinhados à direita -->
-            <div class="user-session-controls">
-                <div id="version-info" class="header-info-tag" style="display: none;">
-                    <span class="material-symbols-outlined">info</span>
-                    <span>v1.0.1</span>
-                </div>
-                <div id="user-email-info" class="header-info-tag" style="display: none;">
-                    <span class="material-symbols-outlined">person</span>
-                    <span id="user-email-display"></span>
-                </div>
-                 <button id="logout-button" style="display: none;">
-                    <span class="material-symbols-outlined">logout</span> Sair
-                </button>
+            <!-- Formulário de Autenticação -->
+            <div id="auth-form" style="display: none;">
+                <input type="email" id="email-login" placeholder="Seu Email" required title="Digite seu email para login ou cadastro">
+                <input type="password" id="password-login" placeholder="Sua Senha" required title="Digite sua senha (mínimo 6 caracteres para cadastro)">
+                <button id="login-email-button" title="Entrar com seu email e senha">Login</button>
+                <button id="signup-email-button" title="Criar uma nova conta com seu email e senha">Cadastrar</button>
+                <button id="cancel-auth-button" style="display: none;" title="Fechar formulário de login/cadastro">Cancelar</button>
             </div>
 
-            <!-- LINHA PRINCIPAL: Ações e formulário de login -->
-            <div class="acoes-dados">
-                <!-- Botões Principais -->
-                <button id="novo-plano" style="display: none;">
-                    <span class="material-symbols-outlined">description</span> Novo
-                </button>
-                <button id="inicio" style="display: none;">
-                    <span class="material-symbols-outlined">home</span> Início
-                </button>
-                <button id="exportar-agenda" style="display: none;">
-                    <span class="material-symbols-outlined">event_note</span> Agenda
-                </button>
-                <button id="reavaliar-carga-btn" style="display: none;">
-                    <span class="material-symbols-outlined">balance</span> Reavaliar
-                </button>
-
-                <!-- Formulário de Autenticação -->
-                <div id="auth-form" style="display: none;">
-                    <input type="email" id="email-login" placeholder="Seu Email" required title="Digite seu email para login ou cadastro">
-                    <input type="password" id="password-login" placeholder="Sua Senha" required title="Digite sua senha (mínimo 6 caracteres para cadastro)">
-                    <button id="login-email-button" title="Entrar com seu email e senha">Login</button>
-                    <button id="signup-email-button" title="Criar uma nova conta com seu email e senha">Cadastrar</button>
-                    <button id="cancel-auth-button" style="display: none;" title="Fechar formulário de login/cadastro">Cancelar</button>
-                </div>
-
-                <!-- Botão de Login principal -->
-                <button id="show-auth-button" style="display: block;">
-                    <span class="material-symbols-outlined">login</span> Login/Cadastro
-                </button>
-            </div>
+            <!-- Botões de Controle de Autenticação -->
+            <button id="show-auth-button" style="display: block;">
+                <span class="material-symbols-outlined">login</span> Login/Cadastro
+            </button>
+            <button id="logout-button" style="display: none;">
+                <span class="material-symbols-outlined">logout</span> Sair
+            </button>
+            
+            <button id="sync-firebase" style="display: none;">
+                <span class="material-symbols-outlined">cloud_sync</span> Sincronizar com Firebase
+            </button>
         </div>
     </header>
 
@@ -316,26 +315,14 @@
         <div id="changelog-modal" class="reavaliacao-modal-overlay">
             <div class="reavaliacao-modal-content">
                 <div class="reavaliacao-modal-header">
-                    <h2><span class="material-symbols-outlined">rocket_launch</span> Novidades da Versão 1.0.1</h2>
+                    <h2 id="changelog-modal-title"><span class="material-symbols-outlined">rocket_launch</span></h2>
                     <button id="changelog-modal-close-btn" class="reavaliacao-modal-close">×</button>
                 </div>
-                <div class="changelog-content">
-                    <h3>✨ Novas Funcionalidades</h3>
-                    <ul>
-                        <li><strong>Criação de Planos Flexível:</strong> Agora é possível criar planos definindo uma meta de "Páginas por Dia". O sistema calcula a data de término para você!</li>
-                        <li><strong>Análise de Carga Semanal:</strong> Um novo modal "Reavaliar" mostra a distribuição de páginas de todos os seus planos ao longo da semana, ajudando a identificar dias sobrecarregados.</li>
-                        <li><strong>Remanejamento de Planos:</strong> A partir do modal de reavaliação, é possível clicar em um plano para ajustar seus dias de leitura e redistribuir as páginas.</li>
-                    </ul>
-                    <h3>🐛 Correções e Melhorias</h3>
-                    <ul>
-                        <li>A lógica de cálculo de planos foi otimizada para maior precisão.</li>
-                        <li>Melhorias na interface de criação de planos para maior clareza.</li>
-                        <li>O código-fonte foi refatorado para uma arquitetura modular, tornando o sistema mais robusto e fácil de manter.</li>
-                    </ul>
+                <div id="changelog-modal-content" class="changelog-content">
+                    <!-- Conteúdo será injetado dinamicamente via JavaScript -->
                 </div>
             </div>
         </div>
-
     </main>
 
     <footer>
