@@ -3,12 +3,12 @@
   "name": "Gerenciador de Planos de Leitura",
   "short_name": "Planos Leitura",
   "description": "Gerencie e acompanhe seus planos de leitura de livros facilmente.",
-  "start_url": ".",
+  "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#f8f8f8",
   "theme_color": "#800080",
   "orientation": "portrait-primary",
-  "scope": "/",
+ "scope": "./",
   "icons": [
     {
       "src": "./imagens/logo_192.png", // Verifique se este caminho está correto!
