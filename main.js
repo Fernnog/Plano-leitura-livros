@@ -9,7 +9,8 @@ import * as authService from './modules/auth.js';
 import * as firestoreService from './modules/firestore-service.js';
 import * as ui from './modules/ui.js';
 import * as planoLogic from './modules/plano-logic.js';
-import * as formHandler from './modules/form-handler.js'; // NOVA IMPORTAÇÃO
+import * as formHandler from './modules/form-handler.js';
+import * as pwaHandler from './modules/pwa-handler.js'; // NOVA IMPORTAÇÃO: Módulo de PWA
 
 // --- Inicialização da Aplicação ---
 document.addEventListener('DOMContentLoaded', initApp);
@@ -17,8 +18,9 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     console.log("[Main] DOM pronto. Iniciando aplicação modularizada.");
     ui.registerServiceWorker();
+    pwaHandler.init(); // NOVA CHAMADA: Inicializa o manipulador de instalação PWA
     setupEventHandlers();
-    formHandler.init(); // NOVA CHAMADA para inicializar o manipulador de formulário
+    formHandler.init(); 
     authService.setupAuthStateObserver(handleAuthStateChange);
 }
 
@@ -93,8 +95,6 @@ function setupEventHandlers() {
         if (e.target === DOMElements.agendaModal) ui.hideAgendaModal();
     });
 
-    // --- INÍCIO DA CORREÇÃO E MELHORIAS ---
-    
     // Modal de Changelog (Novidades da Versão)
     if (DOMElements.versionInfoDiv) {
         DOMElements.versionInfoDiv.addEventListener('click', ui.showChangelogModal);
@@ -129,8 +129,6 @@ function setupEventHandlers() {
             }
         }
     });
-
-    // --- FIM DA CORREÇÃO E MELHORIAS ---
 }
 
 
