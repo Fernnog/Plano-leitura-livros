@@ -1,13 +1,13 @@
 // --- START OF FILE sw.js (AJUSTADO PARA GITHUB PAGES) ---
 
-// Mudei para v3 para garantir que o navegador descarte a versão antiga conflituosa
-const CACHE_NAME = 'gerenciador-leitura-cache-v3';
+// Mudei para v4 para garantir que o navegador baixe o novo manifest.json corrigido
+// e o novo módulo pwa-handler.js
+const CACHE_NAME = 'gerenciador-leitura-cache-v4';
 
 // Define o caminho exato do repositório no GitHub Pages
 const REPO = '/Plano-leitura-livros';
 
 // Lista completa de arquivos essenciais.
-// Agora concatenamos (somamos) o nome do repositório aos caminhos para evitar ambiguidade.
 const urlsToCache = [
   REPO + '/',                 // A raiz da aplicação
   REPO + '/index.html',
@@ -28,6 +28,8 @@ const urlsToCache = [
   REPO + '/modules/state.js',
   REPO + '/modules/auth.js',
   REPO + '/modules/firestore-service.js',
+  REPO + '/modules/pwa-handler.js', // NOVO: Módulo de instalação PWA adicionado ao cache
+  REPO + '/modules/form-handler.js', // Adicionado para garantir que o handler de formulário também esteja offline
   REPO + '/config/firebase-config.js',
   
   // Recursos externos (fontes e ícones) - Estes mantêm-se como URLs absolutas
@@ -37,8 +39,8 @@ const urlsToCache = [
 
 // --- Evento 'install': Cacheia os arquivos e força a ativação ---
 self.addEventListener('install', event => {
-  console.log('[SW Leitura] Evento: install');
-  self.skipWaiting(); // Força a ativação imediata (movido para fora do waitUntil por segurança)
+  console.log('[SW Leitura] Evento: install (v4)');
+  self.skipWaiting(); // Força a ativação imediata para atualizar o App rapidamente
   
   event.waitUntil(
     caches.open(CACHE_NAME)
@@ -59,7 +61,7 @@ self.addEventListener('activate', event => {
         caches.keys().then(cacheNames => {
             return Promise.all(
                 cacheNames.map(cacheName => {
-                    // Se o cache não for o atual (v3) e for um cache antigo deste app, apaga.
+                    // Se o cache não for o atual (v4) e for um cache antigo deste app, apaga.
                     if (cacheName !== CACHE_NAME) {
                         console.log('[SW Leitura] Removendo cache antigo:', cacheName);
                         return caches.delete(cacheName);
@@ -75,28 +77,30 @@ self.addEventListener('activate', event => {
 
 // --- Evento 'fetch': Intercepta requisições de rede ---
 self.addEventListener('fetch', event => {
-  // Ignora requisições que não sejam HTTP/HTTPS
+  // Ignora requisições que não sejam HTTP/HTTPS (ex: chrome-extension://)
   if (!event.request.url.startsWith('http')) {
     return;
   }
 
-  // --- Lógica de Bypass para APIs do Firebase (MANTIDA ORIGINAL) ---
+  // --- Lógica de Bypass para APIs do Firebase ---
   const isFirebaseApiRequest = 
     event.request.url.includes('identitytoolkit.googleapis.com') || 
     event.request.url.includes('firestore.googleapis.com');         
 
   if (isFirebaseApiRequest) {
-    return; // Passa direto para a rede
+    return; // Passa direto para a rede, não cacheia requisições de API
   }
 
   // Estratégia "Cache, falling back to Network"
   event.respondWith(
     caches.match(event.request)
       .then(cachedResponse => {
+        // Se encontrou no cache, retorna
         if (cachedResponse) {
           return cachedResponse;
         }
 
+        // Se não, busca na rede
         return fetch(event.request).then(
           networkResponse => {
             // Cache dinâmico para novos arquivos encontrados (ex: fontes woff2 carregadas pelo CSS)
@@ -114,6 +118,4 @@ self.addEventListener('fetch', event => {
         });
       })
   );
-});
-// --- END OF FILE sw.js ---
-              
+});       
