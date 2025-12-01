@@ -55,15 +55,15 @@ export async function carregarPlanos(user) {
                         ...dia,
                         data: dataDia,
                         lido: Boolean(dia.lido || false),
-                        // NOVA LINHA: Carrega o campo de leitura parcial
-                        ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null
+                        ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null,
+                        // NOVA LINHA: Carrega o objeto complexo de neuro-anotações, se existir
+                        neuroNote: dia.neuroNote || null
                     };
                 }) : [],
                 paginaInicio: Number(plano.paginaInicio) || 1,
                 paginaFim: Number(plano.paginaFim) || 1,
                 totalPaginas: Number(plano.totalPaginas) || 0,
                 paginasLidas: Number(plano.paginasLidas) || 0,
-                // MODIFICAÇÃO: Garante a compatibilidade com planos antigos ao carregar
                 isPaused: plano.isPaused || false,
                 dataPausa: plano.dataPausa ? new Date(plano.dataPausa) : null,
             };
@@ -108,10 +108,10 @@ export async function salvarPlanos(user, planosParaSalvar) {
                 ...dia,
                 data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null,
                 lido: Boolean(dia.lido || false),
-                // NOVA LINHA: Salva o campo de leitura parcial
-                ultimaPaginaLida: dia.ultimaPaginaLida || null
+                ultimaPaginaLida: dia.ultimaPaginaLida || null,
+                // NOVA LINHA: Garante que o objeto neuroNote seja persistido
+                neuroNote: dia.neuroNote || null
             })),
-            // MODIFICAÇÃO: Salva os novos campos de pausa no banco de dados
             isPaused: plano.isPaused || false,
             dataPausa: (plano.isPaused && plano.dataPausa instanceof Date) ? plano.dataPausa.toISOString() : null,
         };
