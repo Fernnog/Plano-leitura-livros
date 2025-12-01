@@ -7,10 +7,14 @@
     <link rel="stylesheet" href="style.css">
     <!-- Link para Material Symbols (Google Fonts) -->
     <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200">
-    <!-- Link para Google Fonts (Roboto e Ubuntu) -->
+    <!-- Link para Google Fonts (Roboto, Ubuntu) - Mantidos -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap" rel="stylesheet">
+    
+    <!-- NOVAS FONTES (NEURO-LEARNING): Inter e Playfair Display -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&family=Playfair+Display:ital,wght@0,600;0,700;1,400&display=swap" rel="stylesheet">
+
     <!-- Favicon -->
     <link rel="icon" href="favicon.ico" type="image/x-icon">
     <!-- Firebase SDK (Módulos ES6) -->
@@ -326,6 +330,27 @@
                 </div>
             </div>
         </div>
+
+        <!-- NOVO MODAL: NEURO-INSIGHTS & M.E.T.A. -->
+        <div id="neuro-modal" class="reavaliacao-modal-overlay">
+            <div class="reavaliacao-modal-content neuro-theme">
+                <div class="reavaliacao-modal-header">
+                    <h2 id="neuro-modal-title"><span class="material-symbols-outlined">psychology</span> Neuro-Insights</h2>
+                    <button id="close-neuro-modal" class="reavaliacao-modal-close">×</button>
+                </div>
+                
+                <!-- Conteúdo Dinâmico Injetado via JS -->
+                <div id="neuro-modal-body" class="neuro-body-content">
+                    <!-- Abas ou seções para M.E.T.A e Gatilhos serão renderizados aqui -->
+                    <p style="color: #666; text-align: center;">Carregando painel cognitivo...</p>
+                </div>
+
+                <div class="recalculo-modal-actions">
+                     <button id="btn-save-neuro" class="button-confirm">Salvar Neuro-Conexão</button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <footer>
