@@ -1,12 +1,12 @@
-// --- START OF FILE ui.js (COMPLETO E MODIFICADO) ---
-
 // modules/ui.js
 // RESPONSABILIDADE ÚNICA: Manipular o DOM, renderizar elementos, ler dados de formulários
 // e gerenciar a visibilidade das seções da UI. Não contém lógica de negócio.
 
 import * as DOMElements from './dom-elements.js';
 import * as planoLogic from './plano-logic.js';
-import { versionConfig } from '../config/version-config.js'; // IMPORTAÇÃO DA NOVA CONFIGURAÇÃO
+import { versionConfig } from '../config/version-config.js'; 
+// Importação necessária para garantir que os listeners do neuro-notes sejam carregados
+import './neuro-notes.js'; 
 
 // --- Funções de Formatação e Helpers ---
 
@@ -40,14 +40,12 @@ export function highlightAndScrollToPlano(planoIndex) {
 
 // --- Funções de Controle de Visibilidade ---
 
-/** Mostra a seção principal com a lista de planos. */
 export function showPlanosList(planos, user) {
     DOMElements.cadastroPlanoSection.style.display = 'none';
     DOMElements.planosLeituraSection.style.display = 'block';
     renderApp(planos, user);
 }
 
-/** Mostra o formulário de cadastro/edição de plano. */
 export function showCadastroForm(planoParaEditar = null) {
     DOMElements.planosLeituraSection.style.display = 'none';
     DOMElements.leiturasAtrasadasSection.style.display = 'none';
@@ -124,26 +122,24 @@ export function renderizarDataFimEstimada(data, erroMsg = '') {
 
     if (erroMsg) {
         feedbackElement.textContent = erroMsg;
-        feedbackElement.style.color = '#dc3545'; // Cor de erro
+        feedbackElement.style.color = '#dc3545';
         return;
     }
 
     if (data instanceof Date && !isNaN(data)) {
         feedbackElement.textContent = `Estimativa de término: ${formatarData(data)}`;
-        feedbackElement.style.color = '#555'; // Cor padrão
+        feedbackElement.style.color = '#555';
     } else {
         feedbackElement.textContent = '';
     }
 }
 
-/** Mostra o formulário de autenticação. */
 export function showAuthForm() {
     DOMElements.authFormDiv.style.display = 'flex';
     DOMElements.cancelAuthButton.style.display = 'inline-flex';
     DOMElements.showAuthButton.style.display = 'none';
 }
 
-/** Esconde o formulário de autenticação. */
 export function hideAuthForm() {
     DOMElements.authFormDiv.style.display = 'none';
     DOMElements.cancelAuthButton.style.display = 'none';
@@ -152,12 +148,10 @@ export function hideAuthForm() {
     }
 }
 
-/** Mostra o modal de reavaliação. */
 export function showReavaliacaoModal() {
     DOMElements.reavaliacaoModal.classList.add('visivel');
 }
 
-/** Esconde o modal de reavaliação. */
 export function hideReavaliacaoModal() {
     DOMElements.reavaliacaoModal.classList.remove('visivel');
 }
@@ -212,8 +206,6 @@ export function hideAgendaModal() {
     DOMElements.agendaModal.classList.remove('visivel');
 }
 
-// --- INÍCIO: MODIFICAÇÕES NO MODAL DE CHANGELOG ---
-/** Mostra o modal de changelog, preenchendo-o com dados do versionConfig. */
 export function showChangelogModal() {
     if (!DOMElements.changelogModal || !DOMElements.changelogModalTitle || !DOMElements.changelogModalContent) return;
 
@@ -232,27 +224,21 @@ export function showChangelogModal() {
     DOMElements.changelogModal.classList.add('visivel');
 }
 
-/** Esconde o modal de changelog. */
 export function hideChangelogModal() {
     if (!DOMElements.changelogModal) return;
     DOMElements.changelogModal.classList.remove('visivel');
 }
-// --- FIM: MODIFICAÇÕES NO MODAL DE CHANGELOG ---
 
 export function triggerDownload(filename, content) {
     const element = document.createElement('a');
     element.setAttribute('href', 'data:text/calendar;charset=utf-8,' + encodeURIComponent(content));
     element.setAttribute('download', filename);
-
     element.style.display = 'none';
     document.body.appendChild(element);
-
     element.click();
-
     document.body.removeChild(element);
 }
 
-// --- Funções de Leitura de Dados da UI (Formulário) ---
 export function getFormData() {
     const definicaoPeriodo = document.querySelector('input[name="definicao-periodo"]:checked').value;
     
@@ -303,7 +289,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização ---
+// --- Funções de Renderização (MODIFICADO PARA O NOVO DESIGN GRID) ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -356,12 +342,20 @@ function renderizarPlanos(planos, user) {
                 `;
             }
 
+            // Indicador visual de Neuro-Nota (Cérebro)
+            const neuroIcon = dia.neuroNote 
+                ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-anotação salva">psychology</span>` 
+                : '';
+
             return `
             <div class="dia-leitura ${dia.lido ? 'lido' : ''}">
-                <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
-                <label for="dia-${index}-${diaIndex}">
-                    <strong>${formatarData(dia.data)}:</strong> Pág. ${dia.paginaInicioDia} a ${dia.paginaFimDia} (${dia.paginas} pág.)
-                </label>
+                <div style="display:flex; align-items:center; width:100%;">
+                    <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
+                    <label for="dia-${index}-${diaIndex}" style="margin-left:8px;">
+                        <strong>${formatarData(dia.data)}:</strong> Pág. ${dia.paginaInicioDia} a ${dia.paginaFimDia}
+                        ${neuroIcon}
+                    </label>
+                </div>
                 ${acoesDiaHTML}
             </div>
         `}).join('');
@@ -377,6 +371,42 @@ function renderizarPlanos(planos, user) {
                 </div>
             </div>
         ` : '';
+
+        // --- ESTILOS INLINE TEMPORÁRIOS PARA O GRID (Substitui o style.css nesta fase) ---
+        const gridLayoutStyle = `
+            display: grid;
+            grid-template-columns: 1fr 200px;
+            gap: 20px;
+            margin-top: 15px;
+        `;
+        const leftColStyle = ``; // Coluna do cronograma
+        const rightColStyle = `
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            border-left: 1px dashed #e0e0e0;
+            padding-left: 15px;
+            justify-content: flex-start;
+        `;
+        
+        const btnNeuroStyle = `
+            background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
+            border: 1px solid #1a252f;
+            color: #1a252f;
+            padding: 10px;
+            border-radius: 8px;
+            font-family: 'Playfair Display', serif;
+            font-size: 0.9em;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            width: 100%;
+            text-align: center;
+        `;
 
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
@@ -402,14 +432,57 @@ function renderizarPlanos(planos, user) {
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
-                <h4 class="dias-leitura-titulo">Cronograma de Leitura:</h4>
-                <div class="dias-leitura">${diasLeituraHTML}</div>
+                <!-- NOVO LAYOUT EM GRID -->
+                <div class="plano-leitura-grid" style="${gridLayoutStyle}">
+                    <!-- Coluna Esquerda: Cronograma -->
+                    <div style="${leftColStyle}">
+                        <h4 class="dias-leitura-titulo" style="margin-top:0;">Cronograma de Leitura:</h4>
+                        <div class="dias-leitura">${diasLeituraHTML}</div>
+                    </div>
+
+                    <!-- Coluna Direita: Painel Neuro-Cognitivo -->
+                    <div class="neuro-panel" style="${rightColStyle}">
+                        <h4 style="margin:0 0 10px 0; font-family:'Playfair Display',serif; color:#d35400; font-size:0.9em; text-transform:uppercase;">Painel Neuro</h4>
+                        
+                        <button style="${btnNeuroStyle}" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
+                            <span class="material-symbols-outlined" style="color:#d35400;">psychology_alt</span>
+                            <span>Anotar</span>
+                        </button>
+                        
+                        <button style="${btnNeuroStyle}" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
+                            <span class="material-symbols-outlined" style="color:#2980b9;">download</span>
+                            <span>Baixar</span>
+                        </button>
+
+                         <div style="margin-top:auto; font-size:0.75em; color:#7f8c8d; text-align:center; background:#fdfbf7; padding:8px; border-radius:4px; font-style:italic;">
+                            "Renovação da mente"
+                         </div>
+                    </div>
+                </div>
             </div>
+            <!-- Estilo responsivo forçado para garantir que o grid quebre em mobile -->
+            <style>
+                @media (max-width: 650px) {
+                    #plano-${index} .plano-leitura-grid {
+                        grid-template-columns: 1fr !important;
+                    }
+                    #plano-${index} .neuro-panel {
+                        border-left: none !important;
+                        border-top: 1px dashed #e0e0e0;
+                        padding-left: 0 !important;
+                        padding-top: 15px;
+                        flex-direction: row !important;
+                        flex-wrap: wrap;
+                    }
+                    #plano-${index} .neuro-panel button {
+                        flex: 1;
+                    }
+                }
+            </style>
         `;
     });
     DOMElements.listaPlanos.innerHTML = html;
 }
-
 
 function renderizarPaginador(planos) {
     const totalPlanos = planos.length;
@@ -435,9 +508,8 @@ function renderizarPaginador(planos) {
     DOMElements.paginadorPlanosDiv.classList.remove('hidden');
 }
 
-// --- INÍCIO: CORREÇÃO DE BUG CRÍTICO ---
 function renderizarPainelProximasLeituras(planos, totalPlanos) {
-    if (!DOMElements.proximasLeiturasSection) return; // GUARDA DE SEGURANÇA
+    if (!DOMElements.proximasLeiturasSection) return;
 
     const planosAtivos = planos.filter(p => !p.isPaused);
     const hoje = new Date();
@@ -470,7 +542,7 @@ function renderizarPainelProximasLeituras(planos, totalPlanos) {
 }
 
 function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
-    if (!DOMElements.leiturasAtrasadasSection) return; // GUARDA DE SEGURANÇA
+    if (!DOMElements.leiturasAtrasadasSection) return;
 
     const planosAtivos = planos.filter(p => !p.isPaused);
     const hoje = new Date();
@@ -503,7 +575,7 @@ function renderizarPainelLeiturasAtrasadas(planos, totalPlanos) {
 }
 
 function renderizarPainelPlanosPausados(planos, totalPlanos) {
-    if (!DOMElements.planosPausadosSection) return; // GUARDA DE SEGURANÇA
+    if (!DOMElements.planosPausadosSection) return;
 
     const planosPausados = planos.filter(plano => plano.isPaused);
 
@@ -525,7 +597,6 @@ function renderizarPainelPlanosPausados(planos, totalPlanos) {
         DOMElements.planosPausadosSection.style.display = 'none';
     }
 }
-// --- FIM: CORREÇÃO DE BUG CRÍTICO ---
 
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
@@ -589,11 +660,9 @@ export function renderizarModalReavaliacaoCompleto(dadosCarga, planos, totalPlan
     renderizarLegendaReavaliacao(planos, totalPlanos);
 }
 
-// --- Função Principal de Renderização da Aplicação ---
 export function renderApp(planos, user) {
     console.log('[UI] Renderizando a aplicação completa...');
 
-    // --- INÍCIO: MODIFICAÇÃO LÓGICA DO HEADER ---
     if (user) {
         DOMElements.showAuthButton.style.display = 'none';
         DOMElements.authFormDiv.style.display = 'none';
@@ -603,7 +672,6 @@ export function renderApp(planos, user) {
         DOMElements.exportarAgendaBtn.style.display = 'inline-flex';
         DOMElements.reavaliarCargaBtn.style.display = 'inline-flex';
 
-        // Lógica para o novo header
         if (DOMElements.headerMetaInfoDiv) {
             DOMElements.userEmailDisplaySpan.textContent = user.email;
             DOMElements.versionDisplaySpan.textContent = `v${versionConfig.version}`;
@@ -619,12 +687,10 @@ export function renderApp(planos, user) {
         DOMElements.reavaliarCargaBtn.style.display = 'none';
         hideAuthForm();
         
-        // Esconde o novo header se não houver usuário
         if (DOMElements.headerMetaInfoDiv) {
             DOMElements.headerMetaInfoDiv.style.display = 'none';
         }
     }
-    // --- FIM: MODIFICAÇÃO LÓGICA DO HEADER ---
 
     if (planos && planos.length > 0) {
         renderizarPainelProximasLeituras(planos, planos.length);
@@ -643,8 +709,6 @@ export function renderApp(planos, user) {
     }
 }
 
-// --- Funções Auxiliares (PWA, Loading, etc) ---
-
 export function registerServiceWorker() {
     if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
@@ -659,4 +723,3 @@ export function toggleLoading(isLoading) {
     console.log(`[UI] Carregamento: ${isLoading ? 'ON' : 'OFF'}`);
     document.body.style.cursor = isLoading ? 'wait' : 'default';
 }
-// --- END OF FILE ui.js ---
