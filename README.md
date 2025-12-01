@@ -1,104 +1,140 @@
-# 📚 Gerenciador de Planos de Leitura ✨
+# 🧠 Gerenciador de Planos de Leitura & Neuroaprendizagem Teológica
 
 [![Logo](logo.png)](https://fernnog.github.io/Plano-leitura-livros/)
 
-**Nunca mais perca o fio da meada em suas leituras!** Este aplicativo web ajuda você a criar, gerenciar e acompanhar seus planos de leitura de forma organizada e motivadora. Defina seus objetivos, equilibre sua rotina e mantenha-se em dia com suas metas literárias.
+> **"Não se amoldem ao padrão deste mundo, mas transformem-se pela renovação da sua mente." — Romanos 12:2**
 
-**➡️ Acesse a demonstração ao vivo:** [**Gerenciador de Planos de Leitura**](https://fernnog.github.io/Plano-leitura-livros/)
+Bem-vindo a uma nova categoria de ferramenta de estudos. O **Gerenciador de Planos de Leitura** evoluiu de um simples rastreador de progresso para uma plataforma robusta de **Neuroteologia Aplicada**.
 
----
+Este projeto parte da premissa de que a leitura teológica ou técnica não deve ser passiva. Para que haja aprendizado real e mudança de comportamento (santificação/prática), o cérebro precisa ser engajado através de mecanismos específicos de codificação, consolidação e recuperação de memória.
 
-## 🚀 Principais Funcionalidades
-
-*   **📅 Criação Flexível de Planos:**
-    *   Defina o **título**, **páginas de início e fim** do livro.
-    *   Escolha o período por **datas específicas** ou por **número de dias**.
-    *   Selecione a **periodicidade**: leia **diariamente** ou apenas em **dias específicos da semana**.
-
-*   **⚖️ Análise e Equilíbrio da Carga Semanal (NOVO!):**
-    *   Clique no botão **"Reavaliar"** para visualizar um quadro completo da sua semana.
-    *   Veja a **média de páginas por dia** somando todos os seus planos ativos.
-    *   Identifique facilmente os dias sobrecarregados e tome decisões para **equilibrar sua rotina de leitura**.
-
-*   **📊 Agendamento Inteligente:**
-    *   O aplicativo calcula e distribui automaticamente as páginas a serem lidas em cada dia válido do seu plano.
-
-*   **🔔 Painel de Controle Dinâmico:**
-    *   **⚠️ Leituras Atrasadas:** Visualize rapidamente as tarefas de leitura mais antigas não concluídas.
-    *   **🗓️ Próximas Leituras:** Veja um resumo das próximas leituras agendadas.
-
-*   **✅ Acompanhamento de Progresso:**
-    *   Marque cada dia de leitura como **concluído** com um simples clique.
-    *   Visualize seu avanço com uma **barra de progresso** e **percentual concluído**.
-
-*   **🚦 Status Visual do Plano:**
-    *   Identifique o status de cada plano com tags coloridas: 🔵 **Próximo**, 🟢 **Em Dia**, 🟠 **Atrasado**, e ⚪ **Concluído**.
-
-*   **🔄 Recálculo de Planos Atrasados:**
-    *   Se um plano ficar atrasado, o app oferece opções para recalcular o cronograma.
-
-*   **🔗 Link para Anotações:**
-    *   Adicione um **link externo** (Google Drive, Notion, etc.) para acessar suas anotações.
-
-*   **🗓️ Exportar para Agenda (.ics):**
-    *   Exporte qualquer plano como um arquivo `.ics` para importar em sua agenda favorita.
-
-*   **✏️ Gerenciamento Completo:**
-    *   **Edite** ou **exclua** planos existentes a qualquer momento.
-
-*   **☁️ Sincronização na Nuvem:**
-    *   Seus planos são salvos automaticamente no **Firebase Firestore**, permitindo acesso de qualquer dispositivo com sua conta.
-
-*   **📱 Design Responsivo:**
-    *   Interface adaptada para uso confortável em desktops, tablets e smartphones.
+**➡️ [Acesse a demonstração ao vivo](https://fernnog.github.io/Plano-leitura-livros/)**
 
 ---
 
-## ✨ Screenshots (Sugestão)
+## 🧬 A Filosofia: Por que "Neuroaprendizagem"?
 
-*Inclua aqui algumas imagens ou GIFs mostrando as principais telas e funcionalidades:*
+A maioria dos leitores sofre da "Curva de Esquecimento de Ebbinghaus", perdendo até 70% do que leram em 24 horas. Este software combate isso integrando princípios de neurociência cognitiva diretamente na interface do usuário.
 
-1.  **Tela Principal:** Visão geral dos planos com status e os painéis de controle.
-2.  **Modal de Reavaliação de Carga:** A nova tabela mostrando a distribuição de páginas por dia da semana.
-3.  **Detalhes de um Plano:** Card do plano expandido mostrando a lista de dias e o progresso.
-4.  **Formulário de Criação/Edição:** Mostrando as opções de data, periodicidade, etc.
+### 1. O Ciclo M.E.T.A.
+Cada sessão de leitura no aplicativo é acompanhada por um **Painel Neuro-Cognitivo** que guia o usuário por quatro estágios mentais obrigatórios:
 
----
+*   **M — Mapear (Priming):** Antes de ler, o usuário é instruído a escanear o texto. Isso ativa o **Sistema Ativador Reticular (SAR)**, preparando as "gavetas mentais" para receber a informação, aumentando a atenção seletiva.
+*   **E — Engajar (Codificação Ativa):** Incentiva a leitura ativa (anotações, grifos). O envolvimento do córtex motor na escrita manual ou digitalização consciente aumenta a retenção.
+*   **T — Traduzir (Síntese/Metacognição):** Baseado na **Técnica Feynman**. O usuário deve explicar o conceito complexo em uma frase simples. Isso expõe a "ilusão de competência" (achar que sabe sem saber).
+*   **A — Aplicar (Plasticidade Neural):** O conhecimento só se torna físico no cérebro através da experiência (*Praxis*). O app exige a definição de uma micro-ação prática derivada da leitura.
 
-## 🛠️ Tecnologias Utilizadas
+### 2. Gatilhos de Memória de Longo Prazo
+O sistema de anotações (Modais) utiliza prompts específicos para "hackear" a amígdala e o hipocampo:
 
-*   **Frontend:** HTML5, CSS3, JavaScript (ES6 Modules)
-    *   A aplicação utiliza uma **arquitetura modular** em JavaScript puro para separar as responsabilidades, garantindo um código limpo, coeso e de fácil manutenção.
-*   **Backend & Infraestrutura:** Firebase
-    *   **Autenticação:** Firebase Authentication (Email/Senha)
-    *   **Banco de Dados:** Firestore (NoSQL Database)
-    *   **Hospedagem:** Firebase Hosting / GitHub Pages
-*   **Design & Ícones:**
-    *   Google Fonts (Roboto, Ubuntu)
-    *   Material Symbols (Ícones)
+*   ⚡ **Erro de Predição (Dopamina):** O usuário registra o que o surpreendeu. O cérebro prioriza biologicamente a atualização de modelos mentais errados.
+*   🔗 **Lei de Hebb (Associação):** *"Neurônios que disparam juntos, permanecem juntos."* O app força a conexão do novo conteúdo com memórias antigas ou versículos conhecidos.
+*   ❤️ **Marcador Somático (Emoção):** Registro da emoção teológica (temor, gratidão, esperança). A emoção atua como uma "cola" química para a memória.
+*   👁️ **Codificação Dupla:** Incentivo ao uso de elementos visuais/imaginéticos, aproveitando que o processamento visual é 60.000x mais rápido que o textual.
 
 ---
 
-## 🏛️ Arquitetura do Projeto
+## 🚀 Funcionalidades do Sistema
 
-O projeto foi refatorado para usar uma arquitetura baseada em módulos ES6, onde cada arquivo tem uma responsabilidade única. Isso melhora a escalabilidade e a organização do código.
+### 🧠 Módulo de Estudo Profundo (Novo)
+*   **Interface Split-View:** O cartão de leitura foi redesenhado. À esquerda, a gestão temporal (cronograma); à direita, o painel de gestão cognitiva.
+*   **Editor de Insights M.E.T.A.:** Um ambiente focado e livre de distrações para registrar os 4 passos do método.
+*   **Exportação Markdown (.md):** Não prenda seu conhecimento no app. Exporte resumos formatados automaticamente (com títulos, datas e tópicos) para ferramentas como Obsidian, Notion, Roam Research ou Logseq.
+*   **Feedback Visual de Progresso:** Ícones indicadores mostram quais dias receberam tratamento cognitivo profundo, não apenas "leitura dinâmica".
 
-*   `main.js`: O **orquestrador** da aplicação. Inicializa os módulos e gerencia o fluxo de eventos principal.
-*   `ui.js`: Responsável por **toda a manipulação do DOM**. Renderiza os componentes, mostra/esconde seções e modais.
-*   `plano-logic.js`: Contém toda a **lógica de negócio**. Realiza cálculos, gera os dias do plano, analisa a carga semanal, etc., sem tocar no DOM.
-*   `state.js`: Atua como a **fonte única da verdade**. Gerencia o estado da aplicação (usuário logado, lista de planos) de forma centralizada.
-*   `auth.js`: Lida com todas as interações com o **Firebase Authentication** (login, logout, cadastro).
-*   `firestore-service.js`: Gerencia a comunicação com o **Firestore** (salvar e carregar planos).
-*   `dom-elements.js`: Centraliza a **seleção de todos os elementos do DOM**, exportando-os para que outros módulos possam usá-los.
+### 📊 Gestão e Planejamento (Core)
+*   **Criação Flexível de Planos:**
+    *   Por Datas (Início e Fim exatos).
+    *   Por Dias (Ex: "Quero ler em 30 dias").
+    *   Por Páginas (Ex: "Vou ler 10 páginas por dia").
+*   **Cronograma Automático:** O algoritmo calcula exatamente quais páginas devem ser lidas em cada dia, pulando dias da semana excluídos (ex: fins de semana).
+*   **Reavaliação de Carga:** Um quadro visual ("Heatmap" tabular) mostra a média de páginas por dia da semana, permitindo identificar dias sobrecarregados.
+*   **Recálculo Inteligente:** Se você atrasar, o sistema oferece um botão para redistribuir as páginas restantes pelos dias que faltam, sem estresse.
+*   **Painéis de Monitoramento:**
+    *   ⚠️ Leituras Atrasadas.
+    *   🗓️ Próximas Leituras.
+    *   ⏸️ Planos Pausados.
+
+### ☁️ Infraestrutura & Dados
+*   **Autenticação Segura:** Login via Google Firebase Auth.
+*   **Persistência em Nuvem:** Todos os planos, progresso e neuro-anotações são salvos no Firebase Firestore em tempo real.
+*   **PWA (Progressive Web App):** O aplicativo pode ser instalado no celular ou desktop, funcionando como um app nativo.
 
 ---
 
-## ⚙️ Como Usar
+## 🏛️ Arquitetura Técnica
 
-1.  Acesse o [link da aplicação](https://fernnog.github.io/Plano-leitura-livros/).
-2.  **Cadastre-se** ou faça **Login** usando seu email e senha para salvar seus dados na nuvem.
-3.  Clique em "**Novo**" para criar seu primeiro plano de leitura, preenchendo os detalhes.
-4.  Acompanhe seus planos na tela inicial e marque os dias lidos nos detalhes de cada plano.
-5.  Clique em **"Reavaliar"** no cabeçalho para abrir o quadro de análise e verificar quais dias da semana estão mais carregados.
-6.  Use os painéis **Leituras Atrasadas** e **Próximas Leituras** para se manter organizado!
-7.  Exporte para a agenda, edite ou exclua seus planos conforme necessário.
+O projeto utiliza uma arquitetura baseada em **Módulos ES6 (EcmaScript Modules)**, garantindo separação de responsabilidades (SoC), manutenibilidade e escalabilidade. Não há "código espaguete"; cada arquivo tem uma função clara.
+
+### Estrutura de Diretórios
+
+
+Plano de Evolução: Arquivo README.md Completo
+Aqui está o conteúdo integral, revisado e expandido, pronto para ser copiado para o seu arquivo README.md.
+code
+Markdown
+/
+├── index.html # Estrutura semântica e templates de Modais
+├── style.css # Design System (Variáveis CSS, Grid, Responsividade)
+├── main.js # Orquestrador: Inicializa o app e liga os eventos
+├── manifest.json # Configuração PWA
+└── modules/ # Cérebro da aplicação
+├── auth.js # Gerencia Login/Logout/Cadastro no Firebase
+├── dom-elements.js # Cache de seletores do DOM (evita queries repetitivas)
+├── firestore-service.js # Camada de dados (CRUD no NoSQL)
+├── form-handler.js # Validação e lógica dos formulários de entrada
+├── neuro-notes.js # [CORE] Lógica dos modais M.E.T.A. e exportação MD
+├── plano-logic.js # Algoritmos puros (cálculo de datas, distribuição de pág.)
+├── pwa-handler.js # Instalação do Service Worker
+├── state.js # Gestão de estado local (Single Source of Truth)
+└── ui.js # Manipulação do DOM e Renderização de Componentes
+
+### Design System
+A interface foi construída para reduzir a carga cognitiva visual:
+*   **Tipografia:** *Inter* (UI) para clareza e *Playfair Display* (Títulos) para evocar a seriedade de livros clássicos.
+*   **Paleta de Cores:**
+    *   `--primary`: Azul Profundo (Foco/Sobriedade).
+    *   `--accent`: Laranja Queimado (Atenção/Destaque).
+    *   `--bg-body`: Off-white/Papel (Redução de fadiga ocular).
+
+---
+
+## ⚙️ Guia de Instalação e Desenvolvimento
+
+Para rodar este projeto localmente:
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/fernnog/Plano-leitura-livros.git
+    ```
+2.  **Configuração do Firebase:**
+    *   Crie um projeto no console do Firebase.
+    *   Habilite *Authentication* (Email/Senha) e *Firestore*.
+    *   Atualize as chaves de API no arquivo `config/firebase-config.js` (ou onde estiverem importadas).
+3.  **Rodar a aplicação:**
+    *   Como utiliza Módulos ES6, você precisa de um servidor local (devido a políticas de CORS).
+    *   Se tiver Python instalado: `python -m http.server`
+    *   Ou use a extensão "Live Server" no VS Code.
+
+---
+
+## 📝 Como Utilizar para Estudo (Workflow Sugerido)
+
+1.  **Planeje:** Cadastre o livro e defina uma meta realista (ex: 15 páginas/dia).
+2.  **Leia (Modo M.E.T.A.):**
+    *   Abra o app. Veja a meta do dia.
+    *   Faça o *Mapeamento* (escaneie o texto).
+    *   Leia ativamente (*Engajamento*).
+3.  **Anote:**
+    *   No app, clique em **"Anotar (M.E.T.A)"** no painel do livro.
+    *   Preencha o que te surpreendeu (Erro de Predição) e sua micro-ação prática.
+    *   Salve.
+4.  **Consolide:**
+    *   Ao final da semana ou do livro, clique em **"Baixar Resumo"**.
+    *   Revise seu arquivo Markdown gerado para reforçar as memórias.
+
+---
+
+<footer>
+    <p align="center">© 2024-2025 Gerenciador de Planos de Leitura - Desenvolvido com foco na Excelência Cognitiva e Espiritual.</p>
+</footer>
