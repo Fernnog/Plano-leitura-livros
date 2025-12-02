@@ -1,4 +1,4 @@
-/* style.css (Completo - Com Melhorias Neuro Granular) */
+/* style.css (Completo - Com Redesign Neuro UI/UX e Listas Granulares) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -465,7 +465,7 @@ section h2 {
 }
 
 
-/* --- MÓDULO NEURO-LEARNING (REDESIGN UI/UX) --- */
+/* --- MÓDULO NEURO-LEARNING (REDESIGN COMPLETO UI/UX & LISTAS GRANULARES) --- */
 
 /* Grid Layout do Card */
 .plano-leitura-grid {
@@ -589,7 +589,7 @@ section h2 {
     color: var(--neuro-primary);
     border-bottom: 2px solid var(--neuro-accent);
     display: inline-block;
-    margin-top: 10px;
+    margin-top: 25px;
     margin-bottom: 15px;
 }
 
@@ -610,144 +610,111 @@ section h2 {
     margin-bottom: 25px;
 }
 
+/* --- NOVOS ESTILOS: Painel Neuro Granular & Listas Dinâmicas --- */
 
-/* --- ESTILOS NEURO-INSIGHTS AVANÇADOS (GRANULAR & CODIFICAÇÃO DUPLA) --- */
-
-/* 1. Área de Codificação Dupla */
-.dual-coding-container {
-    background-color: #f0f4f8; /* Tom azulado/acinzentado claro */
-    border-left: 4px solid #3498db; /* Azul de destaque (cognitivo) */
-    padding: 15px;
+.neuro-list-container {
     margin-bottom: 20px;
-    border-radius: 0 8px 8px 0;
-    font-size: 0.95em;
+    background: #fdfbf7; /* Mantendo o tom de papel */
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
 }
 
-/* 2. Subformulário de Insights (? !) */
-.insight-form-container {
+.neuro-item-card {
     background: #fff;
     border: 1px solid #e0e0e0;
-    padding: 15px;
-    border-radius: 8px;
-    margin-bottom: 15px;
-    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-}
-
-/* Container dos botões de seleção de tipo */
-.insight-type-selector {
-    display: flex;
-    gap: 15px;
-    margin: 10px 0;
-    flex-wrap: wrap; /* Segurança para mobile */
-}
-
-/* Estilo do botão "Radio" disfarçado de card clicável */
-.type-option {
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    cursor: pointer;
-    padding: 8px 12px;
-    border-radius: 20px;
-    border: 1px solid #ddd;
-    transition: all 0.2s;
-    background: white;
-    font-size: 0.9em;
-    user-select: none;
-}
-
-.type-option:hover {
-    background-color: #f9f9f9;
-}
-
-/* Ajuste do input radio nativo */
-.type-option input[type="radio"] {
-    margin: 0;
-}
-
-/* Estados Ativos (Checked) - Texto */
-input[type="radio"]:checked + .type-label-excl {
-    color: var(--neuro-accent); /* Laranja (! Surpresa) */
-    font-weight: bold;
-}
-input[type="radio"]:checked + .type-label-quest {
-    color: #8e44ad; /* Roxo (? Dúvida) */
-    font-weight: bold;
-}
-
-/* 3. Lista de Insights Adicionados (Cards) */
-.insights-list {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-bottom: 20px;
-    max-height: 250px;
-    overflow-y: auto;
-    padding-right: 5px; /* Espaço para scrollbar */
-}
-
-/* Scrollbar fina para a lista */
-.insights-list::-webkit-scrollbar { width: 6px; }
-.insights-list::-webkit-scrollbar-thumb { background-color: #ddd; border-radius: 3px; }
-
-.insight-card {
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
     display: flex;
     justify-content: space-between;
     align-items: flex-start;
-    background: #fafafa;
-    border: 1px solid #eee;
-    padding: 10px;
-    border-radius: 6px;
-    transition: background-color 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
 }
 
-.insight-card:hover {
-    background-color: #f0f0f0;
+.neuro-item-card:hover {
+    transform: translateX(2px);
 }
 
-/* Ícone (? ou !) dentro do card */
-.insight-icon {
-    font-size: 1.4em;
-    font-weight: bold;
-    margin-right: 12px;
-    min-width: 30px;
-    text-align: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-.icon-exclamation { color: var(--neuro-accent); }
-.icon-question { color: #8e44ad; }
+/* Identificadores Visuais por Tipo (Borda Esquerda) */
+.border-question { border-left: 4px solid #8e44ad; }    /* Roxo (?) */
+.border-exclamation { border-left: 4px solid #e67e22; } /* Laranja (!) */
+.border-trigger { border-left: 4px solid #27ae60; }     /* Verde (Gatilhos) */
+.border-dual { border-left: 4px solid #3498db; }        /* Azul (Codificação Dupla) */
+.border-meta { border-left: 4px solid #34495e; }        /* Escuro (M.E.T.A.) */
 
-/* Texto do card */
-.insight-content {
-    flex-grow: 1;
-    font-size: 0.95em;
-    line-height: 1.4;
-    word-break: break-word;
+.neuro-item-content {
+    flex: 1;
+    margin-right: 15px;
 }
-.insight-page {
+
+.neuro-item-meta {
     font-size: 0.8em;
-    color: #777;
+    color: #7f8c8d;
     display: block;
-    margin-bottom: 4px;
-    font-weight: 600;
+    margin-bottom: 6px;
+    font-weight: bold;
+    font-family: var(--neuro-font-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
 }
 
-/* Botão de excluir insight da lista */
-.btn-remove-insight {
+.neuro-item-text {
+    font-size: 0.95em;
+    color: #2c3e50;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-family: var(--neuro-font-main);
+}
+
+.neuro-add-form {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    margin-bottom: 25px;
+    border: 1px dashed #cbd5e0;
+}
+
+.neuro-add-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-add-item {
+    background-color: var(--neuro-accent); /* Laranja do tema */
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-add-item:hover {
+    background-color: var(--neuro-accent-hover);
+}
+
+.btn-remove-item {
     color: #e74c3c;
     cursor: pointer;
     background: none;
     border: none;
     padding: 5px;
-    opacity: 0.7;
-    transition: all 0.2s;
+    border-radius: 50%;
+    transition: background-color 0.2s;
 }
-.btn-remove-insight:hover {
-    opacity: 1;
-    background-color: #ffeaea;
-    border-radius: 4px;
+.btn-remove-item:hover {
+    background-color: #fce4ec;
 }
 
 
@@ -775,14 +742,13 @@ input[type="radio"]:checked + .type-label-quest {
         grid-template-columns: 1fr;
     }
     
-    /* Ajuste do Seletor de Tipo para Mobile */
-    .insight-type-selector {
+    /* Mobile para os novos formulários */
+    .neuro-add-row {
         flex-direction: column;
         gap: 8px;
     }
-    .type-option {
-        width: 100%;
-        justify-content: center;
+    .neuro-add-row input, .neuro-add-row select {
+        width: 100% !important;
     }
 }
 /* --- FIM MÓDULO NEURO --- */
