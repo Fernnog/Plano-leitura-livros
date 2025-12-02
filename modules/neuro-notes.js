@@ -3,7 +3,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
-// ATUALIZADO: Suporte a múltiplos insights, granularidade por página e Codificação Dupla.
+// ATUALIZADO: Suporte a múltiplos insights, granularidade por página, Codificação Dupla e Intervalo de Contexto.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -12,6 +12,8 @@ import * as ui from './ui.js';
 // --- Variável de Estado Local (Temporária enquanto o modal está aberto) ---
 let tempNoteData = {
     chapterTitle: '',
+    pageStart: null, // NOVO: Início do intervalo de contexto
+    pageEnd: null,   // NOVO: Fim do intervalo de contexto
     insights: [], // Array para { page, type: 'question'|'exclamation', text }
     meta: [],     // Array para { page, type: 'map'|'engage'|'translate'|'apply', text }
     triggers: []  // Array para { page, type: 'prediction'|'dual_coding'|etc, text }
@@ -54,6 +56,8 @@ document.addEventListener('click', (e) => {
 function migrateLegacyData(oldData) {
     const newData = {
         chapterTitle: oldData.chapterTitle || '',
+        pageStart: oldData.pageStart || null, // Garante existência do campo
+        pageEnd: oldData.pageEnd || null,     // Garante existência do campo
         insights: oldData.insights || [],
         meta: oldData.meta && Array.isArray(oldData.meta) ? oldData.meta : [],
         triggers: oldData.triggers && Array.isArray(oldData.triggers) ? oldData.triggers : []
@@ -129,6 +133,10 @@ export function openNoteModal(planoIndex, diaIndex) {
         tempNoteData.chapterTitle = `Leitura do dia ${new Date(dia.data).toLocaleDateString('pt-BR')}`;
     }
 
+    // NOVO: Inicializa o intervalo de páginas com o dia atual se estiver vazio
+    if (!tempNoteData.pageStart) tempNoteData.pageStart = dia.paginaInicioDia;
+    if (!tempNoteData.pageEnd) tempNoteData.pageEnd = dia.paginaFimDia;
+
     renderModalUI();
 
     // Configura o botão de salvar
@@ -154,11 +162,27 @@ function closeNoteModal() {
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
     
+    // Estilos inline temporários para o novo grupo de range (Idealmente mover para style.css)
+    const rangeGroupStyle = "display: flex; gap: 15px; margin-bottom: 20px;";
+    const inputWrapperStyle = "flex: 1; display: flex; flex-direction: column;";
+    
     modalBody.innerHTML = `
         <!-- Cabeçalho: Contexto -->
-        <div class="neuro-input-group">
+        <div class="neuro-input-group" style="margin-bottom: 10px;">
             <label>Contexto / Título do Capítulo</label>
             <input type="text" id="neuro-chapter" class="neuro-textarea-card" value="${tempNoteData.chapterTitle}" placeholder="Ex: A Natureza da Graça..." onchange="updateChapterTitle(this.value)">
+        </div>
+
+        <!-- NOVO: Intervalo de Páginas do Contexto -->
+        <div class="neuro-input-group" style="${rangeGroupStyle}">
+            <div style="${inputWrapperStyle}">
+                <label style="font-size: 0.85em; margin-bottom: 5px;">Pág. Inicial do Contexto</label>
+                <input type="number" id="neuro-range-start" class="neuro-textarea-card" value="${tempNoteData.pageStart}" onchange="updatePageRange('start', this.value)">
+            </div>
+            <div style="${inputWrapperStyle}">
+                <label style="font-size: 0.85em; margin-bottom: 5px;">Pág. Final do Contexto</label>
+                <input type="number" id="neuro-range-end" class="neuro-textarea-card" value="${tempNoteData.pageEnd}" onchange="updatePageRange('end', this.value)">
+            </div>
         </div>
         
         <!-- SEÇÃO 1: INSIGHTS RÁPIDOS (? e !) -->
@@ -235,8 +259,11 @@ function renderModalUI() {
     document.getElementById('btn-add-trigger').onclick = () => addItem('triggers');
 }
 
-// Helper para atualizar o título no objeto temporário
+// Helpers globais para inputs
 window.updateChapterTitle = (val) => { tempNoteData.chapterTitle = val; };
+window.updatePageRange = (field, val) => {
+    tempNoteData[field === 'start' ? 'pageStart' : 'pageEnd'] = parseInt(val, 10);
+};
 
 // Funções de Lista
 function addItem(category) {
@@ -274,8 +301,7 @@ function addItem(category) {
     document.getElementById(`list-${category}`).innerHTML = renderList(category);
 
     // Limpa campos
-    document.getElementById(`add-${category.slice(0, -1)}-text`).value = ''; // hack slice 'insights' -> 'insight'
-    // Opcional: manter a página preenchida para facilitar múltiplas anotações na mesma página
+    document.getElementById(`add-${category.slice(0, -1)}-text`).value = ''; 
 }
 
 // Expõe a função de remover globalmente (necessário para o onclick no HTML string)
@@ -333,6 +359,15 @@ function getDisplayProps(category, type) {
 // --- Lógica de Salvamento ---
 
 async function saveNote() {
+    // 0. Validação de Intervalo (Prioridade 3)
+    const pStart = parseInt(tempNoteData.pageStart, 10);
+    const pEnd = parseInt(tempNoteData.pageEnd, 10);
+
+    if (!isNaN(pStart) && !isNaN(pEnd) && pStart > pEnd) {
+        alert('Erro de Consistência: A Página Inicial do contexto não pode ser maior que a Página Final.');
+        return; // Interrompe o salvamento
+    }
+
     // Atualiza timestamp
     tempNoteData.lastEdited = new Date().toISOString();
 
@@ -385,7 +420,13 @@ export function downloadMarkdown(plano) {
             const dataLegivel = new Date(dia.data).toLocaleDateString('pt-BR');
             
             mdContent += `## 🔖 ${note.chapterTitle || `Sessão ${idx + 1}`}\n`;
-            mdContent += `**Data:** ${dataLegivel} | **Páginas:** ${dia.paginaInicioDia}-${dia.paginaFimDia}\n\n`;
+            
+            // Adiciona intervalo de contexto se existir
+            if (note.pageStart && note.pageEnd) {
+                mdContent += `**Intervalo de Contexto:** Pág. ${note.pageStart} - ${note.pageEnd}\n`;
+            }
+            
+            mdContent += `**Data Leitura:** ${dataLegivel} | **Páginas Meta:** ${dia.paginaInicioDia}-${dia.paginaFimDia}\n\n`;
 
             // 1. Insights Rápidos
             if (note.insights && note.insights.length > 0) {

@@ -291,7 +291,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização (MODIFICADO COM O NOVO DESIGN CLEAN) ---
+// --- Funções de Renderização (MODIFICADO COM O NOVO DESIGN CLEAN & LÓGICA DE INTERVALO NEURO) ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -324,6 +324,12 @@ function renderizarPlanos(planos, user) {
             ? `<button data-action="retomar" data-plano-index="${index}" title="Retomar Plano" class="acao-retomar"><span class="material-symbols-outlined">play_circle</span></button>`
             : `<button data-action="pausar" data-plano-index="${index}" title="Pausar Plano"><span class="material-symbols-outlined">pause</span></button>`;
         
+        // --- LÓGICA NEURO (PRIORIDADE 2): Mapeamento de Contextos ---
+        // Extrai todos os intervalos de contexto (ranges de páginas) definidos nas notas deste plano
+        const neuroContexts = plano.diasPlano
+            .filter(d => d.neuroNote && d.neuroNote.pageStart !== undefined && d.neuroNote.pageEnd !== undefined)
+            .map(d => ({ start: d.neuroNote.pageStart, end: d.neuroNote.pageEnd }));
+
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
             let acoesDiaHTML = '';
             if (diaIndex === proximoDiaIndex && !isPausado) {
@@ -344,13 +350,24 @@ function renderizarPlanos(planos, user) {
                 `;
             }
 
-            // Indicador visual de Neuro-Nota (Cérebro)
-            const neuroIcon = dia.neuroNote 
-                ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-anotação salva">psychology</span>` 
+            // --- LÓGICA NEURO (PRIORIDADE 2): Verificação de Interseção ---
+            // Verifica se o dia atual está contido ou intercepta algum contexto neuro definido
+            const isInNeuroRange = neuroContexts.some(ctx => 
+                dia.paginaInicioDia <= ctx.end && dia.paginaFimDia >= ctx.start
+            );
+
+            // O ícone aparece se o dia tem nota própria OU se faz parte de um intervalo de contexto
+            const showNeuroIcon = dia.neuroNote || isInNeuroRange;
+
+            const neuroIcon = showNeuroIcon 
+                ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
 
+            // Adicional (Oportunidade UX): Classe CSS extra para dias em intervalo neuro (pode ser estilizada depois)
+            const neuroClass = isInNeuroRange ? 'neuro-range-active' : '';
+
             return `
-            <div class="dia-leitura ${dia.lido ? 'lido' : ''}">
+            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass}">
                 <div style="display:flex; align-items:center; width:100%;">
                     <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
                     <label for="dia-${index}-${diaIndex}" style="margin-left:8px;">
