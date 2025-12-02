@@ -351,53 +351,80 @@
             </div>
         </div>
 
-        <!-- Modal de Checklist de Retenção -->
+        <!-- NOVO MODAL: CHECKLIST DE RETENÇÃO (CAPE) -->
         <div id="checklist-modal" class="reavaliacao-modal-overlay">
             <div class="reavaliacao-modal-content">
-                <div class="reavaliacao-modal-header">
-                    <h2><span class="material-symbols-outlined">fact_check</span> Checklist de Retenção</h2>
-                    <button id="close-checklist-modal" class="reavaliacao-modal-close">×</button>
+                <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px 8px 0 0;">
+                    <h2 style="color: white; margin: 0; font-size: 1.4em; display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined">fact_check</span> Checklist de Retenção
+                    </h2>
+                    <button id="close-checklist-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
                 </div>
-                <div class="reavaliacao-descricao">
-                    <p>Antes de encerrar, verifique se sua leitura cumpriu estes objetivos cognitivos:</p>
+
+                <div style="padding: 20px;">
+                    <!-- Alerta do CAPE -->
+                    <div style="background: #f8fafc; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin-bottom: 20px; font-size: 0.95em; color: #475569;">
+                        <strong>🧠 CAPE:</strong> Confronto • Ancoragem • Percepção • Esquema
+                        <br>
+                        <em style="font-size: 0.9em;">⚠️ Não leia passivamente. Escaneie o texto procurando preencher estas 4 categorias.</em>
+                    </div>
+
+                    <!-- Tabela do Arquivo Anexo -->
+                    <div class="reavaliacao-tabela-container">
+                        <table class="checklist-table" style="width: 100%; border-collapse: collapse;">
+                            <thead>
+                                <tr style="background: #f1f5f9; color: #1a365d;">
+                                    <th style="padding: 10px; text-align: center; width: 50px;">Ok?</th>
+                                    <th style="padding: 10px; text-align: left;">Pergunta de Controle</th>
+                                    <th style="padding: 10px; text-align: left;">Objetivo Cognitivo / Espiritual</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
+                                        <input type="checkbox" style="transform: scale(1.2);">
+                                    </td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Consigo explicar sem olhar?</td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
+                                        <strong>Metacognição</strong> • Evitar Ilusão de Competência
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
+                                        <input type="checkbox" style="transform: scale(1.2);">
+                                    </td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Desenhei a ideia?</td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
+                                        <strong>Codificação Dupla</strong> • Clareza da Visão
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
+                                        <input type="checkbox" style="transform: scale(1.2);">
+                                    </td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Mudou alguma atitude hoje?</td>
+                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
+                                        <strong>Plasticidade Neural</strong> • Santificação / Obediência
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding: 10px;">
+                                        <input type="checkbox" style="transform: scale(1.2);">
+                                    </td>
+                                    <td style="padding: 10px;">Conectei com a Bíblia?</td>
+                                    <td style="padding: 10px; color: #555;">
+                                        <strong>Associação</strong> • Analogia da Fé
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
-                
-                <div class="reavaliacao-tabela-container">
-                    <table class="checklist-table">
-                        <thead>
-                            <tr>
-                                <th style="width: 50px; text-align: center;">Ok?</th>
-                                <th>Pergunta de Controle</th>
-                                <th>Objetivo Cognitivo / Espiritual</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td style="text-align: center;"><input type="checkbox"></td>
-                                <td>Consigo explicar sem olhar?</td>
-                                <td><strong>Metacognição</strong> • Evitar Ilusão de Competência</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center;"><input type="checkbox"></td>
-                                <td>Desenhei/Esquematizei a ideia?</td>
-                                <td><strong>Codificação Dupla</strong> • Clareza da Visão</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center;"><input type="checkbox"></td>
-                                <td>Mudou alguma atitude hoje?</td>
-                                <td><strong>Plasticidade Neural</strong> • Santificação / Obediência</td>
-                            </tr>
-                            <tr>
-                                <td style="text-align: center;"><input type="checkbox"></td>
-                                <td>Conectei com a Bíblia?</td>
-                                <td><strong>Associação</strong> • Analogia da Fé</td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
-                
-                <div class="recalculo-modal-actions">
-                    <button id="btn-close-checklist-action" class="button-confirm">Entendido</button>
+
+                <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top: 0;">
+                    <button id="btn-close-checklist-action" class="button-confirm" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                        Concluído
+                    </button>
                 </div>
             </div>
         </div>
