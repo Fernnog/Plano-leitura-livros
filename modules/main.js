@@ -1,4 +1,4 @@
-// --- START OF FILE main.js (COMPLETO E ATUALIZADO) ---
+// --- START OF FILE main.js (COMPLETO E CORRIGIDO) ---
 
 // main.js - O Orquestrador da Aplicação
 
@@ -11,7 +11,7 @@ import * as ui from './modules/ui.js';
 import * as planoLogic from './modules/plano-logic.js';
 import * as formHandler from './modules/form-handler.js';
 import * as pwaHandler from './modules/pwa-handler.js';
-import * as neuroNotes from './modules/neuro-notes.js'; // NOVA IMPORTAÇÃO: Módulo de Neuro-Anotações
+import * as neuroNotes from './modules/neuro-notes.js'; // Módulo de Neuro-Anotações
 
 // --- Inicialização da Aplicação ---
 document.addEventListener('DOMContentLoaded', initApp);
@@ -45,7 +45,7 @@ async function handleAuthStateChange(firebaseUser) {
     ui.renderApp(state.getPlanos(), state.getCurrentUser());
     ui.toggleLoading(false);
     
-    // NOVO: Chama o auto-scroll após o carregamento inicial
+    // Chama o auto-scroll após o carregamento inicial
     ui.autoScrollParaDiaAtual();
 }
 
@@ -114,8 +114,7 @@ function setupEventHandlers() {
         });
     }
 
-    // --- NOVO: Listeners para o Modal Neuro-Anotações ---
-    // Botão de Fechar Modal Neuro
+    // --- Listeners para o Modal Neuro-Anotações ---
     const closeNeuroBtn = document.getElementById('close-neuro-modal');
     if (closeNeuroBtn) {
         closeNeuroBtn.addEventListener('click', () => {
@@ -123,7 +122,6 @@ function setupEventHandlers() {
         });
     }
     
-    // Overlay do Modal Neuro
     const neuroModal = document.getElementById('neuro-modal');
     if (neuroModal) {
         neuroModal.addEventListener('click', (e) => {
@@ -133,13 +131,12 @@ function setupEventHandlers() {
         });
     }
 
-    // Botão de Salvar Neuro-Conexão
     const btnSaveNeuro = document.getElementById('btn-save-neuro');
     if (btnSaveNeuro) {
         btnSaveNeuro.addEventListener('click', handleSaveNeuroNote);
     }
 
-    // --- NOVO: Listeners para o Modal Checklist de Retenção ---
+    // --- Listeners para o Modal Checklist de Retenção ---
     const closeChecklistBtn = document.getElementById('close-checklist-modal');
     if (closeChecklistBtn) {
         closeChecklistBtn.addEventListener('click', () => {
@@ -178,7 +175,7 @@ function setupEventHandlers() {
                 neuroModalEl.classList.remove('visivel');
             }
 
-            // NOVO: Fechar modal Checklist
+            // Fechar modal Checklist
             const checklistModalEl = document.getElementById('checklist-modal');
             if (checklistModalEl && checklistModalEl.classList.contains('visivel')) {
                 checklistModalEl.classList.remove('visivel');
@@ -305,6 +302,7 @@ const actionHandlers = {
     // NOVAS AÇÕES NEURO E CHECKLIST
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
+    // ADICIONADO: Ação direta para abrir o checklist
     'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel')
 };
 
@@ -314,11 +312,15 @@ function handleCardAction(event) {
 
     const action = target.dataset.action;
     
+    // --- ALTERAÇÃO IMPORTANTE ---
     // Tratamento direto para ações que não precisam de plano/usuário (como abrir o checklist)
     if (action === 'open-checklist') {
-        actionHandlers[action]();
+        if(actionHandlers[action]) {
+            actionHandlers[action]();
+        }
         return;
     }
+    // -----------------------------
 
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const plano = state.getPlanoByIndex(planoIndex);
