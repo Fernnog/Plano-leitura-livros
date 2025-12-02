@@ -41,16 +41,15 @@ export function highlightAndScrollToPlano(planoIndex) {
 }
 
 /**
- * Rola a tela automaticamente para o dia de leitura atual ou próximo pendente.
- * (NOVO - Prioridade 1 e 2)
+ * NOVA FUNÇÃO: Rola a tela automaticamente para os dias marcados como alvo (Hoje/Próximo).
  */
 export function autoScrollParaDiaAtual() {
-    // Pequeno delay para garantir que o DOM foi renderizado e o layout estabilizado
+    // Pequeno delay para garantir que o DOM foi renderizado e o layout calculado
     setTimeout(() => {
-        // Busca o primeiro elemento marcado como alvo de scroll
-        const alvo = document.querySelector('[data-scroll-target="true"]');
-        if (alvo) {
-            alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const alvos = document.querySelectorAll('[data-scroll-target="true"]');
+        if (alvos.length > 0) {
+            // Rola apenas para o primeiro alvo encontrado (prioridade para o plano mais recente)
+            alvos[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, 600);
 }
@@ -61,8 +60,6 @@ export function showPlanosList(planos, user) {
     DOMElements.cadastroPlanoSection.style.display = 'none';
     DOMElements.planosLeituraSection.style.display = 'block';
     renderApp(planos, user);
-    // Aciona o scroll ao voltar para a lista (Prioridade 2)
-    autoScrollParaDiaAtual();
 }
 
 export function showCadastroForm(planoParaEditar = null) {
@@ -308,7 +305,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização (MODIFICADO COM O NOVO DESIGN CLEAN & LÓGICA DE INTERVALO NEURO) ---
+// --- Funções de Renderização (MODIFICADO: INCLUI AUTO-SCROLL E BOTÃO CHECKLIST) ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -348,25 +345,6 @@ function renderizarPlanos(planos, user) {
 
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
             let acoesDiaHTML = '';
-            
-            // --- LÓGICA DE SCROLL AUTOMÁTICO (PRIORIDADE 1 e 2) ---
-            // Verifica se o dia é "hoje" ou se é o próximo dia a ser lido (alvo do scroll)
-            const hoje = new Date(); 
-            hoje.setHours(0,0,0,0);
-            
-            const dataDia = dia.data ? new Date(dia.data) : null;
-            if(dataDia) dataDia.setHours(0,0,0,0);
-
-            const isHoje = dataDia && dataDia.getTime() === hoje.getTime();
-            
-            // Define se este dia é o alvo do scroll: É hoje OU é o próximo dia não lido
-            const isAlvoScroll = isHoje || (index === 0 && diaIndex === proximoDiaIndex && !isHoje); 
-            const classeScroll = isAlvoScroll ? 'dia-atual-scroll-target' : '';
-            const atributoScroll = isAlvoScroll ? 'data-scroll-target="true"' : '';
-            
-            // Indicador visual de "HOJE" (Melhoria UX)
-            const indicadorHoje = isHoje ? '<span style="color:#d35400; font-weight:bold; font-size:0.8em; margin-left:5px; text-transform:uppercase;">[Hoje]</span>' : '';
-
             if (diaIndex === proximoDiaIndex && !isPausado) {
                 acoesDiaHTML = `
                     <div class="dia-leitura-acoes">
@@ -389,22 +367,39 @@ function renderizarPlanos(planos, user) {
             const isInNeuroRange = neuroContexts.some(ctx => 
                 dia.paginaInicioDia <= ctx.end && dia.paginaFimDia >= ctx.start
             );
-
             const showNeuroIcon = dia.neuroNote || isInNeuroRange;
-
             const neuroIcon = showNeuroIcon 
                 ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
-
             const neuroClass = isInNeuroRange ? 'neuro-range-active' : '';
 
+            // --- LÓGICA DE AUTO-SCROLL (NOVO) ---
+            // Verifica se é hoje para rolar a tela ou se é o próximo dia de leitura do primeiro plano
+            const hoje = new Date();
+            hoje.setHours(0,0,0,0);
+            const dataDia = dia.data ? new Date(dia.data) : null;
+            if (dataDia) dataDia.setHours(0,0,0,0);
+
+            // Alvo é hoje OU (se for o primeiro plano da lista e for o próximo dia de leitura)
+            const isHoje = dataDia && dataDia.getTime() === hoje.getTime();
+            const isAlvoScroll = isHoje || (index === 0 && diaIndex === proximoDiaIndex && !dia.lido);
+            
+            // Classe para destaque visual CSS
+            const classeScroll = isAlvoScroll ? 'dia-atual-scroll-target' : '';
+            // Atributo para seletor JS
+            const attrScroll = isAlvoScroll ? 'data-scroll-target="true"' : '';
+            
+            // Bônus UX: Badge "HOJE"
+            const badgeHoje = isHoje ? '<span class="status-tag status-em-dia" style="font-size:0.7em; margin-left:5px; background-color:#e67e22; color:white; border:none;">HOJE</span>' : '';
+
             return `
-            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass} ${classeScroll}" ${atributoScroll}>
+            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass} ${classeScroll}" ${attrScroll}>
                 <div style="display:flex; align-items:center; width:100%;">
                     <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
                     <label for="dia-${index}-${diaIndex}" style="margin-left:8px;">
                         <strong>${formatarData(dia.data)}:</strong> Pág. ${dia.paginaInicioDia} a ${dia.paginaFimDia}
-                        ${neuroIcon} ${indicadorHoje}
+                        ${badgeHoje}
+                        ${neuroIcon}
                     </label>
                 </div>
                 ${acoesDiaHTML}
@@ -423,7 +418,7 @@ function renderizarPlanos(planos, user) {
             </div>
         ` : '';
 
-        // REDESIGN: Layout em Grid sem estilos inline, usando classes CSS
+        // REDESIGN: Layout em Grid (Com botão NOVO de Checklist)
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
                 <div class="plano-header">
@@ -448,7 +443,7 @@ function renderizarPlanos(planos, user) {
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
-                <!-- LAYOUT DE GRID -->
+                <!-- NOVO LAYOUT DE GRID -->
                 <div class="plano-leitura-grid">
                     <!-- Coluna Esquerda: Cronograma -->
                     <div>
@@ -456,7 +451,7 @@ function renderizarPlanos(planos, user) {
                         <div class="dias-leitura">${diasLeituraHTML}</div>
                     </div>
 
-                    <!-- Coluna Direita: Painel Neuro-Cognitivo (Redesign) -->
+                    <!-- Coluna Direita: Painel Neuro-Cognitivo -->
                     <div class="neuro-panel">
                         <h4 class="neuro-panel-title">Painel Neuro</h4>
                         
@@ -469,8 +464,8 @@ function renderizarPlanos(planos, user) {
                             <span class="material-symbols-outlined">download</span>
                             <span>Baixar Resumo</span>
                         </button>
-
-                        <!-- NOVO BOTÃO: CHECKLIST DE RETENÇÃO (PRIORIDADE 1) -->
+                        
+                        <!-- NOVO BOTÃO: Checklist de Retenção -->
                         <button class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
                             <span class="material-symbols-outlined">fact_check</span>
                             <span>Checklist Retenção</span>
