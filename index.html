@@ -351,78 +351,91 @@
             </div>
         </div>
 
-        <!-- NOVO MODAL: CHECKLIST DE RETENÇÃO (CAPE) -->
+        <!-- NOVO MODAL: CHECKLIST DE RETENÇÃO (CAPE) - CONTEÚDO SUBSTITUÍDO CONFORME SOLICITAÇÃO -->
         <div id="checklist-modal" class="reavaliacao-modal-overlay">
-            <div class="reavaliacao-modal-content">
-                <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px; border-radius: 8px 8px 0 0;">
-                    <h2 style="color: white; margin: 0; font-size: 1.4em; display: flex; align-items: center; gap: 10px;">
+            <div class="reavaliacao-modal-content neuro-theme">
+                <!-- Header Personalizado -->
+                <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, var(--neuro-primary) 0%, #2c3e50 100%); color: white;">
+                    <h2 style="color: white; font-family: var(--neuro-font-serif); margin: 0; display: flex; align-items: center; gap: 10px;">
                         <span class="material-symbols-outlined">fact_check</span> Checklist de Retenção
                     </h2>
                     <button id="close-checklist-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
                 </div>
 
-                <div style="padding: 20px;">
-                    <!-- Alerta do CAPE -->
-                    <div style="background: #f8fafc; border-left: 4px solid #667eea; padding: 15px; border-radius: 4px; margin-bottom: 20px; font-size: 0.95em; color: #475569;">
-                        <strong>🧠 CAPE:</strong> Confronto • Ancoragem • Percepção • Esquema
-                        <br>
-                        <em style="font-size: 0.9em;">⚠️ Não leia passivamente. Escaneie o texto procurando preencher estas 4 categorias.</em>
+                <!-- Corpo do Modal com Conteúdo CAPE -->
+                <div style="padding: 20px 25px;">
+                    
+                    <div class="cape-header">
+                        <h3>🧠 Método C.A.P.E.</h3>
+                        <p>Confronto • Ancoragem • Percepção • Esquema</p>
                     </div>
 
-                    <!-- Tabela do Arquivo Anexo -->
+                    <!-- Alerta -->
+                    <div class="cape-alert-box">
+                        ⚠️ Não leia passivamente. Escaneie o texto procurando preencher estas 4 categorias.
+                    </div>
+
+                    <!-- Grid de Cards -->
+                    <div class="cape-cards-grid">
+                        <div class="cape-card">
+                            <strong>Confronto</strong>
+                            <p>O que confrontou o que você achava que sabia?</p>
+                        </div>
+                        <div class="cape-card">
+                            <strong>Ancoragem</strong>
+                            <p>Conecte o novo a algo velho e forte na sua memória.</p>
+                        </div>
+                        <div class="cape-card">
+                            <strong>Percepção</strong>
+                            <p>Qual sentimento ou emoção essa verdade gerou?</p>
+                        </div>
+                        <div class="cape-card">
+                            <strong>Esquema</strong>
+                            <p>Transforme o texto em um desenho mental ou diagrama.</p>
+                        </div>
+                    </div>
+
+                    <h3 class="neuro-section-title" style="margin-top: 25px;">✅ Validação Cognitiva</h3>
+
+                    <!-- Tabela Checklist -->
                     <div class="reavaliacao-tabela-container">
-                        <table class="checklist-table" style="width: 100%; border-collapse: collapse;">
+                        <table class="cape-table">
                             <thead>
-                                <tr style="background: #f1f5f9; color: #1a365d;">
-                                    <th style="padding: 10px; text-align: center; width: 50px;">Ok?</th>
-                                    <th style="padding: 10px; text-align: left;">Pergunta de Controle</th>
-                                    <th style="padding: 10px; text-align: left;">Objetivo Cognitivo / Espiritual</th>
+                                <tr>
+                                    <th style="text-align: center; width: 50px;">Ok?</th>
+                                    <th>Pergunta de Controle</th>
+                                    <th>Objetivo Cognitivo / Espiritual</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
-                                        <input type="checkbox" style="transform: scale(1.2);">
-                                    </td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Consigo explicar sem olhar?</td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
-                                        <strong>Metacognição</strong> • Evitar Ilusão de Competência
-                                    </td>
+                                    <td class="check-cell"><input type="checkbox"></td>
+                                    <td>Consigo explicar sem olhar?</td>
+                                    <td class="meta-cell"><strong>Metacognição</strong> • Evitar Ilusão de Competência</td>
                                 </tr>
                                 <tr>
-                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
-                                        <input type="checkbox" style="transform: scale(1.2);">
-                                    </td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Desenhei a ideia?</td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
-                                        <strong>Codificação Dupla</strong> • Clareza da Visão
-                                    </td>
+                                    <td class="check-cell"><input type="checkbox"></td>
+                                    <td>Desenhei a ideia?</td>
+                                    <td class="meta-cell"><strong>Codificação Dupla</strong> • Clareza da Visão</td>
                                 </tr>
                                 <tr>
-                                    <td style="text-align: center; border-bottom: 1px solid #eee; padding: 10px;">
-                                        <input type="checkbox" style="transform: scale(1.2);">
-                                    </td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px;">Mudou alguma atitude hoje?</td>
-                                    <td style="border-bottom: 1px solid #eee; padding: 10px; color: #555;">
-                                        <strong>Plasticidade Neural</strong> • Santificação / Obediência
-                                    </td>
+                                    <td class="check-cell"><input type="checkbox"></td>
+                                    <td>Mudou alguma atitude hoje?</td>
+                                    <td class="meta-cell"><strong>Plasticidade Neural</strong> • Santificação / Obediência</td>
                                 </tr>
                                 <tr>
-                                    <td style="text-align: center; padding: 10px;">
-                                        <input type="checkbox" style="transform: scale(1.2);">
-                                    </td>
-                                    <td style="padding: 10px;">Conectei com a Bíblia?</td>
-                                    <td style="padding: 10px; color: #555;">
-                                        <strong>Associação</strong> • Analogia da Fé
-                                    </td>
+                                    <td class="check-cell"><input type="checkbox"></td>
+                                    <td>Conectei com a Bíblia?</td>
+                                    <td class="meta-cell"><strong>Associação</strong> • Analogia da Fé</td>
                                 </tr>
                             </tbody>
                         </table>
                     </div>
                 </div>
 
+                <!-- Footer com Ação -->
                 <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top: 0;">
-                    <button id="btn-close-checklist-action" class="button-confirm" style="width: 100%; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+                    <button id="btn-close-checklist-action" class="button-confirm" style="width: 100%;">
                         Concluído
                     </button>
                 </div>
