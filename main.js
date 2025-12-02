@@ -1,4 +1,4 @@
-// --- START OF FILE main.js (COMPLETO E MODIFICADO) ---
+// --- START OF FILE main.js (COMPLETO E ATUALIZADO) ---
 
 // main.js - O Orquestrador da Aplicação
 
@@ -10,7 +10,8 @@ import * as firestoreService from './modules/firestore-service.js';
 import * as ui from './modules/ui.js';
 import * as planoLogic from './modules/plano-logic.js';
 import * as formHandler from './modules/form-handler.js';
-import * as pwaHandler from './modules/pwa-handler.js'; // NOVA IMPORTAÇÃO: Módulo de PWA
+import * as pwaHandler from './modules/pwa-handler.js';
+import * as neuroNotes from './modules/neuro-notes.js'; // NOVA IMPORTAÇÃO: Módulo de Neuro-Anotações
 
 // --- Inicialização da Aplicação ---
 document.addEventListener('DOMContentLoaded', initApp);
@@ -18,7 +19,7 @@ document.addEventListener('DOMContentLoaded', initApp);
 function initApp() {
     console.log("[Main] DOM pronto. Iniciando aplicação modularizada.");
     ui.registerServiceWorker();
-    pwaHandler.init(); // NOVA CHAMADA: Inicializa o manipulador de instalação PWA
+    pwaHandler.init(); 
     setupEventHandlers();
     formHandler.init(); 
     authService.setupAuthStateObserver(handleAuthStateChange);
@@ -62,7 +63,7 @@ function setupEventHandlers() {
     // Formulário de Plano
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
-    // Ações nos Cards (Event Delegation)
+    // Ações nos Cards (Event Delegation - Inclui agora as ações Neuro)
     DOMElements.listaPlanos.addEventListener('click', handleCardAction);
 
     // Modal de Reavaliação de Carga
@@ -75,7 +76,7 @@ function setupEventHandlers() {
             ui.hideReavaliacaoModal();
             return;
         }
-        handleModalReavaliacaoAction(e); // Delega ações internas para o handler
+        handleModalReavaliacaoAction(e); 
     });
     
     // Modal de Recálculo
@@ -95,7 +96,7 @@ function setupEventHandlers() {
         if (e.target === DOMElements.agendaModal) ui.hideAgendaModal();
     });
 
-    // Modal de Changelog (Novidades da Versão)
+    // Modal de Changelog
     if (DOMElements.versionInfoDiv) {
         DOMElements.versionInfoDiv.addEventListener('click', ui.showChangelogModal);
     }
@@ -110,29 +111,48 @@ function setupEventHandlers() {
         });
     }
 
+    // --- CORREÇÃO PRIORIDADE 1: Delegação de Eventos para o Modal Neuro ---
+    // Como o modal é injetado dinamicamente no DOM, usamos delegação no 'document'
+    // para garantir que o clique seja capturado mesmo se o elemento foi criado depois.
+    document.addEventListener('click', (e) => {
+        // Verifica se o clique foi no botão de fechar (ou no ícone dentro dele)
+        if (e.target.matches('#close-neuro-modal') || e.target.closest('#close-neuro-modal')) {
+            const neuroModal = document.getElementById('neuro-modal');
+            if (neuroModal) {
+                neuroModal.classList.remove('visivel');
+            }
+        }
+        
+        // Verifica se o clique foi no Overlay (fundo escuro) para fechar
+        if (e.target.matches('#neuro-modal')) {
+             e.target.classList.remove('visivel');
+        }
+
+        // Verifica o botão de Salvar (Delegação para garantir funcionamento)
+        if (e.target.matches('#btn-save-neuro') || e.target.closest('#btn-save-neuro')) {
+            handleSaveNeuroNote();
+        }
+    });
+
     // MELHORIA DE UX: Fechar modais com a tecla 'Escape'
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
-            // Verifica qual modal está visível e o fecha
-            if (DOMElements.reavaliacaoModal.classList.contains('visivel')) {
-                ui.hideReavaliacaoModal();
-            }
-            if (DOMElements.recalculoModal.classList.contains('visivel')) {
-                ui.hideRecalculoModal();
-            }
-            if (DOMElements.agendaModal.classList.contains('visivel')) {
-                ui.hideAgendaModal();
-            }
-            // A verificação 'DOMElements.changelogModal' é importante caso o elemento não exista
-            if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) {
-                ui.hideChangelogModal();
+            if (DOMElements.reavaliacaoModal.classList.contains('visivel')) ui.hideReavaliacaoModal();
+            if (DOMElements.recalculoModal.classList.contains('visivel')) ui.hideRecalculoModal();
+            if (DOMElements.agendaModal.classList.contains('visivel')) ui.hideAgendaModal();
+            if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) ui.hideChangelogModal();
+            
+            // Novo: Fechar modal Neuro
+            const neuroModalEl = document.getElementById('neuro-modal');
+            if (neuroModalEl && neuroModalEl.classList.contains('visivel')) {
+                neuroModalEl.classList.remove('visivel');
             }
         }
     });
 }
 
 
-// --- Manipuladores de Ações de Autenticação e Formulário (Handlers) ---
+// --- Manipuladores de Ações (Handlers) ---
 
 async function handleLogin() {
     try {
@@ -144,6 +164,7 @@ async function handleLogin() {
         alert('Erro ao fazer login: ' + error.message);
     }
 }
+
 async function handleSignup() {
     try {
         const email = DOMElements.emailLoginInput.value;
@@ -156,6 +177,7 @@ async function handleSignup() {
         alert('Erro ao cadastrar: ' + error.message);
     }
 }
+
 async function handleLogout() {
     try {
         await authService.logout();
@@ -240,14 +262,12 @@ const actionHandlers = {
     'pausar': handlePausarPlano,
     'retomar': handleRetomarPlano,
     'recalcular': handleRecalcularPlano,
-    'salvar-parcial': handleSalvarParcial
+    'salvar-parcial': handleSalvarParcial,
+    // NOVAS AÇÕES NEURO
+    'open-neuro': handleOpenNeuro,
+    'download-md': handleDownloadMarkdown
 };
 
-/**
- * Função principal que delega as ações executadas nos cards dos planos.
- * Atua como um "dispatcher", chamando a função de tratamento correta.
- * @param {Event} event - O evento de clique.
- */
 function handleCardAction(event) {
     const target = event.target.closest('[data-action]');
     if (!target) return;
@@ -259,7 +279,6 @@ function handleCardAction(event) {
 
     if (isNaN(planoIndex) || !plano || !currentUser) return;
 
-    // Chama o handler correspondente à ação, se ele existir
     if (actionHandlers[action]) {
         actionHandlers[action](target, plano, planoIndex, currentUser);
     }
@@ -324,7 +343,6 @@ async function handleSalvarParcial(target, plano, planoIndex, currentUser) {
     ui.renderApp(state.getPlanos(), currentUser);
 }
 
-
 async function handlePausarPlano(target, plano, planoIndex, currentUser) {
     if (confirm(`Tem certeza que deseja pausar o plano "${plano.titulo}"? O cronograma será congelado.`)) {
         plano.isPaused = true;
@@ -347,6 +365,68 @@ async function handleRetomarPlano(target, plano, planoIndex, currentUser) {
 function handleRecalcularPlano(target, plano, planoIndex, currentUser) {
     ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
 }
+
+// --- Novos Handlers NEURO ---
+function handleOpenNeuro(target, plano, planoIndex, currentUser) {
+    // Se o botão foi clicado na lista de dias (contexto específico do dia)
+    const diaIndex = target.dataset.diaIndex ? parseInt(target.dataset.diaIndex, 10) : null;
+    
+    // Se não tiver dia específico (ex: botão geral do painel), tentamos achar o próximo dia não lido
+    let targetDiaIndex = diaIndex;
+    if (targetDiaIndex === null || isNaN(targetDiaIndex)) {
+        targetDiaIndex = planoLogic.encontrarProximoDiaDeLeituraIndex(plano);
+        if (targetDiaIndex === -1) targetDiaIndex = plano.diasPlano.length - 1; // Se tudo lido, abre o último
+    }
+
+    neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
+}
+
+function handleDownloadMarkdown(target, plano, planoIndex, currentUser) {
+    neuroNotes.downloadMarkdown(plano);
+}
+
+async function handleSaveNeuroNote() {
+    const btn = document.getElementById('btn-save-neuro');
+    // Verificação de segurança: se o botão não for encontrado (ex: modal fechado muito rápido), aborta
+    if (!btn) return;
+
+    const planoIndex = parseInt(btn.dataset.planoIndex, 10);
+    const diaIndex = parseInt(btn.dataset.diaIndex, 10);
+    const currentUser = state.getCurrentUser();
+
+    if (isNaN(planoIndex) || isNaN(diaIndex)) {
+        console.error("Erro ao identificar plano/dia para salvar nota.");
+        return;
+    }
+
+    // Chama o módulo neuro para processar os dados do DOM
+    const noteData = neuroNotes.extractNoteDataFromDOM();
+    
+    // Atualiza o estado
+    const plano = state.getPlanoByIndex(planoIndex);
+    if (!plano.diasPlano[diaIndex].neuroNote) {
+        plano.diasPlano[diaIndex].neuroNote = {};
+    }
+    plano.diasPlano[diaIndex].neuroNote = noteData;
+
+    // Persiste no Firebase
+    try {
+        state.updatePlano(planoIndex, plano);
+        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        
+        // Feedback e UI
+        alert('Neuro-conexão registrada com sucesso!');
+        const neuroModal = document.getElementById('neuro-modal');
+        if (neuroModal) neuroModal.classList.remove('visivel');
+        
+        ui.renderApp(state.getPlanos(), currentUser); // Re-renderiza para atualizar ícones de status
+        
+    } catch (error) {
+        console.error("Erro ao salvar nota:", error);
+        alert("Erro ao salvar: " + error.message);
+    }
+}
+
 
 // --- Handlers de Modais ---
 
