@@ -44,6 +44,11 @@ async function handleAuthStateChange(firebaseUser) {
     
     ui.renderApp(state.getPlanos(), state.getCurrentUser());
     ui.toggleLoading(false);
+    
+    // Prioridade 1 e 2: Auto-scroll após carregamento inicial
+    if (state.getCurrentUser()) {
+        ui.autoScrollParaDiaAtual();
+    }
 }
 
 // --- Configuração dos Ouvintes de Eventos (Event Listeners) ---
@@ -63,7 +68,7 @@ function setupEventHandlers() {
     // Formulário de Plano
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
-    // Ações nos Cards (Event Delegation - Inclui agora as ações Neuro)
+    // Ações nos Cards (Event Delegation - Inclui agora as ações Neuro e Checklist)
     DOMElements.listaPlanos.addEventListener('click', handleCardAction);
 
     // Modal de Reavaliação de Carga
@@ -136,6 +141,24 @@ function setupEventHandlers() {
         btnSaveNeuro.addEventListener('click', handleSaveNeuroNote);
     }
 
+    // --- NOVO: Listeners para o Modal de Checklist (Prioridade 1) ---
+    // Usamos delegação ou getElementById com Optional Chaining caso o modal ainda não esteja no DOM
+    const checklistModal = document.getElementById('checklist-modal');
+    const closeChecklistBtn = document.getElementById('close-checklist-modal');
+    const btnCloseChecklistAction = document.getElementById('btn-close-checklist-action');
+
+    if (checklistModal) {
+        checklistModal.addEventListener('click', (e) => {
+            if (e.target === checklistModal) checklistModal.classList.remove('visivel');
+        });
+    }
+    if (closeChecklistBtn) {
+        closeChecklistBtn.addEventListener('click', () => checklistModal.classList.remove('visivel'));
+    }
+    if (btnCloseChecklistAction) {
+        btnCloseChecklistAction.addEventListener('click', () => checklistModal.classList.remove('visivel'));
+    }
+
     // MELHORIA DE UX: Fechar modais com a tecla 'Escape'
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
@@ -144,10 +167,16 @@ function setupEventHandlers() {
             if (DOMElements.agendaModal.classList.contains('visivel')) ui.hideAgendaModal();
             if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) ui.hideChangelogModal();
             
-            // Novo: Fechar modal Neuro
+            // Fechar modal Neuro
             const neuroModalEl = document.getElementById('neuro-modal');
             if (neuroModalEl && neuroModalEl.classList.contains('visivel')) {
                 neuroModalEl.classList.remove('visivel');
+            }
+            
+            // Fechar modal Checklist
+            const checklistModalEl = document.getElementById('checklist-modal');
+            if (checklistModalEl && checklistModalEl.classList.contains('visivel')) {
+                checklistModalEl.classList.remove('visivel');
             }
         }
     });
@@ -220,6 +249,8 @@ async function handleFormSubmit(event) {
         const planoIndexFinal = state.getPlanos().findIndex(p => p.id === planoData.id);
         if(planoIndexFinal !== -1) {
             ui.highlightAndScrollToPlano(planoIndexFinal);
+            // Prioridade 2: Auto-scroll após salvar um plano
+            ui.autoScrollParaDiaAtual();
         }
 
     } catch (error) {
@@ -267,7 +298,9 @@ const actionHandlers = {
     'salvar-parcial': handleSalvarParcial,
     // NOVAS AÇÕES NEURO
     'open-neuro': handleOpenNeuro,
-    'download-md': handleDownloadMarkdown
+    'download-md': handleDownloadMarkdown,
+    // AÇÃO CHECKLIST (Prioridade 1)
+    'open-checklist': handleOpenChecklist
 };
 
 function handleCardAction(event) {
@@ -387,6 +420,10 @@ function handleDownloadMarkdown(target, plano, planoIndex, currentUser) {
     neuroNotes.downloadMarkdown(plano);
 }
 
+function handleOpenChecklist() {
+    document.getElementById('checklist-modal').classList.add('visivel');
+}
+
 async function handleSaveNeuroNote() {
     const btn = document.getElementById('btn-save-neuro');
     const planoIndex = parseInt(btn.dataset.planoIndex, 10);
@@ -417,6 +454,7 @@ async function handleSaveNeuroNote() {
         alert('Neuro-conexão registrada com sucesso!');
         document.getElementById('neuro-modal').classList.remove('visivel');
         ui.renderApp(state.getPlanos(), currentUser); // Re-renderiza para atualizar ícones de status
+        ui.autoScrollParaDiaAtual(); // Garante o scroll após salvar nota
         
     } catch (error) {
         console.error("Erro ao salvar nota:", error);
@@ -466,6 +504,7 @@ async function handleConfirmRecalculo() {
         
         ui.renderApp(state.getPlanos(), currentUser);
         ui.highlightAndScrollToPlano(planoIndex);
+        ui.autoScrollParaDiaAtual();
 
     } catch (error) {
         console.error('[Main] Erro ao confirmar recálculo/remanejamento:', error);
@@ -497,3 +536,4 @@ function handleModalReavaliacaoAction(event) {
         ui.showRecalculoModal(plano, planoIndex, 'Confirmar Remanejamento');
     }, 300);
 }
+// --- END OF FILE main.js ---
