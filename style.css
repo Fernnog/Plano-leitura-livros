@@ -1,4 +1,4 @@
-/* style.css (Completo - Com Redesign Neuro UI/UX e Listas Granulares) */
+/* style.css (Completo - Com Redesign Neuro UI/UX, Listas Granulares, Auto-Scroll e Checklist) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -816,6 +816,13 @@ section h2 {
     background-color: rgba(211, 84, 0, 0.03); /* Leve tom laranja */
 }
 
+/* Destaque para Auto-Scroll (Dia Atual) - Prioridade 1/2 */
+.dia-leitura.dia-atual-scroll-target {
+    background-color: rgba(211, 84, 0, 0.08); /* Tom laranja suave (neuro-accent) */
+    border-left: 4px solid var(--neuro-accent);
+    padding-left: 8px; /* Ajuste visual para compensar a borda */
+}
+
 .dia-leitura:last-child {
     border-bottom: none;
 }
@@ -1287,6 +1294,42 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     border-radius: 5px;
     border: 1px solid #dee2e6;
     font-size: 0.9em;
+}
+
+/* Estilos Tabela Checklist Retenção - Prioridade 1 */
+.checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    font-family: var(--neuro-font-main);
+}
+
+.checklist-table th {
+    background-color: var(--neuro-primary);
+    color: white;
+    padding: 12px 15px;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.9em;
+    border-bottom: 2px solid var(--neuro-accent);
+}
+
+.checklist-table td {
+    padding: 12px 15px;
+    border-bottom: 1px solid #eee;
+    color: #444;
+    vertical-align: middle;
+}
+
+.checklist-table tr:hover {
+    background-color: #f9f9f9;
+}
+
+.checklist-table input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--neuro-accent);
+    cursor: pointer;
 }
 
 /* Botões de Ação do Modal */
