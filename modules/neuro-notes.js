@@ -1,3 +1,5 @@
+// --- START OF FILE modules/neuro-notes.js ---
+
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
@@ -60,43 +62,33 @@ const createEmptyNote = () => ({
 function ensureModalExists() {
     if (document.getElementById('neuro-modal')) return;
 
+    // REDESIGN: Removida a tag <style> e os estilos inline.
+    // O modal agora usa classes CSS definidas no style.css.
     const modalHTML = `
-    <div id="neuro-modal" class="reavaliacao-modal-overlay" style="z-index: 2000;">
-        <div class="reavaliacao-modal-content neuro-theme" style="max-width: 800px; background: #fdfbf7;">
-            <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); padding: 20px; border-radius: 8px 8px 0 0; color: white;">
+    <div id="neuro-modal" class="reavaliacao-modal-overlay">
+        <div class="reavaliacao-modal-content neuro-theme" style="max-width: 800px; padding: 0;">
+            <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); padding: 15px 20px; border-radius: 8px 8px 0 0; color: white;">
                 <h2 style="color: white; font-family: 'Playfair Display', serif; margin:0; display:flex; align-items:center; gap:10px;">
                     <span class="material-symbols-outlined">psychology_alt</span> Neuro-Insights
                 </h2>
-                <button id="close-neuro-modal" class="reavaliacao-modal-close" style="color: white;">×</button>
+                <button id="close-neuro-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
             </div>
             
-            <div id="neuro-modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
+            <div id="neuro-modal-body" class="neuro-modal-body" style="padding: 20px; max-height: 70vh; overflow-y: auto;">
                 <!-- Conteúdo injetado via JS -->
             </div>
 
-            <div class="recalculo-modal-actions" style="padding: 20px; border-top: 1px solid #eee; background: white; border-radius: 0 0 8px 8px;">
-                 <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; width: 100%;">
+            <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0;">
+                 <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; width: 100%; border: none; box-shadow: 0 2px 4px rgba(211,84,0,0.3);">
                     <span class="material-symbols-outlined">save</span> Salvar Conexão Neural
                  </button>
             </div>
         </div>
     </div>
-    <style>
-        /* Estilos Micro-Injetados para garantir fidelidade ao design solicitado */
-        .neuro-section-title { font-family: 'Playfair Display', serif; color: #1a252f; border-bottom: 2px solid #d35400; display: inline-block; margin-top: 20px; margin-bottom: 15px; }
-        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px; }
-        .neuro-input-group label { display: block; font-weight: bold; color: #2c3e50; margin-bottom: 5px; font-size: 0.9em; }
-        .neuro-input-group textarea, .neuro-input-group input { width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 8px; font-family: 'Inter', sans-serif; background: #fff; transition: border 0.3s; }
-        .neuro-input-group textarea:focus { border-color: #d35400; outline: none; background: #fffaf0; }
-        .neuro-card { background: white; padding: 15px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); border-left: 4px solid #1a252f; }
-        .neuro-card.accent { border-left-color: #d35400; }
-        .neuro-hint { font-size: 0.8em; color: #7f8c8d; font-style: italic; margin-top: 4px; display: block; }
-        @media (max-width: 600px) { .meta-grid { grid-template-columns: 1fr; } }
-    </style>
     `;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
 
-    // Listener para fechar
+    // Listener para fechar (MANTIDO para garantir funcionamento mesmo se main.js não for atualizado imediatamente)
     document.getElementById('close-neuro-modal').addEventListener('click', closeNoteModal);
 }
 
@@ -111,47 +103,50 @@ export function openNoteModal(planoIndex, diaIndex) {
 
     const modalBody = document.getElementById('neuro-modal-body');
     
+    // REDESIGN: Novo Layout com Grid System e Classes
     modalBody.innerHTML = `
-        <div class="neuro-input-group" style="margin-bottom: 20px;">
+        <div class="neuro-input-group">
             <label>Contexto / Título do Capítulo</label>
-            <input type="text" id="neuro-chapter" value="${tituloCapitulo}" placeholder="Ex: A Natureza da Graça...">
+            <input type="text" id="neuro-chapter" class="neuro-textarea-card" value="${tituloCapitulo}" placeholder="Ex: A Natureza da Graça...">
         </div>
         
-        <h3 class="neuro-section-title">1. Método M.E.T.A.</h3>
+        <h3 class="neuro-section-title" style="font-family:'Playfair Display',serif; color:#1a252f; border-bottom:2px solid #d35400; display:inline-block; margin-bottom:15px; margin-top:10px;">1. Método M.E.T.A.</h3>
+        
         <div class="meta-grid">
-            <div class="neuro-input-group neuro-card">
+            <div class="neuro-input-group">
                 <label><strong>M</strong>apear (Conceitos Chave)</label>
-                <textarea id="meta-map" rows="3" placeholder="Palavras-chave escaneadas...">${noteData.meta.map}</textarea>
+                <textarea id="meta-map" class="neuro-textarea-card" rows="3" placeholder="Palavras-chave escaneadas...">${noteData.meta.map}</textarea>
             </div>
-            <div class="neuro-input-group neuro-card">
+            <div class="neuro-input-group">
                 <label><strong>E</strong>ngajar (Dúvidas/Símbolos)</label>
-                <textarea id="meta-engage" rows="3" placeholder="O que me fez parar para pensar?">${noteData.meta.engage}</textarea>
+                <textarea id="meta-engage" class="neuro-textarea-card" rows="3" placeholder="O que me fez parar para pensar?">${noteData.meta.engage}</textarea>
             </div>
-            <div class="neuro-input-group neuro-card">
+            <div class="neuro-input-group">
                 <label><strong>T</strong>raduzir (Síntese em 1 frase)</label>
-                <textarea id="meta-translate" rows="3" placeholder="Explicando para uma criança de 10 anos...">${noteData.meta.translate}</textarea>
+                <textarea id="meta-translate" class="neuro-textarea-card" rows="3" placeholder="Explicando para uma criança de 10 anos...">${noteData.meta.translate}</textarea>
             </div>
-            <div class="neuro-input-group neuro-card accent">
-                <label><strong>A</strong>plicar (Micro-ação)</label>
-                <textarea id="meta-apply" rows="3" placeholder="O que farei diferente hoje?">${noteData.meta.apply}</textarea>
+            <div class="neuro-input-group">
+                <label style="color:#d35400;"><strong>A</strong>plicar (Micro-ação)</label>
+                <textarea id="meta-apply" class="neuro-textarea-card" rows="3" style="border-left: 3px solid #d35400;" placeholder="O que farei diferente hoje?">${noteData.meta.apply}</textarea>
             </div>
         </div>
 
-        <h3 class="neuro-section-title">2. Gatilhos de Memória</h3>
-        <div class="neuro-input-group" style="margin-bottom: 15px;">
-            <label>⚡ Erro de Predição (Surpresa Dopaminérgica)</label>
+        <h3 class="neuro-section-title" style="font-family:'Playfair Display',serif; color:#1a252f; border-bottom:2px solid #d35400; display:inline-block; margin-bottom:15px;">2. Gatilhos de Memória</h3>
+        
+        <div class="neuro-input-group">
+            <label>⚡ Erro de Predição (Surpresa)</label>
             <span class="neuro-hint">"Eu achava que X, mas o texto provou Y."</span>
-            <textarea id="trigger-prediction" rows="2">${noteData.triggers.prediction}</textarea>
+            <textarea id="trigger-prediction" class="neuro-textarea-card" rows="2">${noteData.triggers.prediction}</textarea>
         </div>
-        <div class="neuro-input-group" style="margin-bottom: 15px;">
+        <div class="neuro-input-group">
             <label>🔗 Conexão Relacional</label>
             <span class="neuro-hint">Conecte com algo que você já sabe (outros livros, filmes, versículos).</span>
-            <textarea id="trigger-connection" rows="2">${noteData.triggers.connection}</textarea>
+            <textarea id="trigger-connection" class="neuro-textarea-card" rows="2">${noteData.triggers.connection}</textarea>
         </div>
         <div class="neuro-input-group">
             <label>❤️ Emoção Teológica</label>
             <span class="neuro-hint">O que você sentiu? (Temor, Paz, Gratidão, Desconforto)</span>
-            <textarea id="trigger-emotion" rows="2">${noteData.triggers.emotion}</textarea>
+            <textarea id="trigger-emotion" class="neuro-textarea-card" rows="2">${noteData.triggers.emotion}</textarea>
         </div>
     `;
 
@@ -204,12 +199,25 @@ async function saveNote(planoIndex, diaIndex) {
         const currentUser = state.getCurrentUser();
         if (currentUser) {
             await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-            alert('Neuro-conexão salva e sinapses reforçadas!');
-            closeNoteModal();
-            // Atualiza UI para mostrar o ícone de cérebro
-            ui.renderApp(state.getPlanos(), currentUser);
-            // Mantém o scroll no plano
-            ui.highlightAndScrollToPlano(planoIndex);
+            
+            // UX IMPROVEMENT: Feedback visual no botão em vez de alert
+            const btnSave = document.getElementById('btn-save-neuro');
+            const originalText = btnSave.innerHTML;
+            btnSave.innerHTML = '<span class="material-symbols-outlined">check_circle</span> Salvo!';
+            btnSave.style.backgroundColor = '#27ae60';
+            
+            setTimeout(() => {
+                closeNoteModal();
+                // Restaura botão para próxima vez
+                btnSave.innerHTML = originalText;
+                btnSave.style.backgroundColor = '#d35400';
+                
+                // Atualiza UI para mostrar o ícone de cérebro
+                ui.renderApp(state.getPlanos(), currentUser);
+                // Mantém o scroll no plano
+                ui.highlightAndScrollToPlano(planoIndex);
+            }, 1000);
+
         } else {
             alert('Erro: Usuário não logado. Não foi possível salvar.');
         }
@@ -270,3 +278,4 @@ export function downloadMarkdown(plano) {
     a.click();
     document.body.removeChild(a);
 }
+// --- END OF FILE modules/neuro-notes.js ---

@@ -1,3 +1,5 @@
+// --- START OF FILE modules/ui.js ---
+
 // modules/ui.js
 // RESPONSABILIDADE ÚNICA: Manipular o DOM, renderizar elementos, ler dados de formulários
 // e gerenciar a visibilidade das seções da UI. Não contém lógica de negócio.
@@ -289,7 +291,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização (MODIFICADO PARA O NOVO DESIGN GRID) ---
+// --- Funções de Renderização (MODIFICADO COM O NOVO DESIGN CLEAN) ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -372,42 +374,7 @@ function renderizarPlanos(planos, user) {
             </div>
         ` : '';
 
-        // --- ESTILOS INLINE TEMPORÁRIOS PARA O GRID (Substitui o style.css nesta fase) ---
-        const gridLayoutStyle = `
-            display: grid;
-            grid-template-columns: 1fr 200px;
-            gap: 20px;
-            margin-top: 15px;
-        `;
-        const leftColStyle = ``; // Coluna do cronograma
-        const rightColStyle = `
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
-            border-left: 1px dashed #e0e0e0;
-            padding-left: 15px;
-            justify-content: flex-start;
-        `;
-        
-        const btnNeuroStyle = `
-            background: linear-gradient(135deg, #fff 0%, #f9f9f9 100%);
-            border: 1px solid #1a252f;
-            color: #1a252f;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: 'Playfair Display', serif;
-            font-size: 0.9em;
-            cursor: pointer;
-            transition: all 0.2s;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 8px;
-            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-            width: 100%;
-            text-align: center;
-        `;
-
+        // REDESIGN: Layout em Grid sem estilos inline, usando classes CSS
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
                 <div class="plano-header">
@@ -432,53 +399,34 @@ function renderizarPlanos(planos, user) {
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
-                <!-- NOVO LAYOUT EM GRID -->
-                <div class="plano-leitura-grid" style="${gridLayoutStyle}">
+                <!-- NOVO LAYOUT DE GRID (ESTILOS NO CSS) -->
+                <div class="plano-leitura-grid">
                     <!-- Coluna Esquerda: Cronograma -->
-                    <div style="${leftColStyle}">
+                    <div>
                         <h4 class="dias-leitura-titulo" style="margin-top:0;">Cronograma de Leitura:</h4>
                         <div class="dias-leitura">${diasLeituraHTML}</div>
                     </div>
 
-                    <!-- Coluna Direita: Painel Neuro-Cognitivo -->
-                    <div class="neuro-panel" style="${rightColStyle}">
-                        <h4 style="margin:0 0 10px 0; font-family:'Playfair Display',serif; color:#d35400; font-size:0.9em; text-transform:uppercase;">Painel Neuro</h4>
+                    <!-- Coluna Direita: Painel Neuro-Cognitivo (Redesign) -->
+                    <div class="neuro-panel">
+                        <h4 class="neuro-panel-title">Painel Neuro</h4>
                         
-                        <button style="${btnNeuroStyle}" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
-                            <span class="material-symbols-outlined" style="color:#d35400;">psychology_alt</span>
-                            <span>Anotar</span>
+                        <button class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
+                            <span class="material-symbols-outlined">psychology_alt</span>
+                            <span>Anotar Insight</span>
                         </button>
                         
-                        <button style="${btnNeuroStyle}" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
-                            <span class="material-symbols-outlined" style="color:#2980b9;">download</span>
-                            <span>Baixar</span>
+                        <button class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
+                            <span class="material-symbols-outlined">download</span>
+                            <span>Baixar Resumo</span>
                         </button>
 
-                         <div style="margin-top:auto; font-size:0.75em; color:#7f8c8d; text-align:center; background:#fdfbf7; padding:8px; border-radius:4px; font-style:italic;">
+                         <div style="margin-top:auto; font-size:0.75em; color:#95a5a6; text-align:center; font-style:italic;">
                             "Renovação da mente"
                          </div>
                     </div>
                 </div>
             </div>
-            <!-- Estilo responsivo forçado para garantir que o grid quebre em mobile -->
-            <style>
-                @media (max-width: 650px) {
-                    #plano-${index} .plano-leitura-grid {
-                        grid-template-columns: 1fr !important;
-                    }
-                    #plano-${index} .neuro-panel {
-                        border-left: none !important;
-                        border-top: 1px dashed #e0e0e0;
-                        padding-left: 0 !important;
-                        padding-top: 15px;
-                        flex-direction: row !important;
-                        flex-wrap: wrap;
-                    }
-                    #plano-${index} .neuro-panel button {
-                        flex: 1;
-                    }
-                }
-            </style>
         `;
     });
     DOMElements.listaPlanos.innerHTML = html;
@@ -723,3 +671,4 @@ export function toggleLoading(isLoading) {
     console.log(`[UI] Carregamento: ${isLoading ? 'ON' : 'OFF'}`);
     document.body.style.cursor = isLoading ? 'wait' : 'default';
 }
+// --- END OF FILE modules/ui.js ---
