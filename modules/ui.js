@@ -40,12 +40,29 @@ export function highlightAndScrollToPlano(planoIndex) {
     }, 1500);
 }
 
+/**
+ * Rola a tela automaticamente para o dia de leitura atual ou próximo pendente.
+ * (NOVO - Prioridade 1 e 2)
+ */
+export function autoScrollParaDiaAtual() {
+    // Pequeno delay para garantir que o DOM foi renderizado e o layout estabilizado
+    setTimeout(() => {
+        // Busca o primeiro elemento marcado como alvo de scroll
+        const alvo = document.querySelector('[data-scroll-target="true"]');
+        if (alvo) {
+            alvo.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, 600);
+}
+
 // --- Funções de Controle de Visibilidade ---
 
 export function showPlanosList(planos, user) {
     DOMElements.cadastroPlanoSection.style.display = 'none';
     DOMElements.planosLeituraSection.style.display = 'block';
     renderApp(planos, user);
+    // Aciona o scroll ao voltar para a lista (Prioridade 2)
+    autoScrollParaDiaAtual();
 }
 
 export function showCadastroForm(planoParaEditar = null) {
@@ -324,14 +341,32 @@ function renderizarPlanos(planos, user) {
             ? `<button data-action="retomar" data-plano-index="${index}" title="Retomar Plano" class="acao-retomar"><span class="material-symbols-outlined">play_circle</span></button>`
             : `<button data-action="pausar" data-plano-index="${index}" title="Pausar Plano"><span class="material-symbols-outlined">pause</span></button>`;
         
-        // --- LÓGICA NEURO (PRIORIDADE 2): Mapeamento de Contextos ---
-        // Extrai todos os intervalos de contexto (ranges de páginas) definidos nas notas deste plano
+        // --- LÓGICA NEURO: Mapeamento de Contextos ---
         const neuroContexts = plano.diasPlano
             .filter(d => d.neuroNote && d.neuroNote.pageStart !== undefined && d.neuroNote.pageEnd !== undefined)
             .map(d => ({ start: d.neuroNote.pageStart, end: d.neuroNote.pageEnd }));
 
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
             let acoesDiaHTML = '';
+            
+            // --- LÓGICA DE SCROLL AUTOMÁTICO (PRIORIDADE 1 e 2) ---
+            // Verifica se o dia é "hoje" ou se é o próximo dia a ser lido (alvo do scroll)
+            const hoje = new Date(); 
+            hoje.setHours(0,0,0,0);
+            
+            const dataDia = dia.data ? new Date(dia.data) : null;
+            if(dataDia) dataDia.setHours(0,0,0,0);
+
+            const isHoje = dataDia && dataDia.getTime() === hoje.getTime();
+            
+            // Define se este dia é o alvo do scroll: É hoje OU é o próximo dia não lido
+            const isAlvoScroll = isHoje || (index === 0 && diaIndex === proximoDiaIndex && !isHoje); 
+            const classeScroll = isAlvoScroll ? 'dia-atual-scroll-target' : '';
+            const atributoScroll = isAlvoScroll ? 'data-scroll-target="true"' : '';
+            
+            // Indicador visual de "HOJE" (Melhoria UX)
+            const indicadorHoje = isHoje ? '<span style="color:#d35400; font-weight:bold; font-size:0.8em; margin-left:5px; text-transform:uppercase;">[Hoje]</span>' : '';
+
             if (diaIndex === proximoDiaIndex && !isPausado) {
                 acoesDiaHTML = `
                     <div class="dia-leitura-acoes">
@@ -350,29 +385,26 @@ function renderizarPlanos(planos, user) {
                 `;
             }
 
-            // --- LÓGICA NEURO (PRIORIDADE 2): Verificação de Interseção ---
-            // Verifica se o dia atual está contido ou intercepta algum contexto neuro definido
+            // --- LÓGICA NEURO: Verificação de Interseção ---
             const isInNeuroRange = neuroContexts.some(ctx => 
                 dia.paginaInicioDia <= ctx.end && dia.paginaFimDia >= ctx.start
             );
 
-            // O ícone aparece se o dia tem nota própria OU se faz parte de um intervalo de contexto
             const showNeuroIcon = dia.neuroNote || isInNeuroRange;
 
             const neuroIcon = showNeuroIcon 
                 ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
 
-            // Adicional (Oportunidade UX): Classe CSS extra para dias em intervalo neuro (pode ser estilizada depois)
             const neuroClass = isInNeuroRange ? 'neuro-range-active' : '';
 
             return `
-            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass}">
+            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass} ${classeScroll}" ${atributoScroll}>
                 <div style="display:flex; align-items:center; width:100%;">
                     <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
                     <label for="dia-${index}-${diaIndex}" style="margin-left:8px;">
                         <strong>${formatarData(dia.data)}:</strong> Pág. ${dia.paginaInicioDia} a ${dia.paginaFimDia}
-                        ${neuroIcon}
+                        ${neuroIcon} ${indicadorHoje}
                     </label>
                 </div>
                 ${acoesDiaHTML}
@@ -416,7 +448,7 @@ function renderizarPlanos(planos, user) {
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
-                <!-- NOVO LAYOUT DE GRID (ESTILOS NO CSS) -->
+                <!-- LAYOUT DE GRID -->
                 <div class="plano-leitura-grid">
                     <!-- Coluna Esquerda: Cronograma -->
                     <div>
@@ -436,6 +468,12 @@ function renderizarPlanos(planos, user) {
                         <button class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
                             <span class="material-symbols-outlined">download</span>
                             <span>Baixar Resumo</span>
+                        </button>
+
+                        <!-- NOVO BOTÃO: CHECKLIST DE RETENÇÃO (PRIORIDADE 1) -->
+                        <button class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
+                            <span class="material-symbols-outlined">fact_check</span>
+                            <span>Checklist Retenção</span>
                         </button>
 
                          <div style="margin-top:auto; font-size:0.75em; color:#95a5a6; text-align:center; font-style:italic;">
