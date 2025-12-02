@@ -1,4 +1,4 @@
-/* style.css (Completo - Com Redesign Neuro UI/UX) */
+/* style.css (Completo - Com Melhorias Neuro Granular) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -465,7 +465,7 @@ section h2 {
 }
 
 
-/* --- MÓDULO NEURO-LEARNING (REDESIGN COMPLETO UI/UX) --- */
+/* --- MÓDULO NEURO-LEARNING (REDESIGN UI/UX) --- */
 
 /* Grid Layout do Card */
 .plano-leitura-grid {
@@ -610,6 +610,147 @@ section h2 {
     margin-bottom: 25px;
 }
 
+
+/* --- ESTILOS NEURO-INSIGHTS AVANÇADOS (GRANULAR & CODIFICAÇÃO DUPLA) --- */
+
+/* 1. Área de Codificação Dupla */
+.dual-coding-container {
+    background-color: #f0f4f8; /* Tom azulado/acinzentado claro */
+    border-left: 4px solid #3498db; /* Azul de destaque (cognitivo) */
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.95em;
+}
+
+/* 2. Subformulário de Insights (? !) */
+.insight-form-container {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+/* Container dos botões de seleção de tipo */
+.insight-type-selector {
+    display: flex;
+    gap: 15px;
+    margin: 10px 0;
+    flex-wrap: wrap; /* Segurança para mobile */
+}
+
+/* Estilo do botão "Radio" disfarçado de card clicável */
+.type-option {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    cursor: pointer;
+    padding: 8px 12px;
+    border-radius: 20px;
+    border: 1px solid #ddd;
+    transition: all 0.2s;
+    background: white;
+    font-size: 0.9em;
+    user-select: none;
+}
+
+.type-option:hover {
+    background-color: #f9f9f9;
+}
+
+/* Ajuste do input radio nativo */
+.type-option input[type="radio"] {
+    margin: 0;
+}
+
+/* Estados Ativos (Checked) - Texto */
+input[type="radio"]:checked + .type-label-excl {
+    color: var(--neuro-accent); /* Laranja (! Surpresa) */
+    font-weight: bold;
+}
+input[type="radio"]:checked + .type-label-quest {
+    color: #8e44ad; /* Roxo (? Dúvida) */
+    font-weight: bold;
+}
+
+/* 3. Lista de Insights Adicionados (Cards) */
+.insights-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-bottom: 20px;
+    max-height: 250px;
+    overflow-y: auto;
+    padding-right: 5px; /* Espaço para scrollbar */
+}
+
+/* Scrollbar fina para a lista */
+.insights-list::-webkit-scrollbar { width: 6px; }
+.insights-list::-webkit-scrollbar-thumb { background-color: #ddd; border-radius: 3px; }
+
+.insight-card {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    background: #fafafa;
+    border: 1px solid #eee;
+    padding: 10px;
+    border-radius: 6px;
+    transition: background-color 0.2s;
+}
+
+.insight-card:hover {
+    background-color: #f0f0f0;
+}
+
+/* Ícone (? ou !) dentro do card */
+.insight-icon {
+    font-size: 1.4em;
+    font-weight: bold;
+    margin-right: 12px;
+    min-width: 30px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.icon-exclamation { color: var(--neuro-accent); }
+.icon-question { color: #8e44ad; }
+
+/* Texto do card */
+.insight-content {
+    flex-grow: 1;
+    font-size: 0.95em;
+    line-height: 1.4;
+    word-break: break-word;
+}
+.insight-page {
+    font-size: 0.8em;
+    color: #777;
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 600;
+}
+
+/* Botão de excluir insight da lista */
+.btn-remove-insight {
+    color: #e74c3c;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+    opacity: 0.7;
+    transition: all 0.2s;
+}
+.btn-remove-insight:hover {
+    opacity: 1;
+    background-color: #ffeaea;
+    border-radius: 4px;
+}
+
+
 /* Media Queries Específicas Neuro */
 @media (max-width: 700px) {
     .plano-leitura-grid {
@@ -632,6 +773,16 @@ section h2 {
     }
     .meta-grid {
         grid-template-columns: 1fr;
+    }
+    
+    /* Ajuste do Seletor de Tipo para Mobile */
+    .insight-type-selector {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .type-option {
+        width: 100%;
+        justify-content: center;
     }
 }
 /* --- FIM MÓDULO NEURO --- */
