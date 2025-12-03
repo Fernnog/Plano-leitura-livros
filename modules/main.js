@@ -303,7 +303,9 @@ const actionHandlers = {
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
     // ADICIONADO: Ação direta para abrir o checklist
-    'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel')
+    'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
+    // ** ALTERAÇÃO PRIORIDADE 1: Handler do Botão Histórico **
+    'toggle-historico': handleToggleHistorico
 };
 
 function handleCardAction(event) {
@@ -471,6 +473,31 @@ async function handleSaveNeuroNote() {
     }
 }
 
+// ** ALTERAÇÃO PRIORIDADE 1: Handler do Botão Histórico **
+function handleToggleHistorico(target, plano, planoIndex, currentUser) {
+    // Busca o card específico usando o ID gerado no render
+    const card = document.getElementById(`plano-${planoIndex}`);
+    if (!card) return;
+
+    // Busca o container de dias dentro desse card
+    const containerDias = card.querySelector('.dias-leitura');
+    if (!containerDias) return;
+
+    // Alterna a classe que exibe os itens ocultos
+    containerDias.classList.toggle('mostrar-historico');
+
+    // Atualiza o ícone e o title do botão para feedback visual
+    const icon = target.querySelector('.material-symbols-outlined');
+    if (containerDias.classList.contains('mostrar-historico')) {
+        icon.textContent = 'expand_less'; // Ícone de seta para cima (fechar)
+        target.title = "Ocultar dias anteriores";
+        target.classList.add('ativo'); // Classe opcional para estilização ativa
+    } else {
+        icon.textContent = 'history'; // Ícone de relógio/histórico (abrir)
+        target.title = "Ver dias anteriores";
+        target.classList.remove('ativo');
+    }
+}
 
 // --- Handlers de Modais ---
 
