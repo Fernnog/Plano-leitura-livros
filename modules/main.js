@@ -1,4 +1,4 @@
-// --- START OF FILE main.js (COMPLETO E CORRIGIDO) ---
+// --- START OF FILE main.js (COMPLETO E ATUALIZADO COM HISTÓRICO) ---
 
 // main.js - O Orquestrador da Aplicação
 
@@ -302,9 +302,8 @@ const actionHandlers = {
     // NOVAS AÇÕES NEURO E CHECKLIST
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
-    // ADICIONADO: Ação direta para abrir o checklist
     'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
-    // ** ALTERAÇÃO PRIORIDADE 1: Handler do Botão Histórico **
+    // NOVA AÇÃO: Histórico de dias
     'toggle-historico': handleToggleHistorico
 };
 
@@ -314,7 +313,6 @@ function handleCardAction(event) {
 
     const action = target.dataset.action;
     
-    // --- ALTERAÇÃO IMPORTANTE ---
     // Tratamento direto para ações que não precisam de plano/usuário (como abrir o checklist)
     if (action === 'open-checklist') {
         if(actionHandlers[action]) {
@@ -322,7 +320,6 @@ function handleCardAction(event) {
         }
         return;
     }
-    // -----------------------------
 
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const plano = state.getPlanoByIndex(planoIndex);
@@ -336,6 +333,31 @@ function handleCardAction(event) {
 }
 
 // --- Funções de Tratamento de Ações do Card ---
+
+// Função que controla a visibilidade do histórico
+function handleToggleHistorico(target, plano, planoIndex, currentUser) {
+    // 1. Localiza o card do plano
+    const card = target.closest('.plano-leitura');
+    if (!card) return;
+
+    // 2. Localiza o container da lista de dias dentro deste card
+    const listaDias = card.querySelector('.dias-leitura');
+    if (!listaDias) return;
+
+    // 3. Alterna a classe que força a exibição dos itens ocultos
+    listaDias.classList.toggle('mostrar-historico');
+
+    // 4. (UX) Alterna o ícone do botão para dar feedback visual
+    const iconSpan = target.querySelector('.material-symbols-outlined');
+    if (iconSpan) {
+        const isVisible = listaDias.classList.contains('mostrar-historico');
+        // Muda para seta p/ cima se estiver aberto, ou relógio se estiver fechado
+        iconSpan.textContent = isVisible ? 'expand_less' : 'history';
+        // Opcional: Feedback visual ativo no botão
+        target.style.color = isVisible ? 'var(--neuro-primary)' : '';
+        target.title = isVisible ? "Ocultar histórico" : "Ver histórico completo";
+    }
+}
 
 function handleEditarPlano(target, plano, planoIndex, currentUser) {
     state.setPlanoEditando(planoIndex);
@@ -473,31 +495,6 @@ async function handleSaveNeuroNote() {
     }
 }
 
-// ** ALTERAÇÃO PRIORIDADE 1: Handler do Botão Histórico **
-function handleToggleHistorico(target, plano, planoIndex, currentUser) {
-    // Busca o card específico usando o ID gerado no render
-    const card = document.getElementById(`plano-${planoIndex}`);
-    if (!card) return;
-
-    // Busca o container de dias dentro desse card
-    const containerDias = card.querySelector('.dias-leitura');
-    if (!containerDias) return;
-
-    // Alterna a classe que exibe os itens ocultos
-    containerDias.classList.toggle('mostrar-historico');
-
-    // Atualiza o ícone e o title do botão para feedback visual
-    const icon = target.querySelector('.material-symbols-outlined');
-    if (containerDias.classList.contains('mostrar-historico')) {
-        icon.textContent = 'expand_less'; // Ícone de seta para cima (fechar)
-        target.title = "Ocultar dias anteriores";
-        target.classList.add('ativo'); // Classe opcional para estilização ativa
-    } else {
-        icon.textContent = 'history'; // Ícone de relógio/histórico (abrir)
-        target.title = "Ver dias anteriores";
-        target.classList.remove('ativo');
-    }
-}
 
 // --- Handlers de Modais ---
 
