@@ -1,6 +1,4 @@
---- START OF FILE style.css ---
-
-/* style.css (Completo - Versão 2.1 Neuro-Learning & Checklist CAPE) */
+/* style.css (Completo - Versão 2.2 com Foco Progressivo/Cronograma Inteligente) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -790,6 +788,10 @@ section h2 {
     font-size: 0.9em;
     font-weight: bold;
     color: #555;
+    /* Adicionado para suportar o layout flexivel do cabeçalho */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
 .dias-leitura {
@@ -801,6 +803,50 @@ section h2 {
     padding: 5px 10px;
     background-color: #fdfdfd;
 }
+
+/* === NOVO: ESTILOS PARA CRONOGRAMA INTELIGENTE (FOCO PROGRESSIVO) === */
+
+/* Oculta os itens antigos por padrão */
+.item-recolhido {
+    display: none !important;
+}
+
+/* Quando o container pai tem a classe 'mostrar-historico', exibe os itens ocultos */
+.dias-leitura.mostrar-historico .item-recolhido {
+    display: flex !important; /* Restaura o layout flex do .dia-leitura */
+    background-color: #fafafa; /* Fundo sutil para diferenciar histórico */
+    opacity: 0.85; /* Leve transparência para tirar o foco */
+}
+
+/* Estilo do Botão de Histórico (Toggle) */
+.btn-toggle-historico {
+    background: none;
+    border: 1px solid #e0e0e0;
+    border-radius: 12px;
+    cursor: pointer;
+    font-size: 0.8em;
+    color: #777;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 2px 10px;
+    margin-left: auto;
+    transition: all 0.2s ease;
+}
+
+.btn-toggle-historico:hover {
+    background-color: #f0f0f0;
+    color: var(--neuro-primary);
+    border-color: #ccc;
+}
+
+.btn-toggle-historico.ativo {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #c8e6c9;
+}
+
+/* ==================================================================== */
 
 .dia-leitura {
     display: flex;
