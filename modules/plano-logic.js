@@ -1,5 +1,3 @@
-// --- START OF FILE plano-logic.js (COMPLETO E MODIFICADO) ---
-
 // modules/plano-logic.js
 // RESPONSABILIDADE ÚNICA: Conter toda a lógica de negócio, cálculos e manipulação
 // de dados dos planos. Funções "puras" que não tocam no DOM.
@@ -66,6 +64,33 @@ export function verificarAtraso(plano) {
         }
         return count;
     }, 0);
+}
+
+/**
+ * Verifica se um dia de leitura deve ser exibido no modo de "Foco Progressivo".
+ * Regra: Exibir se não foi lido OU se possui Neuro-Anotações relevantes.
+ * @param {object} dia - O objeto do dia de leitura.
+ * @returns {boolean} True se deve ser visível, False se deve ser ocultado (histórico).
+ */
+export function verificarVisibilidadeDia(dia) {
+    if (!dia) return false;
+    
+    // Se não foi lido, sempre mostra (tarefa pendente)
+    if (!dia.lido) return true;
+
+    // Se foi lido, verifica se tem anotações relevantes (Neuro-Notes)
+    // Verifica existência do objeto e se arrays de conteúdo têm itens
+    if (dia.neuroNote) {
+        const temInsights = Array.isArray(dia.neuroNote.insights) && dia.neuroNote.insights.length > 0;
+        const temMeta = Array.isArray(dia.neuroNote.meta) && dia.neuroNote.meta.length > 0;
+        const temTriggers = Array.isArray(dia.neuroNote.triggers) && dia.neuroNote.triggers.length > 0;
+        
+        // Se tiver qualquer tipo de anotação, mantém visível para revisão
+        if (temInsights || temMeta || temTriggers) return true;
+    }
+
+    // Se foi lido e não tem notas relevantes, deve ser ocultado (ir para histórico)
+    return false;
 }
 
 /**
@@ -169,7 +194,6 @@ export function gerarDiasPlanoPorDias(dataInicio, numeroDias, periodicidade, dia
     return dias;
 }
 
-// INÍCIO DA MODIFICAÇÃO (Prioridade 1)
 /**
  * Gera um array de dias de leitura com base na meta de páginas por dia.
  * @param {Date} dataInicio
@@ -194,7 +218,6 @@ export function gerarDiasPlanoPorPaginas(dataInicio, paginasPorDia, paginaInicio
     // Reutiliza a lógica já existente para gerar os dias
     return gerarDiasPlanoPorDias(dataInicio, diasLeituraNecessarios, periodicidade, diasSemana);
 }
-// FIM DA MODIFICAÇÃO
 
 /**
  * Distribui as páginas de um plano entre seus dias de leitura. Modifica o objeto plano.
@@ -364,7 +387,6 @@ export function analisarCargaSemanal(planos, totalPlanos) {
     return diasDaSemana;
 }
 
-// INÍCIO DA MODIFICAÇÃO (Prioridade 1)
 function gerarDiasDoPlano(formData) {
     if (formData.definicaoPeriodo === 'datas') {
         return gerarDiasPlanoPorDatas(formData.dataInicio, formData.dataFim, formData.periodicidade, formData.diasSemana);
@@ -374,7 +396,6 @@ function gerarDiasDoPlano(formData) {
         return gerarDiasPlanoPorPaginas(formData.dataInicio, formData.paginasPorDia, formData.paginaInicio, formData.paginaFim, formData.periodicidade, formData.diasSemana);
     }
 }
-// FIM DA MODIFICAÇÃO
 
 export function construirObjetoPlano(formData, planoEditado) {
     const diasPlano = gerarDiasDoPlano(formData);
@@ -546,7 +567,6 @@ export function gerarConteudoICS(planos, horaInicio, horaFim) {
     return icsContent.join('\r\n');
 }
 
-// INÍCIO DA MODIFICAÇÃO (Prioridade 2.B)
 /**
  * Calcula a data de término estimada de um plano com base nos dados do formulário.
  * @param {object} dadosFormulario - Objeto contendo dataInicio, paginasPorDia, etc.
@@ -583,6 +603,3 @@ export function calcularDataFimEstimada(dadosFormulario) {
 
     return dataFimEstimada;
 }
-// FIM DA MODIFICAÇÃO
-
-// --- END OF FILE plano-logic.js ---
