@@ -1,5 +1,3 @@
-// --- START OF FILE main.js (COMPLETO E ATUALIZADO COM HISTÓRICO) ---
-
 // main.js - O Orquestrador da Aplicação
 
 // --- Importações dos Módulos ---
@@ -51,6 +49,8 @@ async function handleAuthStateChange(firebaseUser) {
 
 // --- Configuração dos Ouvintes de Eventos (Event Listeners) ---
 function setupEventHandlers() {
+    console.log('[DEBUG] 1. Configurando Event Handlers...');
+
     // Autenticação
     DOMElements.loginEmailButton.addEventListener('click', handleLogin);
     DOMElements.signupEmailButton.addEventListener('click', handleSignup);
@@ -66,8 +66,13 @@ function setupEventHandlers() {
     // Formulário de Plano
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
-    // Ações nos Cards (Event Delegation - Inclui agora as ações Neuro e Checklist)
-    DOMElements.listaPlanos.addEventListener('click', handleCardAction);
+    // Ações nos Cards (Event Delegation)
+    if (DOMElements.listaPlanos) {
+        console.log('[DEBUG] 2. Listener de clique adicionado com sucesso em listaPlanos');
+        DOMElements.listaPlanos.addEventListener('click', handleCardAction);
+    } else {
+        console.error('[CRITICAL] Elemento listaPlanos NÃO encontrado no DOM durante setupEventHandlers!');
+    }
 
     // Modal de Reavaliação de Carga
     DOMElements.reavaliarCargaBtn.addEventListener('click', handleReavaliarCarga);
@@ -114,54 +119,34 @@ function setupEventHandlers() {
         });
     }
 
-    // --- Listeners para o Modal Neuro-Anotações ---
+    // Listeners para Modais Neuro e Checklist
     const closeNeuroBtn = document.getElementById('close-neuro-modal');
     if (closeNeuroBtn) {
-        closeNeuroBtn.addEventListener('click', () => {
-            document.getElementById('neuro-modal').classList.remove('visivel');
-        });
+        closeNeuroBtn.addEventListener('click', () => document.getElementById('neuro-modal').classList.remove('visivel'));
     }
-    
     const neuroModal = document.getElementById('neuro-modal');
     if (neuroModal) {
-        neuroModal.addEventListener('click', (e) => {
-            if (e.target === neuroModal) {
-                neuroModal.classList.remove('visivel');
-            }
-        });
+        neuroModal.addEventListener('click', (e) => { if (e.target === neuroModal) neuroModal.classList.remove('visivel'); });
     }
-
     const btnSaveNeuro = document.getElementById('btn-save-neuro');
     if (btnSaveNeuro) {
         btnSaveNeuro.addEventListener('click', handleSaveNeuroNote);
     }
 
-    // --- Listeners para o Modal Checklist de Retenção ---
     const closeChecklistBtn = document.getElementById('close-checklist-modal');
     if (closeChecklistBtn) {
-        closeChecklistBtn.addEventListener('click', () => {
-            document.getElementById('checklist-modal').classList.remove('visivel');
-        });
+        closeChecklistBtn.addEventListener('click', () => document.getElementById('checklist-modal').classList.remove('visivel'));
     }
-
     const closeChecklistAction = document.getElementById('btn-close-checklist-action');
     if (closeChecklistAction) {
-        closeChecklistAction.addEventListener('click', () => {
-            document.getElementById('checklist-modal').classList.remove('visivel');
-        });
+        closeChecklistAction.addEventListener('click', () => document.getElementById('checklist-modal').classList.remove('visivel'));
     }
-    
-    // Overlay do Modal Checklist
     const checklistModal = document.getElementById('checklist-modal');
     if (checklistModal) {
-        checklistModal.addEventListener('click', (e) => {
-            if (e.target === checklistModal) {
-                checklistModal.classList.remove('visivel');
-            }
-        });
+        checklistModal.addEventListener('click', (e) => { if (e.target === checklistModal) checklistModal.classList.remove('visivel'); });
     }
 
-    // MELHORIA DE UX: Fechar modais com a tecla 'Escape'
+    // Fechar modais com Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (DOMElements.reavaliacaoModal.classList.contains('visivel')) ui.hideReavaliacaoModal();
@@ -169,17 +154,11 @@ function setupEventHandlers() {
             if (DOMElements.agendaModal.classList.contains('visivel')) ui.hideAgendaModal();
             if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) ui.hideChangelogModal();
             
-            // Fechar modal Neuro
             const neuroModalEl = document.getElementById('neuro-modal');
-            if (neuroModalEl && neuroModalEl.classList.contains('visivel')) {
-                neuroModalEl.classList.remove('visivel');
-            }
+            if (neuroModalEl && neuroModalEl.classList.contains('visivel')) neuroModalEl.classList.remove('visivel');
 
-            // Fechar modal Checklist
             const checklistModalEl = document.getElementById('checklist-modal');
-            if (checklistModalEl && checklistModalEl.classList.contains('visivel')) {
-                checklistModalEl.classList.remove('visivel');
-            }
+            if (checklistModalEl && checklistModalEl.classList.contains('visivel')) checklistModalEl.classList.remove('visivel');
         }
     });
 }
@@ -253,7 +232,6 @@ async function handleFormSubmit(event) {
             ui.highlightAndScrollToPlano(planoIndexFinal);
         }
         
-        // Garante o auto-scroll após criar/editar
         ui.autoScrollParaDiaAtual();
 
     } catch (error) {
@@ -290,7 +268,7 @@ async function handleAgendaExport() {
     }
 }
 
-// Mapeamento de ações para suas respectivas funções de tratamento
+// --- Mapeamento de Ações ---
 const actionHandlers = {
     'editar': handleEditarPlano,
     'excluir': handleExcluirPlano,
@@ -299,27 +277,42 @@ const actionHandlers = {
     'retomar': handleRetomarPlano,
     'recalcular': handleRecalcularPlano,
     'salvar-parcial': handleSalvarParcial,
-    // NOVAS AÇÕES NEURO E CHECKLIST
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
     'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
-    // NOVA AÇÃO: Histórico de dias
+    // --- NOVO HANDLER REGISTRADO ---
     'toggle-historico': handleToggleHistorico
 };
 
+// --- FUNÇÃO DE DELEGAÇÃO DE EVENTOS INSTRUMENTADA ---
 function handleCardAction(event) {
+    console.log('[DEBUG] 3. Clique detectado em listaPlanos. Alvo original:', event.target);
+
     const target = event.target.closest('[data-action]');
+    console.log('[DEBUG] 4. Elemento com data-action encontrado:', target);
+
     if (!target) return;
 
     const action = target.dataset.action;
+    console.log(`[DEBUG] 5. Ação identificada: "${action}"`);
     
-    // Tratamento direto para ações que não precisam de plano/usuário (como abrir o checklist)
+    // Tratamento direto para ações que não precisam de plano/usuário
     if (action === 'open-checklist') {
-        if(actionHandlers[action]) {
-            actionHandlers[action]();
+        if(actionHandlers[action]) actionHandlers[action]();
+        return;
+    }
+
+    // Tratamento específico para o toggle de histórico (não depende estritamente do plano/user)
+    if (action === 'toggle-historico') {
+        if (actionHandlers[action]) {
+            console.log('[DEBUG] Executando handler específico para: toggle-historico');
+            actionHandlers[action](target);
+        } else {
+            console.error('[CRITICAL] Handler para toggle-historico NÃO ENCONTRADO em actionHandlers!');
         }
         return;
     }
+    // -----------------------------------------------------
 
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const plano = state.getPlanoByIndex(planoIndex);
@@ -328,32 +321,29 @@ function handleCardAction(event) {
     if (isNaN(planoIndex) || !plano || !currentUser) return;
 
     if (actionHandlers[action]) {
+        console.log(`[DEBUG] Executando handler padrão para: ${action}`);
         actionHandlers[action](target, plano, planoIndex, currentUser);
     }
 }
 
 // --- Funções de Tratamento de Ações do Card ---
 
-// Função que controla a visibilidade do histórico
-function handleToggleHistorico(target, plano, planoIndex, currentUser) {
-    // 1. Localiza o card do plano
+// Função de Toggle Histórico (Implementada)
+function handleToggleHistorico(target) {
+    console.log('[Main] Alternando visibilidade do histórico...');
     const card = target.closest('.plano-leitura');
     if (!card) return;
 
-    // 2. Localiza o container da lista de dias dentro deste card
     const listaDias = card.querySelector('.dias-leitura');
     if (!listaDias) return;
 
-    // 3. Alterna a classe que força a exibição dos itens ocultos
     listaDias.classList.toggle('mostrar-historico');
-
-    // 4. (UX) Alterna o ícone do botão para dar feedback visual
+    
+    // Atualiza ícone e estilo
     const iconSpan = target.querySelector('.material-symbols-outlined');
     if (iconSpan) {
         const isVisible = listaDias.classList.contains('mostrar-historico');
-        // Muda para seta p/ cima se estiver aberto, ou relógio se estiver fechado
         iconSpan.textContent = isVisible ? 'expand_less' : 'history';
-        // Opcional: Feedback visual ativo no botão
         target.style.color = isVisible ? 'var(--neuro-primary)' : '';
         target.title = isVisible ? "Ocultar histórico" : "Ver histórico completo";
     }
