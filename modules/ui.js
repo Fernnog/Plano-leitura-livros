@@ -41,7 +41,7 @@ export function highlightAndScrollToPlano(planoIndex) {
 }
 
 /**
- * NOVA FUNÇÃO: Rola a tela automaticamente para os dias marcados como alvo (Hoje/Próximo).
+ * Rola a tela automaticamente para os dias marcados como alvo (Hoje/Próximo).
  */
 export function autoScrollParaDiaAtual() {
     // Pequeno delay para garantir que o DOM foi renderizado e o layout calculado
@@ -343,6 +343,9 @@ function renderizarPlanos(planos, user) {
             .filter(d => d.neuroNote && d.neuroNote.pageStart !== undefined && d.neuroNote.pageEnd !== undefined)
             .map(d => ({ start: d.neuroNote.pageStart, end: d.neuroNote.pageEnd }));
 
+        // ** ALTERAÇÃO PRIORIDADE 1: Contador de dias ocultos **
+        let diasOcultosCount = 0;
+
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
             let acoesDiaHTML = '';
             if (diaIndex === proximoDiaIndex && !isPausado) {
@@ -367,7 +370,16 @@ function renderizarPlanos(planos, user) {
             const isInNeuroRange = neuroContexts.some(ctx => 
                 dia.paginaInicioDia <= ctx.end && dia.paginaFimDia >= ctx.start
             );
-            const showNeuroIcon = dia.neuroNote || isInNeuroRange;
+
+            // Verifica se tem anotações importantes
+            const temNeuroNote = dia.neuroNote && (
+                (dia.neuroNote.insights && dia.neuroNote.insights.length > 0) ||
+                (dia.neuroNote.meta && dia.neuroNote.meta.length > 0) ||
+                (dia.neuroNote.triggers && dia.neuroNote.triggers.length > 0)
+            );
+            
+            const showNeuroIcon = temNeuroNote || isInNeuroRange;
+            
             const neuroIcon = showNeuroIcon 
                 ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
@@ -392,8 +404,18 @@ function renderizarPlanos(planos, user) {
             // Bônus UX: Badge "HOJE"
             const badgeHoje = isHoje ? '<span class="status-tag status-em-dia" style="font-size:0.7em; margin-left:5px; background-color:#e67e22; color:white; border:none;">HOJE</span>' : '';
 
+            // ** ALTERAÇÃO PRIORIDADE 1: Lógica de Visibilidade (Progressive Disclosure) **
+            // Deve mostrar se: NÃO foi lido OU (foi lido E tem anotações importantes)
+            const deveMostrar = !dia.lido || temNeuroNote;
+            let classeVisibilidade = '';
+            
+            if (!deveMostrar) {
+                diasOcultosCount++;
+                classeVisibilidade = 'item-recolhido';
+            }
+
             return `
-            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass} ${classeScroll}" ${attrScroll}>
+            <div class="dia-leitura ${dia.lido ? 'lido' : ''} ${neuroClass} ${classeScroll} ${classeVisibilidade}" ${attrScroll}>
                 <div style="display:flex; align-items:center; width:100%;">
                     <input type="checkbox" id="dia-${index}-${diaIndex}" data-action="marcar-lido" data-plano-index="${index}" data-dia-index="${diaIndex}" ${dia.lido ? 'checked' : ''}>
                     <label for="dia-${index}-${diaIndex}" style="margin-left:8px;">
@@ -417,6 +439,13 @@ function renderizarPlanos(planos, user) {
                 </div>
             </div>
         ` : '';
+
+        // ** ALTERAÇÃO PRIORIDADE 1: Botão de Toggle Histórico **
+        const botaoHistoricoHTML = diasOcultosCount > 0 
+            ? `<button class="btn-toggle-historico" data-action="toggle-historico" data-plano-index="${index}" title="Ver dias anteriores">
+                 <span class="material-symbols-outlined" style="font-size: 1.1em; vertical-align: text-bottom;">history</span> ${diasOcultosCount}
+               </button>` 
+            : '';
 
         // REDESIGN: Layout em Grid (Com botão NOVO de Checklist)
         html += `
@@ -447,7 +476,10 @@ function renderizarPlanos(planos, user) {
                 <div class="plano-leitura-grid">
                     <!-- Coluna Esquerda: Cronograma -->
                     <div>
-                        <h4 class="dias-leitura-titulo" style="margin-top:0;">Cronograma de Leitura:</h4>
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; margin-top: 0;">
+                            <h4 class="dias-leitura-titulo" style="margin: 0;">Cronograma:</h4>
+                            ${botaoHistoricoHTML}
+                        </div>
                         <div class="dias-leitura">${diasLeituraHTML}</div>
                     </div>
 
