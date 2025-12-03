@@ -1,33 +1,45 @@
-// --- START OF FILE config/version-config.js ---
+// config/version-config.js
 export const versionConfig = {
-  version: "1.0.2",
-  changelog: {
-    title: "Atualização 1.0.2: Neuro-Learning Granular",
-    sections: [
-      {
-        title: "🧠 Painel Neuro Dinâmico",
-        points: [
-          "<strong>Fim dos Limites de Campo:</strong> Substituímos os campos de texto estáticos por listas dinâmicas. Agora você pode adicionar quantos insights, gatilhos ou passos M.E.T.A. quiser por sessão de leitura.",
-          "<strong>Rastreamento por Página:</strong> Cada anotação — seja um insight, um erro de predição ou uma dúvida — agora possui um campo dedicado para o número da página, permitindo precisão cirúrgica na revisão.",
-          "<strong>Subformulários Ágeis:</strong> Nova interface de adição rápida que permite inserir anotações sem quebrar o fluxo de leitura."
+    version: '1.0.3',
+    changelog: {
+        title: 'Histórico de Evolução',
+        sections: [
+            {
+                title: 'v1.0.3 - Módulo de Retenção & Estabilidade (Atual)',
+                points: [
+                    '<strong>NOVO: Checklist de Retenção (C.A.P.E.):</strong> Implementação do método de validação cognitiva (Confronto, Ancoragem, Percepção, Esquema).',
+                    '<strong>UX:</strong> Novo modal visual com grid de conceitos e tabela de verificação de aprendizado.',
+                    '<strong>FIX:</strong> Correção crítica no orquestrador de eventos (main.js) onde botões de ação sem índice de plano não respondiam.',
+                    '<strong>TECH:</strong> Adição de telemetria de logs para diagnóstico de interações de interface.'
+                ]
+            },
+            {
+                title: 'v1.0.2 - Neuro-Painel Granular',
+                points: [
+                    '<strong>UI Split-View:</strong> Redesign dos cards de leitura para exibir Cronograma (esquerda) e Painel Neuro (direita) lado a lado.',
+                    '<strong>Listas Dinâmicas:</strong> Agora é possível adicionar múltiplos Insights, Passos M.E.T.A. e Gatilhos por sessão, ao invés de apenas um campo de texto.',
+                    '<strong>Contexto de Leitura:</strong> Adicionado suporte para definir intervalo de páginas (Início/Fim) específico para cada anotação.',
+                    '<strong>Visual:</strong> Identificação visual por cores para tipos de anotação (Roxo para dúvidas, Laranja para alertas, etc.).'
+                ]
+            },
+            {
+                title: 'v1.0.1 - A Era Neuro-Learning',
+                points: [
+                    '<strong>Conceito M.E.T.A.:</strong> Introdução dos campos de Mapear, Engajar, Traduzir e Aplicar.',
+                    '<strong>Exportação Markdown:</strong> Funcionalidade para baixar resumos formatados compatíveis com Obsidian e Notion.',
+                    '<strong>Design System:</strong> Adoção da paleta de cores "Deep Blue & Burnt Orange" e tipografia serifada para títulos.',
+                    '<strong>Gatilhos de Memória:</strong> Primeiros campos para registro de "Erro de Predição" e "Codificação Dupla".'
+                ]
+            },
+            {
+                title: 'v1.0.0 - O Início (MVP)',
+                points: [
+                    '<strong>Gestão de Planos:</strong> Criação, edição e exclusão de planos de leitura.',
+                    '<strong>Cálculo Automático:</strong> Algoritmo de distribuição de páginas por dias da semana.',
+                    '<strong>Persistência:</strong> Integração com Firebase (Auth e Firestore) para salvar dados na nuvem.',
+                    '<strong>PWA:</strong> Suporte básico para instalação como aplicativo no celular.'
+                ]
+            }
         ]
-      },
-      {
-        title: "⚡ Novos Tipos de Insight & Métodos",
-        points: [
-          "<strong>Marcadores Rápidos (? e !):</strong> Classifique seus pensamentos instantaneamente. Use <strong>'❓ Dúvida'</strong> para questionamentos críticos e <strong>'❗ Ponto Chave'</strong> para conceitos fundamentais.",
-          "<strong>👁️ Codificação Dupla:</strong> Implementação oficial do gatilho visual. Um espaço dedicado para descrever diagramas, mapas mentais ou imagens associativas, ativando canais sensoriais adicionais conforme a neurociência."
-        ]
-      },
-      {
-        title: "🛠️ Engenharia & Dados",
-        points: [
-          "<strong>Migração Automática:</strong> O sistema detecta anotações de versões anteriores e as converte automaticamente para o novo formato de lista, garantindo que nenhum dado histórico seja perdido.",
-          "<strong>Identificação Visual:</strong> Cards com bordas coloridas (Roxo para dúvidas, Laranja para destaques, Verde para gatilhos, Azul para M.E.T.A) para leitura rápida.",
-          "<strong>Exportação Markdown Estruturada:</strong> O resumo .md gerado agora agrupa suas anotações de forma granular, facilitando a criação de uma 'segunda base de cérebro' (Second Brain)."
-        ]
-      }
-    ]
-  }
+    }
 };
-// --- END OF FILE config/version-config.js ---
