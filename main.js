@@ -128,9 +128,10 @@ function setupEventHandlers() {
     if (neuroModal) {
         neuroModal.addEventListener('click', (e) => { if (e.target === neuroModal) neuroModal.classList.remove('visivel'); });
     }
-    
-    // NOTA: O listener para #btn-save-neuro foi removido daqui e passado para neuro-notes.js
-    // para evitar conflitos de eventos dinâmicos.
+    const btnSaveNeuro = document.getElementById('btn-save-neuro');
+    if (btnSaveNeuro) {
+        btnSaveNeuro.addEventListener('click', handleSaveNeuroNote);
+    }
 
     const closeChecklistBtn = document.getElementById('close-checklist-modal');
     if (closeChecklistBtn) {
@@ -279,6 +280,7 @@ const actionHandlers = {
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
     'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
+    // --- NOVO HANDLER REGISTRADO ---
     'toggle-historico': handleToggleHistorico
 };
 
@@ -326,6 +328,7 @@ function handleCardAction(event) {
 
 // --- Funções de Tratamento de Ações do Card ---
 
+// Função de Toggle Histórico (Implementada)
 function handleToggleHistorico(target) {
     console.log('[Main] Alternando visibilidade do histórico...');
     const card = target.closest('.plano-leitura');
@@ -426,35 +429,61 @@ function handleRecalcularPlano(target, plano, planoIndex, currentUser) {
     ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
 }
 
-// --- ATUALIZADO: Handlers NEURO ---
+// --- Novos Handlers NEURO (ATUALIZADO) ---
 function handleOpenNeuro(target, plano, planoIndex, currentUser) {
     // 1. Tenta pegar o dia específico (se o clique veio da lista de dias)
     let targetDiaIndex = target.dataset.diaIndex ? parseInt(target.dataset.diaIndex, 10) : null;
-    
-    // 2. Se for o botão do painel lateral (sem dia específico), calcula o contexto
-    if (targetDiaIndex === null || isNaN(targetDiaIndex)) {
-        // Usa a lógica do plano-logic para achar o primeiro dia não lido
-        targetDiaIndex = planoLogic.encontrarProximoDiaDeLeituraIndex(plano);
-        
-        // Se o retorno for -1 (plano concluído), abre o último dia para revisão
-        if (targetDiaIndex === -1) {
-            targetDiaIndex = plano.diasPlano.length - 1;
-        }
-    }
 
-    // 3. Validação e Chamada
-    if (targetDiaIndex !== null && targetDiaIndex >= 0) {
-        console.log(`[Main] Abrindo Neuro para Plano ${planoIndex}, Dia ${targetDiaIndex}`);
-        neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
-    } else {
-        console.error("[Main] Não foi possível determinar o dia de leitura.");
-        alert("Não foi possível identificar o dia de leitura atual.");
-    }
+    // Log para depuração
+    console.log(`[Main] Abrindo Neuro para Plano ${planoIndex}. Dia específico: ${targetDiaIndex !== null ? targetDiaIndex : 'Nenhum (Contexto Geral)'}`);
+
+    // A lógica de "qual nota mostrar" (última editada ou nova baseada no dia)
+    // agora é responsabilidade do módulo neuro-notes.js, não do main.js.
+    // O modal simplesmente abre e decide o que carregar com base nos dados.
+    neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
 }
 
 function handleDownloadMarkdown(target, plano, planoIndex, currentUser) {
     neuroNotes.downloadMarkdown(plano);
 }
+
+async function handleSaveNeuroNote() {
+    const btn = document.getElementById('btn-save-neuro');
+    const planoIndex = parseInt(btn.dataset.planoIndex, 10);
+    const diaIndex = parseInt(btn.dataset.diaIndex, 10);
+    const currentUser = state.getCurrentUser();
+
+    if (isNaN(planoIndex) || isNaN(diaIndex)) {
+        console.error("Erro ao identificar plano/dia para salvar nota.");
+        return;
+    }
+
+    // Chama o módulo neuro para processar os dados do DOM
+    const noteData = neuroNotes.extractNoteDataFromDOM();
+    
+    // Atualiza o estado
+    const plano = state.getPlanoByIndex(planoIndex);
+    if (!plano.diasPlano[diaIndex].neuroNote) {
+        plano.diasPlano[diaIndex].neuroNote = {};
+    }
+    plano.diasPlano[diaIndex].neuroNote = noteData;
+
+    // Persiste no Firebase
+    try {
+        state.updatePlano(planoIndex, plano);
+        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        
+        // Feedback e UI
+        alert('Neuro-conexão registrada com sucesso!');
+        document.getElementById('neuro-modal').classList.remove('visivel');
+        ui.renderApp(state.getPlanos(), currentUser); // Re-renderiza para atualizar ícones de status
+        
+    } catch (error) {
+        console.error("Erro ao salvar nota:", error);
+        alert("Erro ao salvar: " + error.message);
+    }
+}
+
 
 // --- Handlers de Modais ---
 
