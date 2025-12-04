@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
-// ATUALIZADO: Arquitetura dissociada (neuroAnnotations), Reset de Ciclo e UI dinâmica.
+// ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional) e Robustez no Recálculo.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -9,7 +9,7 @@ import * as ui from './ui.js';
 
 // --- Variável de Estado Local (Temporária enquanto o modal está aberto) ---
 let tempNoteData = {
-    id: null,        // ID único da anotação (novo para arquitetura dissociada)
+    id: null,        // ID único da anotação
     chapterTitle: '',
     pageStart: null,
     pageEnd: null,
@@ -19,7 +19,7 @@ let tempNoteData = {
 };
 
 let currentPlanoIndex = null;
-let currentDiaIndex = null; // Usado apenas para referência de página, não mais para salvar dados fixos no dia
+let currentDiaIndex = null; // Pode ser null se aberto pelo botão geral do painel
 
 // --- Inicialização e Helpers ---
 
@@ -102,50 +102,66 @@ function ensureModalExists() {
     document.getElementById('close-neuro-modal').addEventListener('click', closeNoteModal);
 }
 
-export function openNoteModal(planoIndex, diaIndex) {
+// ATUALIZADO: diaIndex agora é opcional (default null)
+export function openNoteModal(planoIndex, diaIndex = null) {
     ensureModalExists();
     currentPlanoIndex = planoIndex;
     currentDiaIndex = diaIndex;
 
     const plano = state.getPlanoByIndex(planoIndex);
     
-    if (!plano || !plano.diasPlano || diaIndex < 0 || diaIndex >= plano.diasPlano.length) {
-        console.error("Erro ao abrir modal: Índices inválidos.");
+    // Validação básica do plano
+    if (!plano) {
+        console.error("Erro ao abrir modal: Plano não encontrado.");
         return;
     }
 
-    const dia = plano.diasPlano[diaIndex];
-
-    // --- LÓGICA DE DISSOCIAÇÃO DE DADOS ---
-    // 1. Tenta encontrar uma nota global (neuroAnnotations) que corresponda ao intervalo de páginas deste dia
     let annotationFound = null;
     const annotations = plano.neuroAnnotations || [];
-    
-    // Procura anotação que intercepte o intervalo do dia
-    annotationFound = annotations.find(note => 
-        (dia.paginaInicioDia <= note.pageEnd && dia.paginaFimDia >= note.pageStart)
-    );
 
-    // 2. Fallback para legado (se existir nota presa no dia e não houver global)
-    if (!annotationFound && dia.neuroNote) {
-        annotationFound = dia.neuroNote;
+    // LÓGICA DE SELEÇÃO DE CONTEXTO
+
+    // Cenário 1: Usuário clicou em um dia específico na lista
+    if (diaIndex !== null && plano.diasPlano && plano.diasPlano[diaIndex]) {
+        const dia = plano.diasPlano[diaIndex];
+        
+        // Procura anotação global que intercepte o intervalo do dia
+        annotationFound = annotations.find(note => 
+            (dia.paginaInicioDia <= note.pageEnd && dia.paginaFimDia >= note.pageStart)
+        );
+
+        // Fallback para legado (se existir nota presa no dia e não houver global)
+        if (!annotationFound && dia.neuroNote) {
+            annotationFound = dia.neuroNote;
+        }
+    }
+
+    // Cenário 2: Usuário clicou no botão geral (sem dia específico) ou não achou nota no dia
+    // Carrega o ÚLTIMO contexto trabalhado (continuidade)
+    if (!annotationFound && annotations.length > 0) {
+        // Assume que a última anotação do array é a mais recente
+        annotationFound = annotations[annotations.length - 1];
     }
 
     // 3. Prepara os dados temporários
     tempNoteData = migrateLegacyData(annotationFound);
 
-    // Se título vazio, sugere padrão
-    if (!tempNoteData.chapterTitle) {
-        tempNoteData.chapterTitle = `Leitura Pág. ${dia.paginaInicioDia} - ${dia.paginaFimDia}`;
+    // Configuração de Defaults (se for nova nota)
+    if (!annotationFound) {
+        // Se temos um dia de referência, usamos as páginas dele
+        if (diaIndex !== null && plano.diasPlano && plano.diasPlano[diaIndex]) {
+            const dia = plano.diasPlano[diaIndex];
+            tempNoteData.chapterTitle = `Leitura Pág. ${dia.paginaInicioDia} - ${dia.paginaFimDia}`;
+            tempNoteData.pageStart = dia.paginaInicioDia;
+            tempNoteData.pageEnd = dia.paginaFimDia;
+        } else {
+            // Se contexto geral e sem histórico, inicia limpo ou genérico
+            tempNoteData.chapterTitle = 'Novo Contexto Neuro';
+            // Deixa pageStart/End nulos para o usuário preencher
+        }
     }
 
-    // Se intervalo vazio, usa o do dia atual
-    if (!tempNoteData.pageStart) tempNoteData.pageStart = dia.paginaInicioDia;
-    if (!tempNoteData.pageEnd) tempNoteData.pageEnd = dia.paginaFimDia;
-
     renderModalUI();
-
-    // Configura os botões de ação (Salvar e Reset)
     setupModalButtons();
 
     document.getElementById('neuro-modal').classList.add('visivel');
@@ -183,6 +199,10 @@ function renderModalUI() {
     const rangeGroupStyle = "display: flex; gap: 15px; margin-bottom: 20px;";
     const inputWrapperStyle = "flex: 1; display: flex; flex-direction: column;";
     
+    // Fallback visual para valores nulos nos inputs
+    const pStartVal = tempNoteData.pageStart !== null ? tempNoteData.pageStart : '';
+    const pEndVal = tempNoteData.pageEnd !== null ? tempNoteData.pageEnd : '';
+    
     modalBody.innerHTML = `
         <div class="neuro-input-group" style="margin-bottom: 10px;">
             <label>Contexto / Título do Capítulo</label>
@@ -192,11 +212,11 @@ function renderModalUI() {
         <div class="neuro-input-group" style="${rangeGroupStyle}">
             <div style="${inputWrapperStyle}">
                 <label style="font-size: 0.85em; margin-bottom: 5px;">Pág. Inicial do Contexto</label>
-                <input type="number" id="neuro-range-start" class="neuro-textarea-card" value="${tempNoteData.pageStart}" onchange="updatePageRange('start', this.value)">
+                <input type="number" id="neuro-range-start" class="neuro-textarea-card" value="${pStartVal}" placeholder="0" onchange="updatePageRange('start', this.value)">
             </div>
             <div style="${inputWrapperStyle}">
                 <label style="font-size: 0.85em; margin-bottom: 5px;">Pág. Final do Contexto</label>
-                <input type="number" id="neuro-range-end" class="neuro-textarea-card" value="${tempNoteData.pageEnd}" onchange="updatePageRange('end', this.value)">
+                <input type="number" id="neuro-range-end" class="neuro-textarea-card" value="${pEndVal}" placeholder="0" onchange="updatePageRange('end', this.value)">
             </div>
         </div>
         
@@ -352,7 +372,14 @@ async function saveNote() {
     // Validação
     const pStart = parseInt(tempNoteData.pageStart, 10);
     const pEnd = parseInt(tempNoteData.pageEnd, 10);
-    if (!isNaN(pStart) && !isNaN(pEnd) && pStart > pEnd) {
+    
+    // Verifica se os valores são números válidos antes de comparar
+    if (isNaN(pStart) || isNaN(pEnd)) {
+        alert('Por favor, defina um intervalo de páginas válido para este contexto.');
+        return;
+    }
+
+    if (pStart > pEnd) {
         alert('Erro: A Página Inicial não pode ser maior que a Página Final.');
         return;
     }
@@ -387,9 +414,11 @@ async function saveNote() {
         plano.neuroAnnotations.push(novaNota);
     }
 
-    // Limpa legado do dia para evitar duplicidade visual (opcional, mas recomendado)
-    if (plano.diasPlano[currentDiaIndex].neuroNote) {
-        plano.diasPlano[currentDiaIndex].neuroNote = null;
+    // ATUALIZADO: Só tenta limpar legado se tivermos um diaIndex válido
+    if (currentDiaIndex !== null && plano.diasPlano && plano.diasPlano[currentDiaIndex]) {
+        if (plano.diasPlano[currentDiaIndex].neuroNote) {
+            plano.diasPlano[currentDiaIndex].neuroNote = null;
+        }
     }
 
     state.updatePlano(currentPlanoIndex, plano);
@@ -419,7 +448,7 @@ async function saveNote() {
 
 // NOVO: Função de Reset
 async function handleResetNeuro() {
-    if (!confirm("ATENÇÃO: Isso irá apagar TODAS as anotações deste plano para iniciar um novo ciclo. \n\nUm arquivo de backup (.md) será baixado automaticamente. Deseja continuar?")) {
+    if (!confirm("ATENÇÃO: Isso irá apagar TODAS as anotações deste contexto para iniciar um novo ciclo. \n\nUm arquivo de backup (.md) será baixado automaticamente. Deseja continuar?")) {
         return;
     }
 
@@ -431,11 +460,15 @@ async function handleResetNeuro() {
         // 1. Força Download
         downloadMarkdown(plano);
 
-        // 2. Limpa dados globais
+        // 2. Limpa dados globais (Apaga todas as anotações do plano ou só a atual?
+        // Neste contexto de "Resetar Ciclo", geralmente significa limpar tudo para recomeçar o livro.
+        // Se quiséssemos apagar só a nota atual, filtraríamos pelo ID).
         plano.neuroAnnotations = [];
 
         // 3. Limpa legado (dias individuais)
-        plano.diasPlano.forEach(d => d.neuroNote = null);
+        if (plano.diasPlano) {
+            plano.diasPlano.forEach(d => d.neuroNote = null);
+        }
 
         // 4. Limpa estado local
         tempNoteData = {
@@ -479,17 +512,16 @@ export function downloadMarkdown(plano) {
     let allNotes = [...(plano.neuroAnnotations || [])];
     
     // Adiciona notas legadas se não estiverem no array global (para garantir backup completo)
-    plano.diasPlano.forEach(dia => {
-        if (dia.neuroNote && !allNotes.some(n => n.pageStart === dia.neuroNote.pageStart)) {
-            allNotes.push(migrateLegacyData(dia.neuroNote));
-        }
-    });
+    if (plano.diasPlano) {
+        plano.diasPlano.forEach(dia => {
+            if (dia.neuroNote && !allNotes.some(n => n.pageStart === dia.neuroNote.pageStart)) {
+                allNotes.push(migrateLegacyData(dia.neuroNote));
+            }
+        });
+    }
 
     if (allNotes.length === 0) {
-        // Se for chamado pelo Reset e não tiver notas, avisa mas não bloqueia o reset,
-        // mas aqui vamos apenas avisar.
         console.log("Nenhuma nota para exportar.");
-        // alert("Sem notas para exportar."); // Comentado para não travar o fluxo de reset se vazio
         return;
     }
 
@@ -538,4 +570,9 @@ export function downloadMarkdown(plano) {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
+}
+
+// --- Funções Auxiliares para exportação interna ---
+export function extractNoteDataFromDOM() {
+    return tempNoteData;
 }
