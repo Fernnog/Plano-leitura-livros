@@ -1,5 +1,3 @@
-// --- START OF FILE modules/ui.js ---
-
 // modules/ui.js
 // RESPONSABILIDADE ÚNICA: Manipular o DOM, renderizar elementos, ler dados de formulários
 // e gerenciar a visibilidade das seções da UI. Não contém lógica de negócio.
@@ -305,7 +303,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização (ATUALIZADO: Lógica de ícone Neuro baseada em intervalos) ---
+// --- Funções de Renderização ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -338,7 +336,6 @@ function renderizarPlanos(planos, user) {
             ? `<button data-action="retomar" data-plano-index="${index}" title="Retomar Plano" class="acao-retomar"><span class="material-symbols-outlined">play_circle</span></button>`
             : `<button data-action="pausar" data-plano-index="${index}" title="Pausar Plano"><span class="material-symbols-outlined">pause</span></button>`;
         
-        // ** ALTERAÇÃO PRIORIDADE 1: Contador de dias ocultos **
         let diasOcultosCount = 0;
 
         // Recupera as anotações globais (nova arquitetura) ou array vazio
@@ -444,6 +441,7 @@ function renderizarPlanos(planos, user) {
                </button>` 
             : '';
 
+        // CORREÇÃO: Adicionado type="button" e pointer-events: none nos filhos para evitar bugs de clique no Android
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
                 <div class="plano-header">
@@ -483,19 +481,19 @@ function renderizarPlanos(planos, user) {
                     <div class="neuro-panel">
                         <h4 class="neuro-panel-title">Painel Neuro</h4>
                         
-                        <button class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
-                            <span class="material-symbols-outlined">psychology_alt</span>
-                            <span>Anotar Insight</span>
+                        <button type="button" class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
+                            <span class="material-symbols-outlined" style="pointer-events: none;">psychology_alt</span>
+                            <span style="pointer-events: none;">Anotar Insight</span>
                         </button>
                         
-                        <button class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
-                            <span class="material-symbols-outlined">download</span>
-                            <span>Baixar Resumo</span>
+                        <button type="button" class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
+                            <span class="material-symbols-outlined" style="pointer-events: none;">download</span>
+                            <span style="pointer-events: none;">Baixar Resumo</span>
                         </button>
                         
-                        <button class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
-                            <span class="material-symbols-outlined">fact_check</span>
-                            <span>Checklist Retenção</span>
+                        <button type="button" class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
+                            <span class="material-symbols-outlined" style="pointer-events: none;">fact_check</span>
+                            <span style="pointer-events: none;">Checklist Retenção</span>
                         </button>
 
                          <div style="margin-top:auto; font-size:0.75em; color:#95a5a6; text-align:center; font-style:italic;">
@@ -748,4 +746,3 @@ export function toggleLoading(isLoading) {
     console.log(`[UI] Carregamento: ${isLoading ? 'ON' : 'OFF'}`);
     document.body.style.cursor = isLoading ? 'wait' : 'default';
 }
-// --- END OF FILE modules/ui.js ---

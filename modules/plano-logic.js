@@ -427,6 +427,9 @@ export function construirObjetoPlano(formData, planoEditado) {
         totalPaginas: formData.paginaFim - formData.paginaInicio + 1,
         isPaused: planoEditado ? planoEditado.isPaused : false,
         dataPausa: planoEditado ? planoEditado.dataPausa : null,
+        
+        // CORREÇÃO: Garante a persistência das anotações Neuro ao editar/recalcular
+        neuroAnnotations: planoEditado ? (planoEditado.neuroAnnotations || []) : [] 
     };
 }
 
