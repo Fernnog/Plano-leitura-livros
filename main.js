@@ -1,5 +1,3 @@
-// --- START OF FILE main.js (VERSÃO DE DIAGNÓSTICO) ---
-
 // main.js - O Orquestrador da Aplicação
 
 // --- Importações dos Módulos ---
@@ -68,8 +66,7 @@ function setupEventHandlers() {
     // Formulário de Plano
     DOMElements.formPlano.addEventListener('submit', handleFormSubmit);
 
-    // Ações nos Cards (Event Delegation - Inclui agora as ações Neuro e Checklist)
-    // --- PONTO DE DEBUG 1: Verificando se o listener está sendo anexado ---
+    // Ações nos Cards (Event Delegation)
     if (DOMElements.listaPlanos) {
         console.log('[DEBUG] 2. Listener de clique adicionado com sucesso em listaPlanos');
         DOMElements.listaPlanos.addEventListener('click', handleCardAction);
@@ -122,54 +119,33 @@ function setupEventHandlers() {
         });
     }
 
-    // --- Listeners para o Modal Neuro-Anotações ---
+    // Listeners para Modais Neuro e Checklist
     const closeNeuroBtn = document.getElementById('close-neuro-modal');
     if (closeNeuroBtn) {
-        closeNeuroBtn.addEventListener('click', () => {
-            document.getElementById('neuro-modal').classList.remove('visivel');
-        });
+        closeNeuroBtn.addEventListener('click', () => document.getElementById('neuro-modal').classList.remove('visivel'));
     }
-    
     const neuroModal = document.getElementById('neuro-modal');
     if (neuroModal) {
-        neuroModal.addEventListener('click', (e) => {
-            if (e.target === neuroModal) {
-                neuroModal.classList.remove('visivel');
-            }
-        });
-    }
-
-    const btnSaveNeuro = document.getElementById('btn-save-neuro');
-    if (btnSaveNeuro) {
-        btnSaveNeuro.addEventListener('click', handleSaveNeuroNote);
-    }
-
-    // --- Listeners para o Modal Checklist de Retenção ---
-    const closeChecklistBtn = document.getElementById('close-checklist-modal');
-    if (closeChecklistBtn) {
-        closeChecklistBtn.addEventListener('click', () => {
-            document.getElementById('checklist-modal').classList.remove('visivel');
-        });
-    }
-
-    const closeChecklistAction = document.getElementById('btn-close-checklist-action');
-    if (closeChecklistAction) {
-        closeChecklistAction.addEventListener('click', () => {
-            document.getElementById('checklist-modal').classList.remove('visivel');
-        });
+        neuroModal.addEventListener('click', (e) => { if (e.target === neuroModal) neuroModal.classList.remove('visivel'); });
     }
     
-    // Overlay do Modal Checklist
+    // NOTA: O listener para #btn-save-neuro foi removido daqui e passado para neuro-notes.js
+    // para evitar conflitos de eventos dinâmicos.
+
+    const closeChecklistBtn = document.getElementById('close-checklist-modal');
+    if (closeChecklistBtn) {
+        closeChecklistBtn.addEventListener('click', () => document.getElementById('checklist-modal').classList.remove('visivel'));
+    }
+    const closeChecklistAction = document.getElementById('btn-close-checklist-action');
+    if (closeChecklistAction) {
+        closeChecklistAction.addEventListener('click', () => document.getElementById('checklist-modal').classList.remove('visivel'));
+    }
     const checklistModal = document.getElementById('checklist-modal');
     if (checklistModal) {
-        checklistModal.addEventListener('click', (e) => {
-            if (e.target === checklistModal) {
-                checklistModal.classList.remove('visivel');
-            }
-        });
+        checklistModal.addEventListener('click', (e) => { if (e.target === checklistModal) checklistModal.classList.remove('visivel'); });
     }
 
-    // MELHORIA DE UX: Fechar modais com a tecla 'Escape'
+    // Fechar modais com Escape
     document.addEventListener('keydown', (e) => {
         if (e.key === 'Escape') {
             if (DOMElements.reavaliacaoModal.classList.contains('visivel')) ui.hideReavaliacaoModal();
@@ -177,17 +153,11 @@ function setupEventHandlers() {
             if (DOMElements.agendaModal.classList.contains('visivel')) ui.hideAgendaModal();
             if (DOMElements.changelogModal && DOMElements.changelogModal.classList.contains('visivel')) ui.hideChangelogModal();
             
-            // Fechar modal Neuro
             const neuroModalEl = document.getElementById('neuro-modal');
-            if (neuroModalEl && neuroModalEl.classList.contains('visivel')) {
-                neuroModalEl.classList.remove('visivel');
-            }
+            if (neuroModalEl && neuroModalEl.classList.contains('visivel')) neuroModalEl.classList.remove('visivel');
 
-            // Fechar modal Checklist
             const checklistModalEl = document.getElementById('checklist-modal');
-            if (checklistModalEl && checklistModalEl.classList.contains('visivel')) {
-                checklistModalEl.classList.remove('visivel');
-            }
+            if (checklistModalEl && checklistModalEl.classList.contains('visivel')) checklistModalEl.classList.remove('visivel');
         }
     });
 }
@@ -261,7 +231,6 @@ async function handleFormSubmit(event) {
             ui.highlightAndScrollToPlano(planoIndexFinal);
         }
         
-        // Garante o auto-scroll após criar/editar
         ui.autoScrollParaDiaAtual();
 
     } catch (error) {
@@ -298,7 +267,7 @@ async function handleAgendaExport() {
     }
 }
 
-// Mapeamento de ações para suas respectivas funções de tratamento
+// --- Mapeamento de Ações ---
 const actionHandlers = {
     'editar': handleEditarPlano,
     'excluir': handleExcluirPlano,
@@ -307,46 +276,37 @@ const actionHandlers = {
     'retomar': handleRetomarPlano,
     'recalcular': handleRecalcularPlano,
     'salvar-parcial': handleSalvarParcial,
-    // NOVAS AÇÕES NEURO E CHECKLIST
     'open-neuro': handleOpenNeuro,
     'download-md': handleDownloadMarkdown,
-    // ADICIONADO: Ação direta para abrir o checklist
-    'open-checklist': () => {
-        const modal = document.getElementById('checklist-modal');
-        if (modal) modal.classList.add('visivel');
-        else console.error("Modal checklist não encontrado pelo Handler!");
-    }
+    'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
+    'toggle-historico': handleToggleHistorico
 };
 
-// --- FUNÇÃO INSTRUMENTADA COM LOGS DE DEBUG ---
+// --- FUNÇÃO DE DELEGAÇÃO DE EVENTOS INSTRUMENTADA ---
 function handleCardAction(event) {
-    // LOG 3: O clique chegou na função?
     console.log('[DEBUG] 3. Clique detectado em listaPlanos. Alvo original:', event.target);
 
     const target = event.target.closest('[data-action]');
-    
-    // LOG 4: Conseguimos identificar um elemento com data-action?
     console.log('[DEBUG] 4. Elemento com data-action encontrado:', target);
 
     if (!target) return;
 
     const action = target.dataset.action;
-    // LOG 5: Qual é o nome da ação?
     console.log(`[DEBUG] 5. Ação identificada: "${action}"`);
     
-    // --- TRATAMENTO ESPECÍFICO PARA CHECKLIST COM LOGS ---
+    // Tratamento direto para ações que não precisam de plano/usuário
     if (action === 'open-checklist') {
-        console.log('[DEBUG] 6. Entrou no bloco específico do checklist');
-        const modalChecklist = document.getElementById('checklist-modal');
-        
-        // LOG 7: O modal existe no HTML?
-        console.log('[DEBUG] 7. Elemento modal encontrado?', modalChecklist);
+        if(actionHandlers[action]) actionHandlers[action]();
+        return;
+    }
 
-        if (modalChecklist) {
-            modalChecklist.classList.add('visivel');
-            console.log('[DEBUG] 8. Classe "visivel" adicionada com sucesso.');
+    // Tratamento específico para o toggle de histórico (não depende estritamente do plano/user)
+    if (action === 'toggle-historico') {
+        if (actionHandlers[action]) {
+            console.log('[DEBUG] Executando handler específico para: toggle-historico');
+            actionHandlers[action](target);
         } else {
-            console.error('[CRITICAL] ERRO: Modal com ID "checklist-modal" NÃO EXISTE no DOM.');
+            console.error('[CRITICAL] Handler para toggle-historico NÃO ENCONTRADO em actionHandlers!');
         }
         return;
     }
@@ -365,6 +325,26 @@ function handleCardAction(event) {
 }
 
 // --- Funções de Tratamento de Ações do Card ---
+
+function handleToggleHistorico(target) {
+    console.log('[Main] Alternando visibilidade do histórico...');
+    const card = target.closest('.plano-leitura');
+    if (!card) return;
+
+    const listaDias = card.querySelector('.dias-leitura');
+    if (!listaDias) return;
+
+    listaDias.classList.toggle('mostrar-historico');
+    
+    // Atualiza ícone e estilo
+    const iconSpan = target.querySelector('.material-symbols-outlined');
+    if (iconSpan) {
+        const isVisible = listaDias.classList.contains('mostrar-historico');
+        iconSpan.textContent = isVisible ? 'expand_less' : 'history';
+        target.style.color = isVisible ? 'var(--neuro-primary)' : '';
+        target.title = isVisible ? "Ocultar histórico" : "Ver histórico completo";
+    }
+}
 
 function handleEditarPlano(target, plano, planoIndex, currentUser) {
     state.setPlanoEditando(planoIndex);
@@ -446,62 +426,35 @@ function handleRecalcularPlano(target, plano, planoIndex, currentUser) {
     ui.showRecalculoModal(plano, planoIndex, 'Confirmar Recálculo');
 }
 
-// --- Novos Handlers NEURO ---
+// --- ATUALIZADO: Handlers NEURO ---
 function handleOpenNeuro(target, plano, planoIndex, currentUser) {
-    // Se o botão foi clicado na lista de dias (contexto específico do dia)
-    const diaIndex = target.dataset.diaIndex ? parseInt(target.dataset.diaIndex, 10) : null;
+    // 1. Tenta pegar o dia específico (se o clique veio da lista de dias)
+    let targetDiaIndex = target.dataset.diaIndex ? parseInt(target.dataset.diaIndex, 10) : null;
     
-    // Se não tiver dia específico (ex: botão geral do painel), tentamos achar o próximo dia não lido
-    let targetDiaIndex = diaIndex;
+    // 2. Se for o botão do painel lateral (sem dia específico), calcula o contexto
     if (targetDiaIndex === null || isNaN(targetDiaIndex)) {
+        // Usa a lógica do plano-logic para achar o primeiro dia não lido
         targetDiaIndex = planoLogic.encontrarProximoDiaDeLeituraIndex(plano);
-        if (targetDiaIndex === -1) targetDiaIndex = plano.diasPlano.length - 1; // Se tudo lido, abre o último
+        
+        // Se o retorno for -1 (plano concluído), abre o último dia para revisão
+        if (targetDiaIndex === -1) {
+            targetDiaIndex = plano.diasPlano.length - 1;
+        }
     }
 
-    neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
+    // 3. Validação e Chamada
+    if (targetDiaIndex !== null && targetDiaIndex >= 0) {
+        console.log(`[Main] Abrindo Neuro para Plano ${planoIndex}, Dia ${targetDiaIndex}`);
+        neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
+    } else {
+        console.error("[Main] Não foi possível determinar o dia de leitura.");
+        alert("Não foi possível identificar o dia de leitura atual.");
+    }
 }
 
 function handleDownloadMarkdown(target, plano, planoIndex, currentUser) {
     neuroNotes.downloadMarkdown(plano);
 }
-
-async function handleSaveNeuroNote() {
-    const btn = document.getElementById('btn-save-neuro');
-    const planoIndex = parseInt(btn.dataset.planoIndex, 10);
-    const diaIndex = parseInt(btn.dataset.diaIndex, 10);
-    const currentUser = state.getCurrentUser();
-
-    if (isNaN(planoIndex) || isNaN(diaIndex)) {
-        console.error("Erro ao identificar plano/dia para salvar nota.");
-        return;
-    }
-
-    // Chama o módulo neuro para processar os dados do DOM
-    const noteData = neuroNotes.extractNoteDataFromDOM();
-    
-    // Atualiza o estado
-    const plano = state.getPlanoByIndex(planoIndex);
-    if (!plano.diasPlano[diaIndex].neuroNote) {
-        plano.diasPlano[diaIndex].neuroNote = {};
-    }
-    plano.diasPlano[diaIndex].neuroNote = noteData;
-
-    // Persiste no Firebase
-    try {
-        state.updatePlano(planoIndex, plano);
-        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-        
-        // Feedback e UI
-        alert('Neuro-conexão registrada com sucesso!');
-        document.getElementById('neuro-modal').classList.remove('visivel');
-        ui.renderApp(state.getPlanos(), currentUser); // Re-renderiza para atualizar ícones de status
-        
-    } catch (error) {
-        console.error("Erro ao salvar nota:", error);
-        alert("Erro ao salvar: " + error.message);
-    }
-}
-
 
 // --- Handlers de Modais ---
 
@@ -578,4 +531,3 @@ function handleModalReavaliacaoAction(event) {
         ui.showRecalculoModal(plano, planoIndex, 'Confirmar Remanejamento');
     }, 300);
 }
-// --- END OF FILE main.js ---
