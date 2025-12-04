@@ -270,7 +270,11 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
         throw new Error("A nova data de fim deve ser posterior à data de hoje.");
     }
     
+    // IMPORTANTE: Ao copiar o plano original com JSON.parse/stringify,
+    // garantimos que a nova propriedade 'neuroAnnotations' (onde as notas agora vivem)
+    // seja preservada automaticamente, pois ela está na raiz do objeto plano.
     const planoRecalculado = JSON.parse(JSON.stringify(planoOriginal));
+    
     planoRecalculado.dataInicio = new Date(planoRecalculado.dataInicio);
     planoRecalculado.diasPlano.forEach(d => { if(d.data) d.data = new Date(d.data); });
     

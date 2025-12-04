@@ -4,7 +4,7 @@ import { db } from '../config/firebase-config.js';
 
 /**
  * Carrega e processa os planos de leitura de um usuário do Firestore.
- * Converte timestamps/strings de data em objetos Date.
+ * Converte timestamps/strings de data em objetos Date e realiza migração de arquitetura de dados.
  * @param {object} user - O objeto de usuário autenticado do Firebase.
  * @returns {Promise<Array>} Uma promessa que resolve para um array de objetos de plano.
  */
@@ -39,27 +39,50 @@ export async function carregarPlanos(user) {
                 return null;
             }
 
+            // --- MIGRAÇÃO DE ARQUITETURA NEURO (Prioridade 1) ---
+            // Extrai notas antigas presas em 'diasPlano' para a nova estrutura 'neuroAnnotations'
+            let neuroAnnotations = plano.neuroAnnotations || [];
+
+            // Processa os dias
+            const diasProcessados = plano.diasPlano ? plano.diasPlano.map(dia => {
+                const dataDia = dia.data ? new Date(dia.data) : null;
+                if (dataDia && isNaN(dataDia)) {
+                    console.warn("[Firestore] Dia com data inválida no plano:", plano.titulo);
+                    return { ...dia, data: null };
+                }
+
+                // Lógica de Migração: Se não temos anotações globais, coletamos dos dias antigos
+                if (neuroAnnotations.length === 0 && dia.neuroNote && Object.keys(dia.neuroNote).length > 0) {
+                    neuroAnnotations.push({
+                        id: crypto.randomUUID(),
+                        pageStart: dia.neuroNote.pageStart || Number(dia.paginaInicioDia),
+                        pageEnd: dia.neuroNote.pageEnd || Number(dia.paginaFimDia),
+                        data: dia.neuroNote,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                }
+
+                return {
+                    ...dia,
+                    data: dataDia,
+                    lido: Boolean(dia.lido || false),
+                    ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null,
+                    // Mantemos neuroNote no dia por enquanto para compatibilidade visual (cache),
+                    // mas a fonte da verdade agora é neuroAnnotations
+                    neuroNote: dia.neuroNote || null
+                };
+            }) : [];
+
             return {
                 ...plano,
                 id: plano.id || crypto.randomUUID(),
                 linkDrive: plano.linkDrive || '',
                 dataInicio,
                 dataFim,
-                diasPlano: plano.diasPlano ? plano.diasPlano.map(dia => {
-                    const dataDia = dia.data ? new Date(dia.data) : null;
-                    if (dataDia && isNaN(dataDia)) {
-                        console.warn("[Firestore] Dia com data inválida no plano:", plano.titulo);
-                        return { ...dia, data: null };
-                    }
-                    return {
-                        ...dia,
-                        data: dataDia,
-                        lido: Boolean(dia.lido || false),
-                        ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null,
-                        // NOVA LINHA: Carrega o objeto complexo de neuro-anotações, se existir
-                        neuroNote: dia.neuroNote || null
-                    };
-                }) : [],
+                diasPlano: diasProcessados,
+                // Nova propriedade centralizada de anotações (Dissociação de Dados)
+                neuroAnnotations: neuroAnnotations, 
                 paginaInicio: Number(plano.paginaInicio) || 1,
                 paginaFim: Number(plano.paginaFim) || 1,
                 totalPaginas: Number(plano.totalPaginas) || 0,
@@ -109,9 +132,10 @@ export async function salvarPlanos(user, planosParaSalvar) {
                 data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null,
                 lido: Boolean(dia.lido || false),
                 ultimaPaginaLida: dia.ultimaPaginaLida || null,
-                // NOVA LINHA: Garante que o objeto neuroNote seja persistido
                 neuroNote: dia.neuroNote || null
             })),
+            // Salva a nova estrutura de dados dissociada
+            neuroAnnotations: plano.neuroAnnotations || [],
             isPaused: plano.isPaused || false,
             dataPausa: (plano.isPaused && plano.dataPausa instanceof Date) ? plano.dataPausa.toISOString() : null,
         };

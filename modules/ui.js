@@ -305,7 +305,7 @@ export function getFormData() {
     return formData;
 }
 
-// --- Funções de Renderização (MODIFICADO: INCLUI AUTO-SCROLL E BOTÃO CHECKLIST) ---
+// --- Funções de Renderização (ATUALIZADO: Lógica de ícone Neuro baseada em intervalos) ---
 
 function renderizarPlanos(planos, user) {
     if (!user) {
@@ -338,13 +338,11 @@ function renderizarPlanos(planos, user) {
             ? `<button data-action="retomar" data-plano-index="${index}" title="Retomar Plano" class="acao-retomar"><span class="material-symbols-outlined">play_circle</span></button>`
             : `<button data-action="pausar" data-plano-index="${index}" title="Pausar Plano"><span class="material-symbols-outlined">pause</span></button>`;
         
-        // --- LÓGICA NEURO: Mapeamento de Contextos ---
-        const neuroContexts = plano.diasPlano
-            .filter(d => d.neuroNote && d.neuroNote.pageStart !== undefined && d.neuroNote.pageEnd !== undefined)
-            .map(d => ({ start: d.neuroNote.pageStart, end: d.neuroNote.pageEnd }));
-
         // ** ALTERAÇÃO PRIORIDADE 1: Contador de dias ocultos **
         let diasOcultosCount = 0;
+
+        // Recupera as anotações globais (nova arquitetura) ou array vazio
+        const globalAnnotations = plano.neuroAnnotations || [];
 
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
             let acoesDiaHTML = '';
@@ -366,47 +364,47 @@ function renderizarPlanos(planos, user) {
                 `;
             }
 
-            // --- LÓGICA NEURO: Verificação de Interseção ---
-            const isInNeuroRange = neuroContexts.some(ctx => 
-                dia.paginaInicioDia <= ctx.end && dia.paginaFimDia >= ctx.start
-            );
+            // --- LÓGICA NEURO ATUALIZADA (Dissociação de Dados) ---
+            // Verifica se existe alguma anotação global que intercepte as páginas deste dia
+            const temAnnotationMatch = globalAnnotations.some(note => {
+                // Lógica de interseção: (InicioA <= FimB) e (FimA >= InicioB)
+                return (dia.paginaInicioDia <= note.pageEnd && dia.paginaFimDia >= note.pageStart);
+            });
 
-            // Verifica se tem anotações importantes
-            const temNeuroNote = dia.neuroNote && (
+            // Verifica legado (para dados antigos não migrados)
+            const temLegacyNote = dia.neuroNote && (
                 (dia.neuroNote.insights && dia.neuroNote.insights.length > 0) ||
                 (dia.neuroNote.meta && dia.neuroNote.meta.length > 0) ||
                 (dia.neuroNote.triggers && dia.neuroNote.triggers.length > 0)
             );
             
-            const showNeuroIcon = temNeuroNote || isInNeuroRange;
+            // O ícone deve aparecer se houver match global OU nota legada
+            const showNeuroIcon = temAnnotationMatch || temLegacyNote;
             
             const neuroIcon = showNeuroIcon 
                 ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
-            const neuroClass = isInNeuroRange ? 'neuro-range-active' : '';
+            
+            // Destaque visual CSS para dias com contexto ativo
+            const neuroClass = showNeuroIcon ? 'neuro-range-active' : '';
 
-            // --- LÓGICA DE AUTO-SCROLL (NOVO) ---
-            // Verifica se é hoje para rolar a tela ou se é o próximo dia de leitura do primeiro plano
+            // --- LÓGICA DE AUTO-SCROLL ---
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
             const dataDia = dia.data ? new Date(dia.data) : null;
             if (dataDia) dataDia.setHours(0,0,0,0);
 
-            // Alvo é hoje OU (se for o primeiro plano da lista e for o próximo dia de leitura)
             const isHoje = dataDia && dataDia.getTime() === hoje.getTime();
             const isAlvoScroll = isHoje || (index === 0 && diaIndex === proximoDiaIndex && !dia.lido);
             
-            // Classe para destaque visual CSS
             const classeScroll = isAlvoScroll ? 'dia-atual-scroll-target' : '';
-            // Atributo para seletor JS
             const attrScroll = isAlvoScroll ? 'data-scroll-target="true"' : '';
             
-            // Bônus UX: Badge "HOJE"
             const badgeHoje = isHoje ? '<span class="status-tag status-em-dia" style="font-size:0.7em; margin-left:5px; background-color:#e67e22; color:white; border:none;">HOJE</span>' : '';
 
-            // ** ALTERAÇÃO PRIORIDADE 1: Lógica de Visibilidade (Progressive Disclosure) **
-            // Deve mostrar se: NÃO foi lido OU (foi lido E tem anotações importantes)
-            const deveMostrar = !dia.lido || temNeuroNote;
+            // ** Lógica de Visibilidade (Foco Progressivo) **
+            // Mostra se não foi lido OU se tem anotações importantes
+            const deveMostrar = !dia.lido || showNeuroIcon;
             let classeVisibilidade = '';
             
             if (!deveMostrar) {
@@ -440,14 +438,12 @@ function renderizarPlanos(planos, user) {
             </div>
         ` : '';
 
-        // ** ALTERAÇÃO PRIORIDADE 1: Botão de Toggle Histórico **
         const botaoHistoricoHTML = diasOcultosCount > 0 
             ? `<button class="btn-toggle-historico" data-action="toggle-historico" data-plano-index="${index}" title="Ver dias anteriores">
                  <span class="material-symbols-outlined" style="font-size: 1.1em; vertical-align: text-bottom;">history</span> ${diasOcultosCount}
                </button>` 
             : '';
 
-        // REDESIGN: Layout em Grid (Com botão NOVO de Checklist)
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
                 <div class="plano-header">
@@ -497,7 +493,6 @@ function renderizarPlanos(planos, user) {
                             <span>Baixar Resumo</span>
                         </button>
                         
-                        <!-- NOVO BOTÃO: Checklist de Retenção -->
                         <button class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
                             <span class="material-symbols-outlined">fact_check</span>
                             <span>Checklist Retenção</span>
