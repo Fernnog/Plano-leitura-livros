@@ -270,10 +270,12 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
         throw new Error("A nova data de fim deve ser posterior à data de hoje.");
     }
     
-    // IMPORTANTE: Ao copiar o plano original com JSON.parse/stringify,
-    // garantimos que a nova propriedade 'neuroAnnotations' (onde as notas agora vivem)
-    // seja preservada automaticamente, pois ela está na raiz do objeto plano.
+    // IMPORTANTE: Deep copy para não afetar o original durante os cálculos
     const planoRecalculado = JSON.parse(JSON.stringify(planoOriginal));
+    
+    // GARANTIA DE INTEGRIDADE: Preserva anotações globais independentemente da redistribuição de dias.
+    // Isso assegura que o Painel Neuro não seja resetado, mas sim persistido mesmo se os dias mudarem.
+    planoRecalculado.neuroAnnotations = planoOriginal.neuroAnnotations || [];
     
     planoRecalculado.dataInicio = new Date(planoRecalculado.dataInicio);
     planoRecalculado.diasPlano.forEach(d => { if(d.data) d.data = new Date(d.data); });
