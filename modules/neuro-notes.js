@@ -172,25 +172,49 @@ function closeNoteModal() {
 }
 
 function setupModalButtons() {
-    // Botão Salvar
+    // 1. Configuração do Botão Salvar (Geralmente já existe no index.html)
     const btnSave = document.getElementById('btn-save-neuro');
-    const newBtnSave = btnSave.cloneNode(true); 
-    btnSave.parentNode.replaceChild(newBtnSave, btnSave);
     
-    newBtnSave.addEventListener('click', async () => {
-        ui.toggleLoading(true);
-        await saveNote();
-        ui.toggleLoading(false);
-    });
+    if (btnSave) {
+        const newBtnSave = btnSave.cloneNode(true); 
+        btnSave.parentNode.replaceChild(newBtnSave, btnSave);
+        
+        newBtnSave.addEventListener('click', async () => {
+            ui.toggleLoading(true);
+            await saveNote();
+            ui.toggleLoading(false);
+        });
+    } else {
+        console.error("Botão btn-save-neuro não encontrado no DOM.");
+    }
 
-    // Botão Reset
-    const btnReset = document.getElementById('btn-reset-neuro');
-    const newBtnReset = btnReset.cloneNode(true);
-    btnReset.parentNode.replaceChild(newBtnReset, btnReset);
+    // 2. Configuração do Botão Reset (Geralmente AUSENTE no index.html estático)
+    let btnReset = document.getElementById('btn-reset-neuro');
 
-    newBtnReset.addEventListener('click', handleResetNeuro);
+    // Se o botão reset não existir, mas o botão salvar existir, injetamos o reset abaixo dele
+    if (!btnReset && btnSave) {
+        const actionsContainer = btnSave.closest('.recalculo-modal-actions') || btnSave.parentNode;
+        
+        const resetHTML = `
+            <div style="text-align: center; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
+                <button id="btn-reset-neuro" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
+                    <span class="material-symbols-outlined" style="font-size: 1.2em;">delete_forever</span>
+                    Resetar Ciclo
+                </button>
+                <p style="font-size: 0.7em; color: #999; margin-top: 5px; margin-bottom: 0;">⚠️ Baixa backup antes de apagar.</p>
+            </div>
+        `;
+        actionsContainer.insertAdjacentHTML('beforeend', resetHTML);
+        btnReset = document.getElementById('btn-reset-neuro'); // Atualiza a referência
+    }
+
+    // Agora configuramos o listener do Reset com segurança
+    if (btnReset) {
+        const newBtnReset = btnReset.cloneNode(true);
+        btnReset.parentNode.replaceChild(newBtnReset, btnReset);
+        newBtnReset.addEventListener('click', handleResetNeuro);
+    }
 }
-
 
 // --- Renderização da UI ---
 
