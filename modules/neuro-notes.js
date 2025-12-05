@@ -172,11 +172,20 @@ function closeNoteModal() {
 }
 
 function setupModalButtons() {
-    // 1. Configuração do Botão Salvar (Geralmente já existe no index.html)
     const btnSave = document.getElementById('btn-save-neuro');
     
+    // CORREÇÃO CRÍTICA: Identificar o container ANTES de modificar o btnSave.
+    // Se mexermos no btnSave (replaceChild), ele perde o pai e gera o erro 'null'.
+    let actionsContainer = null;
+    if (btnSave) {
+        actionsContainer = btnSave.closest('.recalculo-modal-actions') || btnSave.parentNode;
+    }
+
+    // 1. Configuração do Botão Salvar
     if (btnSave) {
         const newBtnSave = btnSave.cloneNode(true); 
+        // O replaceChild remove o btnSave original do DOM. 
+        // Por isso precisávamos pegar o container antes.
         btnSave.parentNode.replaceChild(newBtnSave, btnSave);
         
         newBtnSave.addEventListener('click', async () => {
@@ -184,17 +193,13 @@ function setupModalButtons() {
             await saveNote();
             ui.toggleLoading(false);
         });
-    } else {
-        console.error("Botão btn-save-neuro não encontrado no DOM.");
     }
 
-    // 2. Configuração do Botão Reset (Geralmente AUSENTE no index.html estático)
+    // 2. Configuração do Botão Reset
     let btnReset = document.getElementById('btn-reset-neuro');
 
-    // Se o botão reset não existir, mas o botão salvar existir, injetamos o reset abaixo dele
-    if (!btnReset && btnSave) {
-        const actionsContainer = btnSave.closest('.recalculo-modal-actions') || btnSave.parentNode;
-        
+    // Se não existir botão reset, mas temos o container, injetamos ele
+    if (!btnReset && actionsContainer) {
         const resetHTML = `
             <div style="text-align: center; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
                 <button id="btn-reset-neuro" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
@@ -205,10 +210,10 @@ function setupModalButtons() {
             </div>
         `;
         actionsContainer.insertAdjacentHTML('beforeend', resetHTML);
-        btnReset = document.getElementById('btn-reset-neuro'); // Atualiza a referência
+        btnReset = document.getElementById('btn-reset-neuro'); // Atualiza referência
     }
 
-    // Agora configuramos o listener do Reset com segurança
+    // Configura listener do Reset se ele existir (agora ou previamente)
     if (btnReset) {
         const newBtnReset = btnReset.cloneNode(true);
         btnReset.parentNode.replaceChild(newBtnReset, btnReset);
