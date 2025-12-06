@@ -441,6 +441,9 @@ function renderizarPlanos(planos, user) {
                </button>` 
             : '';
 
+        // Estilo condicional para data de previsão (vermelho se atrasado em relação a hoje)
+        const styleData = (plano.dataFim && new Date(plano.dataFim) < new Date() && status !== 'concluido') ? 'color: #e74c3c; font-weight: bold;' : '';
+
         // CORREÇÃO: Adicionado type="button" e pointer-events: none nos filhos para evitar bugs de clique no Android
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
@@ -461,8 +464,13 @@ function renderizarPlanos(planos, user) {
                     </div>` : ''
                 }
                 ${avisoAtrasoHTML}
-                <p>Progresso: ${progresso.toFixed(0)}% (${plano.paginasLidas} de ${plano.totalPaginas} páginas)</p>
-                <div class="progresso-container">
+
+                <!-- BARRA DE PROGRESSO & PREVISÃO (ALTERADO) -->
+                <div style="display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; color: #666;">
+                    <span><strong>Progresso:</strong> ${progresso.toFixed(0)}% (${plano.paginasLidas}/${plano.totalPaginas})</span>
+                    <span style="${styleData}"><strong>Previsão:</strong> ${formatarData(plano.dataFim)}</span>
+                </div>
+                <div class="progresso-container" title="${plano.paginasLidas} de ${plano.totalPaginas} páginas lidas">
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
