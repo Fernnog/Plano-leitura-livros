@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
-// ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional) e Robustez no Recálculo.
+// ATUALIZADO: Layout do rodapé harmonizado (Botões Salvar/Resetar alinhados).
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -81,18 +81,26 @@ function ensureModalExists() {
                 <!-- Conteúdo injetado via JS -->
             </div>
 
-            <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0; flex-shrink: 0; flex-direction: column; gap: 10px;">
-                 <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; width: 100%; border: none; box-shadow: 0 2px 4px rgba(211,84,0,0.3);">
-                    <span class="material-symbols-outlined">save</span> Salvar Conexão Neural
-                 </button>
-                 
-                 <div style="text-align: center; margin-top: 5px;">
-                    <button id="btn-reset-neuro" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                        <span class="material-symbols-outlined" style="font-size: 1.2em;">delete_forever</span>
-                        Resetar Ciclo (Apagar Notas)
+            <!-- RODAPÉ ATUALIZADO: Layout Flexbox Harmonizado -->
+            <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0; flex-shrink: 0;">
+                 <div style="display: flex; gap: 10px; align-items: stretch;">
+                    <!-- Botão Salvar (Maior destaque) -->
+                    <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; flex-grow: 2; border: none; box-shadow: 0 2px 4px rgba(211,84,0,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;">
+                        <span class="material-symbols-outlined">save</span> Salvar Conexão
                     </button>
-                    <p style="font-size: 0.7em; color: #999; margin-top: 5px; margin-bottom: 0;">⚠️ Baixa o resumo automaticamente antes de apagar.</p>
-                </div>
+
+                    <!-- Botão Reset (Mesma altura, estilo danger light) -->
+                    <button id="btn-reset-neuro" style="background: #fff; border: 1px solid #e74c3c; color: #e74c3c; flex-grow: 1; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s;">
+                        <span class="material-symbols-outlined">delete_forever</span> Resetar
+                    </button>
+                 </div>
+
+                 <!-- Aviso discreto abaixo dos botões -->
+                 <div style="text-align: center; margin-top: 8px;">
+                    <p style="font-size: 0.75em; color: #999; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+                        <span class="material-symbols-outlined" style="font-size: 1.1em;">download</span> Backup automático ao resetar
+                    </p>
+                 </div>
             </div>
         </div>
     </div>
@@ -171,21 +179,13 @@ function closeNoteModal() {
     document.getElementById('neuro-modal').classList.remove('visivel');
 }
 
+// ATUALIZADO: Lógica simplificada, pois os botões agora já existem no HTML base
 function setupModalButtons() {
-    const btnSave = document.getElementById('btn-save-neuro');
-    
-    // CORREÇÃO CRÍTICA: Identificar o container ANTES de modificar o btnSave.
-    // Se mexermos no btnSave (replaceChild), ele perde o pai e gera o erro 'null'.
-    let actionsContainer = null;
-    if (btnSave) {
-        actionsContainer = btnSave.closest('.recalculo-modal-actions') || btnSave.parentNode;
-    }
-
     // 1. Configuração do Botão Salvar
+    const btnSave = document.getElementById('btn-save-neuro');
     if (btnSave) {
+        // Clona para remover listeners antigos e evitar duplicação
         const newBtnSave = btnSave.cloneNode(true); 
-        // O replaceChild remove o btnSave original do DOM. 
-        // Por isso precisávamos pegar o container antes.
         btnSave.parentNode.replaceChild(newBtnSave, btnSave);
         
         newBtnSave.addEventListener('click', async () => {
@@ -196,25 +196,9 @@ function setupModalButtons() {
     }
 
     // 2. Configuração do Botão Reset
-    let btnReset = document.getElementById('btn-reset-neuro');
-
-    // Se não existir botão reset, mas temos o container, injetamos ele
-    if (!btnReset && actionsContainer) {
-        const resetHTML = `
-            <div style="text-align: center; margin-top: 10px; border-top: 1px solid #eee; padding-top: 10px;">
-                <button id="btn-reset-neuro" style="background: none; border: 1px solid #e74c3c; color: #e74c3c; padding: 6px 12px; border-radius: 4px; font-size: 0.8em; cursor: pointer; display: inline-flex; align-items: center; gap: 5px;">
-                    <span class="material-symbols-outlined" style="font-size: 1.2em;">delete_forever</span>
-                    Resetar Ciclo
-                </button>
-                <p style="font-size: 0.7em; color: #999; margin-top: 5px; margin-bottom: 0;">⚠️ Baixa backup antes de apagar.</p>
-            </div>
-        `;
-        actionsContainer.insertAdjacentHTML('beforeend', resetHTML);
-        btnReset = document.getElementById('btn-reset-neuro'); // Atualiza referência
-    }
-
-    // Configura listener do Reset se ele existir (agora ou previamente)
+    const btnReset = document.getElementById('btn-reset-neuro');
     if (btnReset) {
+        // Clona para remover listeners antigos
         const newBtnReset = btnReset.cloneNode(true);
         btnReset.parentNode.replaceChild(newBtnReset, btnReset);
         newBtnReset.addEventListener('click', handleResetNeuro);
