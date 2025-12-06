@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
-// ATUALIZADO: Layout do rodapé harmonizado (Botões Salvar/Resetar alinhados).
+// ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional) e Robustez no Recálculo.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -67,6 +67,7 @@ function migrateLegacyData(oldData) {
 function ensureModalExists() {
     if (document.getElementById('neuro-modal')) return;
 
+    // Estrutura base do Modal
     const modalHTML = `
     <div id="neuro-modal" class="reavaliacao-modal-overlay">
         <div class="reavaliacao-modal-content neuro-theme" style="max-width: 800px; padding: 0; display: flex; flex-direction: column; max-height: 90vh;">
@@ -81,26 +82,9 @@ function ensureModalExists() {
                 <!-- Conteúdo injetado via JS -->
             </div>
 
-            <!-- RODAPÉ ATUALIZADO: Layout Flexbox Harmonizado -->
+            <!-- Rodapé placeholder - Será sobrescrito pela função setupModalButtons para garantir o layout correto -->
             <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0; flex-shrink: 0;">
-                 <div style="display: flex; gap: 10px; align-items: stretch;">
-                    <!-- Botão Salvar (Maior destaque) -->
-                    <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; flex-grow: 2; border: none; box-shadow: 0 2px 4px rgba(211,84,0,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px;">
-                        <span class="material-symbols-outlined">save</span> Salvar Conexão
-                    </button>
-
-                    <!-- Botão Reset (Mesma altura, estilo danger light) -->
-                    <button id="btn-reset-neuro" style="background: #fff; border: 1px solid #e74c3c; color: #e74c3c; flex-grow: 1; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s;">
-                        <span class="material-symbols-outlined">delete_forever</span> Resetar
-                    </button>
-                 </div>
-
-                 <!-- Aviso discreto abaixo dos botões -->
-                 <div style="text-align: center; margin-top: 8px;">
-                    <p style="font-size: 0.75em; color: #999; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
-                        <span class="material-symbols-outlined" style="font-size: 1.1em;">download</span> Backup automático ao resetar
-                    </p>
-                 </div>
+                 <!-- Botões injetados dinamicamente -->
             </div>
         </div>
     </div>
@@ -179,29 +163,53 @@ function closeNoteModal() {
     document.getElementById('neuro-modal').classList.remove('visivel');
 }
 
-// ATUALIZADO: Lógica simplificada, pois os botões agora já existem no HTML base
+/**
+ * Função responsável por injetar os botões no rodapé do modal.
+ * ATUALIZAÇÃO: Reescreve o HTML do rodapé toda vez para garantir
+ * que o layout esteja harmonioso e que o botão Reset não desapareça.
+ */
 function setupModalButtons() {
-    // 1. Configuração do Botão Salvar
+    // 1. Localiza o container do rodapé dentro do modal
+    const modalFooter = document.querySelector('#neuro-modal .recalculo-modal-actions');
+    
+    if (!modalFooter) return; // Segurança caso o modal não tenha sido renderizado ainda
+
+    // 2. FORÇA O NOVO LAYOUT: Sobrescreve o HTML interno com os botões alinhados lado a lado
+    modalFooter.innerHTML = `
+        <div style="display: flex; gap: 10px; align-items: stretch;">
+            <!-- Botão Salvar (Maior, ocupa 2/3) -->
+            <button id="btn-save-neuro" class="button-confirm" style="background-color: #d35400; flex-grow: 2; border: none; box-shadow: 0 2px 4px rgba(211,84,0,0.3); display: flex; align-items: center; justify-content: center; gap: 8px; padding: 12px; color: white; font-weight: bold; border-radius: 5px; cursor: pointer;">
+                <span class="material-symbols-outlined">save</span> Salvar Conexão
+            </button>
+
+            <!-- Botão Reset (Menor, 1/3, mesma altura) -->
+            <button id="btn-reset-neuro" style="background: #fff; border: 1px solid #e74c3c; color: #e74c3c; flex-grow: 1; border-radius: 5px; cursor: pointer; display: flex; align-items: center; justify-content: center; gap: 5px; transition: all 0.2s; font-weight: 600;">
+                <span class="material-symbols-outlined">delete_forever</span> Resetar
+            </button>
+        </div>
+
+        <!-- Texto de aviso abaixo, centralizado -->
+        <div style="text-align: center; margin-top: 8px;">
+            <p style="font-size: 0.75em; color: #999; margin: 0; display: inline-flex; align-items: center; gap: 4px;">
+                <span class="material-symbols-outlined" style="font-size: 1.1em;">download</span> Backup automático ao resetar
+            </p>
+        </div>
+    `;
+
+    // 3. Adiciona os eventos de clique (Listeners) nos novos elementos criados
     const btnSave = document.getElementById('btn-save-neuro');
+    const btnReset = document.getElementById('btn-reset-neuro');
+
     if (btnSave) {
-        // Clona para remover listeners antigos e evitar duplicação
-        const newBtnSave = btnSave.cloneNode(true); 
-        btnSave.parentNode.replaceChild(newBtnSave, btnSave);
-        
-        newBtnSave.addEventListener('click', async () => {
+        btnSave.addEventListener('click', async () => {
             ui.toggleLoading(true);
             await saveNote();
             ui.toggleLoading(false);
         });
     }
 
-    // 2. Configuração do Botão Reset
-    const btnReset = document.getElementById('btn-reset-neuro');
     if (btnReset) {
-        // Clona para remover listeners antigos
-        const newBtnReset = btnReset.cloneNode(true);
-        btnReset.parentNode.replaceChild(newBtnReset, btnReset);
-        newBtnReset.addEventListener('click', handleResetNeuro);
+        btnReset.addEventListener('click', handleResetNeuro);
     }
 }
 
@@ -473,14 +481,15 @@ async function handleResetNeuro() {
         // 1. Força Download
         downloadMarkdown(plano);
 
-        // 2. Limpa dados globais (Apaga todas as anotações do plano ou só a atual?
-        // Neste contexto de "Resetar Ciclo", geralmente significa limpar tudo para recomeçar o livro.
-        // Se quiséssemos apagar só a nota atual, filtraríamos pelo ID).
-        plano.neuroAnnotations = [];
+        // 2. Limpa dados globais
+        // Filtra para remover a anotação atual da lista global
+        if (plano.neuroAnnotations) {
+            plano.neuroAnnotations = plano.neuroAnnotations.filter(n => n.id !== tempNoteData.id);
+        }
 
-        // 3. Limpa legado (dias individuais)
-        if (plano.diasPlano) {
-            plano.diasPlano.forEach(d => d.neuroNote = null);
+        // 3. Limpa legado (dias individuais) se estiver no contexto de um dia
+        if (currentDiaIndex !== null && plano.diasPlano && plano.diasPlano[currentDiaIndex]) {
+            plano.diasPlano[currentDiaIndex].neuroNote = null;
         }
 
         // 4. Limpa estado local
@@ -535,7 +544,8 @@ export function downloadMarkdown(plano) {
 
     if (allNotes.length === 0) {
         console.log("Nenhuma nota para exportar.");
-        return;
+        // Cria um arquivo mínimo para não falhar
+        mdContent += "*Nenhuma anotação registrada neste ciclo.*";
     }
 
     // Ordena por página
