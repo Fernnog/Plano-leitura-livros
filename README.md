@@ -93,6 +93,8 @@ Baseada em **ES6 Modules** para modularidade e desacoplamento de serviços exter
     ├── firebase-config.js  # Credenciais Firebase
     └── version-config.js   # Histórico e Changelog
 
+```bash
+
 ## ⚙️ Instalação e Configuração
 
 1.  **Clone o repositório:**
