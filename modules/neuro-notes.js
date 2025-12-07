@@ -1,11 +1,13 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
-// ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional) e Robustez no Recálculo.
+// ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional), Robustez no Recálculo
+// e Integração com Ditado Inteligente (Neuro-Voice).
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
 import * as ui from './ui.js';
+import { attachDictationToInput } from './dictation-widget.js'; // Integração Neuro-Voice
 
 // --- Variável de Estado Local (Temporária enquanto o modal está aberto) ---
 let tempNoteData = {
@@ -215,10 +217,18 @@ function setupModalButtons() {
 
 // --- Renderização da UI ---
 
+// Helper para criar o botão de microfone
+const createMicBtn = (targetId) => `
+    <button type="button" id="mic-${targetId}" class="btn-neuro-mic" title="Ditar com IA">
+        <span class="material-symbols-outlined">mic</span>
+    </button>
+`;
+
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
     const rangeGroupStyle = "display: flex; gap: 15px; margin-bottom: 20px;";
     const inputWrapperStyle = "flex: 1; display: flex; flex-direction: column;";
+    const inputWithMicStyle = "display: flex; gap: 8px; align-items: flex-start; width: 100%;";
     
     // Fallback visual para valores nulos nos inputs
     const pStartVal = tempNoteData.pageStart !== null ? tempNoteData.pageStart : '';
@@ -227,7 +237,10 @@ function renderModalUI() {
     modalBody.innerHTML = `
         <div class="neuro-input-group" style="margin-bottom: 10px;">
             <label>Contexto / Título do Capítulo</label>
-            <input type="text" id="neuro-chapter" class="neuro-textarea-card" value="${tempNoteData.chapterTitle}" placeholder="Ex: A Natureza da Graça..." onchange="updateChapterTitle(this.value)">
+            <div style="${inputWithMicStyle}">
+                <input type="text" id="neuro-chapter" class="neuro-textarea-card" value="${tempNoteData.chapterTitle}" placeholder="Ex: A Natureza da Graça..." onchange="updateChapterTitle(this.value)" style="flex-grow: 1;">
+                ${createMicBtn('neuro-chapter')}
+            </div>
         </div>
 
         <div class="neuro-input-group" style="${rangeGroupStyle}">
@@ -254,7 +267,10 @@ function renderModalUI() {
                         <label for="type-question" style="cursor:pointer; color:#8e44ad; font-weight:bold;">(?) Dúvida</label>
                     </div>
                 </div>
-                <textarea id="add-insight-text" placeholder="Trecho do livro ou insight..." class="neuro-textarea-card" rows="2"></textarea>
+                <div style="${inputWithMicStyle}">
+                    <textarea id="add-insight-text" placeholder="Trecho do livro ou insight..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMicBtn('add-insight-text')}
+                </div>
                 <div style="text-align:right; margin-top:5px;">
                     <button class="btn-add-item" id="btn-add-insight">+ Adicionar Insight</button>
                 </div>
@@ -274,7 +290,10 @@ function renderModalUI() {
                         <option value="apply">A - Aplicar (Micro-ação)</option>
                     </select>
                 </div>
-                <textarea id="add-meta-text" placeholder="Sua anotação..." class="neuro-textarea-card" rows="2"></textarea>
+                <div style="${inputWithMicStyle}">
+                    <textarea id="add-meta-text" placeholder="Sua anotação..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMicBtn('add-meta-text')}
+                </div>
                 <div style="text-align:right; margin-top:5px;">
                     <button class="btn-add-item" id="btn-add-meta">+ Adicionar Passo</button>
                 </div>
@@ -294,7 +313,10 @@ function renderModalUI() {
                         <option value="emotion">❤️ Emoção Teológica</option>
                     </select>
                 </div>
-                <textarea id="add-trigger-text" placeholder="Descreva o gatilho, imagem mental ou diagrama..." class="neuro-textarea-card" rows="2"></textarea>
+                <div style="${inputWithMicStyle}">
+                    <textarea id="add-trigger-text" placeholder="Descreva o gatilho, imagem mental ou diagrama..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMicBtn('add-trigger-text')}
+                </div>
                 <div style="text-align:right; margin-top:5px;">
                     <button class="btn-add-item" id="btn-add-trigger">+ Adicionar Gatilho</button>
                 </div>
@@ -302,9 +324,24 @@ function renderModalUI() {
         </div>
     `;
 
+    // Bind dos eventos de adicionar itens (manual)
     document.getElementById('btn-add-insight').onclick = () => addItem('insights');
     document.getElementById('btn-add-meta').onclick = () => addItem('meta');
     document.getElementById('btn-add-trigger').onclick = () => addItem('triggers');
+
+    // Bind dos eventos de Ditado (Neuro-Voice)
+    // Pequeno delay para garantir que o DOM foi injetado antes de buscar os elementos
+    setTimeout(() => {
+        const inputsToBind = ['neuro-chapter', 'add-insight-text', 'add-meta-text', 'add-trigger-text'];
+        
+        inputsToBind.forEach(id => {
+            const inputEl = document.getElementById(id);
+            const micBtn = document.getElementById(`mic-${id}`);
+            if (inputEl && micBtn) {
+                attachDictationToInput(inputEl, micBtn);
+            }
+        });
+    }, 0);
 }
 
 window.updateChapterTitle = (val) => { tempNoteData.chapterTitle = val; };
@@ -346,7 +383,10 @@ function addItem(category) {
     });
 
     document.getElementById(`list-${category}`).innerHTML = renderList(category);
+    // Limpa o textarea após adicionar
     document.getElementById(`add-${category.slice(0, -1)}-text`).value = ''; 
+    // Dispara evento de change para garantir limpeza de estados internos se necessário
+    document.getElementById(`add-${category.slice(0, -1)}-text`).dispatchEvent(new Event('input'));
 }
 
 function renderList(category) {
