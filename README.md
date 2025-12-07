@@ -93,26 +93,35 @@ Baseada em **ES6 Modules** para modularidade e desacoplamento de serviços exter
     ├── firebase-config.js  # Credenciais Firebase
     └── version-config.js   # Histórico e Changelog
 
-⚙️ Instalação e Configuração
-Clone o repositório:
-git clone https://github.com/fernnog/Plano-leitura-livros.git
-Configuração do Firebase:
-Atualize config/firebase-config.js com suas credenciais.
-Configuração da IA (Google Gemini):
-Não é necessário alterar código. Ao tentar usar o recurso de voz ou correção pela primeira vez, o navegador solicitará sua Google Gemini API Key.
-A chave fica salva localmente no seu navegador (localStorage) para segurança.
-Obtenha sua chave gratuita aqui.
-Rodar a aplicação:
-Necessário servidor local (Live Server, Python HTTP, etc) devido aos módulos ES6.
-📝 Workflow Sugerido
-Planeje: Cadastre o livro e defina a meta.
-Leia & Dite:
-Abra o Painel Neuro.
-Use o Microfone para ditar suas impressões enquanto lê.
-Use a Varinha Mágica para corrigir notas digitadas rapidamente.
-Verifique (C.A.P.E.): Valide a retenção no fim da sessão.
-Consolide: Exporte o Markdown para seu "Segundo Cérebro" (Obsidian).
+## ⚙️ Instalação e Configuração
+
+1.  **Clone o repositório:**
+    ```bash
+    git clone https://github.com/fernnog/Plano-leitura-livros.git
+    ```
+2.  **Configuração do Firebase:**
+    *   Atualize `config/firebase-config.js` com suas credenciais.
+3.  **Configuração da IA (Google Gemini):**
+    *   Não é necessário alterar código. Ao tentar usar o recurso de voz ou correção pela primeira vez, o navegador solicitará sua **Google Gemini API Key**.
+    *   A chave fica salva localmente no seu navegador (`localStorage`) para segurança.
+    *   [Obtenha sua chave gratuita aqui](https://aistudio.google.com/app/apikey).
+4.  **Rodar a aplicação:**
+    *   Necessário servidor local (Live Server, Python HTTP, etc) devido aos módulos ES6.
+
+---
+
+## 📝 Workflow Sugerido
+
+1.  **Planeje:** Cadastre o livro e defina a meta.
+2.  **Leia & Dite:**
+    *   Abra o Painel Neuro.
+    *   Use o **Microfone** para ditar suas impressões enquanto lê.
+    *   Use a **Varinha Mágica** para corrigir notas digitadas rapidamente.
+3.  **Verifique (C.A.P.E.):** Valide a retenção no fim da sessão.
+4.  **Consolide:** Exporte o Markdown para seu "Segundo Cérebro" (Obsidian).
+
+---
+
 <footer>
-<p align="center">© 2024-2025 Gerenciador de Planos de Leitura - Desenvolvido com foco na Excelência Cognitiva e Espiritual.</p>
+    <p align="center">© 2024-2025 Gerenciador de Planos de Leitura - Desenvolvido com foco na Excelência Cognitiva e Espiritual.</p>
 </footer>
-```
