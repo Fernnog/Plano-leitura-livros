@@ -2,12 +2,13 @@
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (M.E.T.A.),
 // persistência local/remota dessas anotações e exportação para Markdown.
 // ATUALIZADO: Suporte a Contexto Geral (diaIndex opcional), Robustez no Recálculo
-// e Integração com Ditado Inteligente (Neuro-Voice).
+// Integração com Ditado Inteligente (Neuro-Voice) e Correção Manual (Magic Button).
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
 import * as ui from './ui.js';
 import { attachDictationToInput } from './dictation-widget.js'; // Integração Neuro-Voice
+import { processTextWithAI } from './ai-service.js'; // Integração Correção AI
 
 // --- Variável de Estado Local (Temporária enquanto o modal está aberto) ---
 let tempNoteData = {
@@ -224,6 +225,13 @@ const createMicBtn = (targetId) => `
     </button>
 `;
 
+// Helper para criar o botão Mágico (Correção de Texto)
+const createMagicBtn = (targetId) => `
+    <button type="button" id="magic-${targetId}" class="btn-neuro-magic" title="Corrigir/Melhorar texto com IA">
+        <span class="material-symbols-outlined">auto_fix_high</span>
+    </button>
+`;
+
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
     const rangeGroupStyle = "display: flex; gap: 15px; margin-bottom: 20px;";
@@ -239,6 +247,7 @@ function renderModalUI() {
             <label>Contexto / Título do Capítulo</label>
             <div style="${inputWithMicStyle}">
                 <input type="text" id="neuro-chapter" class="neuro-textarea-card" value="${tempNoteData.chapterTitle}" placeholder="Ex: A Natureza da Graça..." onchange="updateChapterTitle(this.value)" style="flex-grow: 1;">
+                ${createMagicBtn('neuro-chapter')}
                 ${createMicBtn('neuro-chapter')}
             </div>
         </div>
@@ -269,6 +278,7 @@ function renderModalUI() {
                 </div>
                 <div style="${inputWithMicStyle}">
                     <textarea id="add-insight-text" placeholder="Trecho do livro ou insight..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMagicBtn('add-insight-text')}
                     ${createMicBtn('add-insight-text')}
                 </div>
                 <div style="text-align:right; margin-top:5px;">
@@ -292,6 +302,7 @@ function renderModalUI() {
                 </div>
                 <div style="${inputWithMicStyle}">
                     <textarea id="add-meta-text" placeholder="Sua anotação..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMagicBtn('add-meta-text')}
                     ${createMicBtn('add-meta-text')}
                 </div>
                 <div style="text-align:right; margin-top:5px;">
@@ -315,6 +326,7 @@ function renderModalUI() {
                 </div>
                 <div style="${inputWithMicStyle}">
                     <textarea id="add-trigger-text" placeholder="Descreva o gatilho, imagem mental ou diagrama..." class="neuro-textarea-card" rows="2" style="flex-grow: 1;"></textarea>
+                    ${createMagicBtn('add-trigger-text')}
                     ${createMicBtn('add-trigger-text')}
                 </div>
                 <div style="text-align:right; margin-top:5px;">
@@ -329,9 +341,9 @@ function renderModalUI() {
     document.getElementById('btn-add-meta').onclick = () => addItem('meta');
     document.getElementById('btn-add-trigger').onclick = () => addItem('triggers');
 
-    // Bind dos eventos de Ditado (Neuro-Voice)
-    // Pequeno delay para garantir que o DOM foi injetado antes de buscar os elementos
+    // Bind dos eventos de Ditado (Neuro-Voice) e Correção (Magic)
     setTimeout(() => {
+        // 1. Configuração do Ditado (Mic)
         const inputsToBind = ['neuro-chapter', 'add-insight-text', 'add-meta-text', 'add-trigger-text'];
         
         inputsToBind.forEach(id => {
@@ -341,6 +353,45 @@ function renderModalUI() {
                 attachDictationToInput(inputEl, micBtn);
             }
         });
+
+        // 2. Configuração da Correção Inteligente (Magic)
+        const inputsToMagic = ['neuro-chapter', 'add-insight-text', 'add-meta-text', 'add-trigger-text'];
+        
+        inputsToMagic.forEach(id => {
+            const btn = document.getElementById(`magic-${id}`);
+            const input = document.getElementById(id);
+            
+            if (btn && input) {
+                btn.addEventListener('click', async (e) => {
+                    e.preventDefault();
+                    const originalText = input.value;
+                    if (!originalText.trim()) return;
+
+                    // Feedback Visual de Carregamento
+                    const originalIcon = btn.innerHTML;
+                    btn.innerHTML = '<span class="material-symbols-outlined spin">sync</span>';
+                    btn.disabled = true;
+                    input.disabled = true;
+
+                    try {
+                        const correctedText = await processTextWithAI(originalText);
+                        input.value = correctedText;
+                        // Dispara eventos para garantir que o estado local perceba a mudança
+                        input.dispatchEvent(new Event('input'));
+                        input.dispatchEvent(new Event('change'));
+                    } catch (error) {
+                        console.error("Erro na correção:", error);
+                        alert("Não foi possível corrigir o texto no momento.");
+                    } finally {
+                        btn.innerHTML = originalIcon;
+                        btn.disabled = false;
+                        input.disabled = false;
+                        input.focus();
+                    }
+                });
+            }
+        });
+
     }, 0);
 }
 
