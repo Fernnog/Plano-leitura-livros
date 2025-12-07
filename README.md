@@ -93,7 +93,7 @@ Baseada em **ES6 Modules** para modularidade e desacoplamento de serviços exter
     ├── firebase-config.js  # Credenciais Firebase
     └── version-config.js   # Histórico e Changelog
 
-```bash
+```
 
 ## ⚙️ Instalação e Configuração
 
@@ -127,3 +127,4 @@ Baseada em **ES6 Modules** para modularidade e desacoplamento de serviços exter
 <footer>
     <p align="center">© 2024-2025 Gerenciador de Planos de Leitura - Desenvolvido com foco na Excelência Cognitiva e Espiritual.</p>
 </footer>
+```
