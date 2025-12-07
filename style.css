@@ -1602,3 +1602,125 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
         font-size: 0.8em;
     }
 }
+
+/* --- INÍCIO DO MÓDULO NEURO-VOICE (DITADO INTELIGENTE) --- */
+
+/* Botão de Mic Discreto nos Inputs */
+.btn-neuro-mic {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: var(--neuro-primary);
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    height: 42px; /* Mesma altura padrão dos inputs se ajustado */
+}
+.btn-neuro-mic:hover {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+/* WIDGET FLUTUANTE DE VOZ */
+.voice-widget-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000; /* Acima de tudo */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+.voice-widget-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.voice-widget-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.voice-header {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: var(--neuro-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.voice-pulse {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    padding: 8px;
+    animation: pulse-red 1.5s infinite;
+}
+
+.voice-preview-box {
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+    padding: 15px;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: left;
+    font-family: var(--neuro-font-main);
+    color: #555;
+    font-size: 1.1em;
+}
+
+.voice-actions {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+
+.btn-voice-confirm {
+    background: var(--neuro-primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-voice-cancel {
+    background: transparent;
+    color: #777;
+    border: 1px solid #ccc;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+.spin {
+    animation: spin 1s linear infinite;
+}
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- FIM DO MÓDULO NEURO-VOICE (DITADO INTELIGENTE) --- */
