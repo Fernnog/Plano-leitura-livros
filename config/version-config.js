@@ -1,11 +1,20 @@
 // config/version-config.js
 export const versionConfig = {
-    version: '1.0.3',
+    version: '1.0.4',
     changelog: {
         title: 'Histórico de Evolução',
         sections: [
             {
-                title: 'v1.0.3 - Módulo de Retenção & Estabilidade (Atual)',
+                title: 'v1.0.4 - Ditado Cognitivo (Neuro-Voice)',
+                points: [
+                    '<strong>NOVO: Neuro-Voice (Beta):</strong> Funcionalidade de ditado inteligente. Fale seus insights e deixe a IA corrigir a gramática e a clareza automaticamente antes de salvar.',
+                    '<strong>Integração AI:</strong> Conexão direta com Google Gemini para processamento de linguagem natural e refinamento de texto em tempo real.',
+                    '<strong>UX Mãos Livres:</strong> Novo widget flutuante de voz e botões de microfone discretos integrados aos campos de Título, Insights, M.E.T.A. e Gatilhos.',
+                    '<strong>TECH:</strong> Implementação de nova arquitetura de serviços desacoplada (AI Service e Dictation Widget) para modularidade.'
+                ]
+            },
+            {
+                title: 'v1.0.3 - Módulo de Retenção & Estabilidade',
                 points: [
                     '<strong>NOVO: Checklist de Retenção (C.A.P.E.):</strong> Implementação do método de validação cognitiva (Confronto, Ancoragem, Percepção, Esquema).',
                     '<strong>UX:</strong> Novo modal visual com grid de conceitos e tabela de verificação de aprendizado.',
