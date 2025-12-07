@@ -1,9 +1,17 @@
 // config/version-config.js
 export const versionConfig = {
-    version: '1.0.4',
+    version: '1.0.5',
     changelog: {
         title: 'Histórico de Evolução',
         sections: [
+            {
+                title: 'v1.0.5 - Refinamento Textual & Fidelidade',
+                points: [
+                    '<strong>NOVO: Correção Assistida (Teclado):</strong> Adicionado botão de "Varinha Mágica" nos campos de texto. Agora é possível aplicar a correção inteligente da IA em textos digitados manualmente, sem necessidade de usar o microfone.',
+                    '<strong>Proteção de Citações (Smart-Quotes):</strong> A lógica da IA foi blindada para ignorar estritamente o conteúdo entre aspas. Isso garante que versículos bíblicos e citações de autores clássicos mantenham sua grafia original e fidelidade, sem alterações gramaticais indesejadas.',
+                    '<strong>UX & Performance:</strong> Feedback visual de processamento (ícone roxo) e unificação do motor de IA para atender tanto ditado quanto digitação com as mesmas regras de segurança.'
+                ]
+            },
             {
                 title: 'v1.0.4 - Ditado Cognitivo (Neuro-Voice)',
                 points: [
