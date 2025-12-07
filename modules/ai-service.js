@@ -4,15 +4,17 @@ const GEMINI_MODEL = 'gemini-flash-latest'; // Modelo rápido e eficiente
 const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const STORAGE_KEY = 'neuro_gemini_api_key';
 
-// Prompt otimizado para anotações de estudo/teologia
+// Prompt otimizado para anotações de estudo/teologia com PROTEÇÃO DE CITAÇÕES
 const CORRECTION_PROMPT = `
 Atue como um editor de textos acadêmicos e teológicos. 
-Sua tarefa é corrigir a gramática, pontuação e clareza do texto ditado abaixo.
-Regras:
+Sua tarefa é corrigir a gramática, pontuação e clareza do texto abaixo.
+
+Regras OBRIGATÓRIAS:
 1. Mantenha o tom pessoal, mas culto.
 2. Corrija erros de concordância e capitalize frases.
 3. NÃO adicione introduções (ex: "Aqui está o texto"). Retorne APENAS o conteúdo tratado.
 4. Se o texto parecer confuso, tente inferir o sentido lógico no contexto de um estudo de livro.
+5. 🛡️ PROTEÇÃO DE CITAÇÕES (CRÍTICO): Qualquer trecho que estiver entre aspas duplas (" ") ou simples (' ') deve ser considerado uma CITAÇÃO LITERAL. Você DEVE manter o conteúdo dentro das aspas EXATAMENTE como está, letra por letra, preservando inclusive linguagem arcaica ou pontuação original. Apenas corrija o texto FORA das aspas.
 
 Texto cru: "{{TEXT}}"
 `;
