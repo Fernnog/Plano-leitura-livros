@@ -1,6 +1,6 @@
 // modules/ai-service.js
 
-const GEMINI_MODEL = 'gemini-1.5-flash'; // Modelo rápido e eficiente
+const GEMINI_MODEL = 'gemini-flash-latest'; // Modelo rápido e eficiente
 const BASE_URL = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent`;
 const STORAGE_KEY = 'neuro_gemini_api_key';
 
