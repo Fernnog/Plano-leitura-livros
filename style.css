@@ -1,4 +1,4 @@
-/* style.css (Completo - Versão 2.2 com Foco Progressivo/Cronograma Inteligente) */
+/* style.css (Completo - Versão 2.3 com Botão Magic AI) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -1623,6 +1623,28 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     background-color: #e8f5e9;
     color: #2e7d32;
     border-color: #a5d6a7;
+}
+
+/* Botão Magic AI (Correção Manual) */
+.btn-neuro-magic {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #8e44ad; /* Roxo para indicar IA/Mágica */
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    height: 42px; /* Mesma altura do input e do mic */
+    margin-right: 5px; /* Espaçamento entre ele e o mic */
+}
+
+.btn-neuro-magic:hover {
+    background-color: #f3e5f5;
+    color: #9b59b6;
+    border-color: #d7bde2;
 }
 
 /* WIDGET FLUTUANTE DE VOZ */
