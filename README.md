@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="logo.png" alt="Logotipo do Plano de Leitura" width="150">
+</p>
+
 # 🧠 Gerenciador de Planos de Leitura & Neuroaprendizagem Teológica
 
 ![Versão Atual](https://img.shields.io/badge/version-1.0.5-blue.svg) ![Status](https://img.shields.io/badge/status-stable-success.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![AI Powered](https://img.shields.io/badge/AI-Google%20Gemini-orange)
