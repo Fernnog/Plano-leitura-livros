@@ -1,4 +1,4 @@
-/* style.css (Completo - Versão 2.3 com Botão Magic AI) */
+/* style.css (Completo - Versão 2.3 com Botão Magic AI e Wizard Neuro) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -1745,4 +1745,113 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
 }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 
-/* --- FIM DO MÓDULO NEURO-VOICE (DITADO INTELIGENTE) --- */
+/* --- NOVO: ESTILOS DO WIZARD NEURO-RETENÇÃO (M.E.T.A.) --- */
+
+/* Container de Progresso */
+.neuro-wizard-progress {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    padding: 0 5px;
+    gap: 8px;
+}
+
+.neuro-step-indicator {
+    flex: 1;
+    height: 6px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.neuro-step-indicator.active {
+    background-color: var(--neuro-accent);
+    box-shadow: 0 0 8px rgba(211, 84, 0, 0.4);
+}
+
+.neuro-step-indicator.completed {
+    background-color: #27ae60;
+}
+
+/* Container do Passo */
+.wizard-step-container {
+    animation: fadeIn 0.4s ease-in-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-step-title {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 10px;
+}
+
+/* Área de Guia (Guardrail Cognitivo) */
+.neuro-guide-box {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--neuro-primary);
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 0 6px 6px 0;
+    font-family: var(--neuro-font-main);
+    font-size: 0.95em;
+    color: #555;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.neuro-guide-box .material-symbols-outlined {
+    color: var(--neuro-accent);
+    font-size: 1.4em;
+}
+
+/* --- DISTINÇÃO VISUAL DE VOZES --- */
+
+/* Voz do Autor (Séria, Livresca, Passiva) */
+.voice-author-input {
+    font-family: 'Playfair Display', serif !important;
+    background-color: #faf9f6 !important; /* Off-white/Papel */
+    border-color: #dcdcdc !important;
+    font-size: 1.15em !important;
+    line-height: 1.6 !important;
+    color: #2c3e50 !important;
+    border-left: 4px solid #7f8c8d !important; /* Cinza */
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+}
+
+/* Minha Voz (Moderna, Ativa, Pessoal) */
+.voice-me-input {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #fff !important;
+    border-left: 4px solid var(--neuro-accent) !important; /* Laranja */
+    font-weight: 500 !important;
+    color: #333 !important;
+    font-size: 1em !important;
+}
+
+/* --- MODO RECUPERAÇÃO (BLIND MODE) --- */
+/* Aplica desfoque para impedir "colar" durante a etapa de Tradução */
+.blind-mode-overlay {
+    filter: blur(6px);
+    pointer-events: none;
+    opacity: 0.6;
+    user-select: none;
+    transition: all 0.6s ease;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    padding: 15px;
+}
