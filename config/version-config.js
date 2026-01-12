@@ -1,60 +1,55 @@
 // config/version-config.js
 export const versionConfig = {
-    version: '1.0.5',
+    version: '2.0.0',
     changelog: {
-        title: 'Histórico de Evolução',
+        title: 'A Revolução da Memória (SRS)',
         sections: [
+            {
+                title: 'v2.0.0 - Sistema de Repetição Espaçada',
+                points: [
+                    '<strong>NOVO: Algoritmo SRS (Spaced Repetition):</strong> O sistema agora calcula automaticamente quando você está prestes a esquecer uma anotação. Implementação das curvas de revisão em D+1 (Flash), D+3 (Consolidação) e D+7 (Memória Permanente).',
+                    '<strong>Modo Prova (Blind Mode):</strong> Ao revisar, suas respostas originais são ocultadas. O sistema desafia você a responder mentalmente primeiro ("Recuperação Ativa") antes de conferir o gabarito. Isso fortalece as trilhas neurais muito mais do que a releitura passiva.',
+                    '<strong>Painel de Fila de Revisão:</strong> Nova seção prioritária no topo do dashboard que só aparece quando há memórias em "Risco de Esquecimento".',
+                    '<strong>Mudança de Paradigma:</strong> Evolução oficial de um "Rastreador de Leitura" para um "Gestor de Retenção Cognitiva".'
+                ]
+            },
             {
                 title: 'v1.0.5 - Refinamento Textual & Fidelidade',
                 points: [
-                    '<strong>NOVO: Correção Assistida (Teclado):</strong> Adicionado botão de "Varinha Mágica" nos campos de texto. Agora é possível aplicar a correção inteligente da IA em textos digitados manualmente, sem necessidade de usar o microfone.',
-                    '<strong>Proteção de Citações (Smart-Quotes):</strong> A lógica da IA foi blindada para ignorar estritamente o conteúdo entre aspas. Isso garante que versículos bíblicos e citações de autores clássicos mantenham sua grafia original e fidelidade, sem alterações gramaticais indesejadas.',
-                    '<strong>UX & Performance:</strong> Feedback visual de processamento (ícone roxo) e unificação do motor de IA para atender tanto ditado quanto digitação com as mesmas regras de segurança.'
+                    '<strong>Correção Assistida (Teclado):</strong> Botão de "Varinha Mágica" para correção inteligente de textos digitados.',
+                    '<strong>Proteção de Citações:</strong> Blindagem de trechos entre aspas para preservar a fidelidade bíblica/bibliográfica.',
+                    '<strong>UX & Performance:</strong> Feedback visual de processamento e unificação do motor de IA.'
                 ]
             },
             {
                 title: 'v1.0.4 - Ditado Cognitivo (Neuro-Voice)',
                 points: [
-                    '<strong>NOVO: Neuro-Voice (Beta):</strong> Funcionalidade de ditado inteligente. Fale seus insights e deixe a IA corrigir a gramática e a clareza automaticamente antes de salvar.',
-                    '<strong>Integração AI:</strong> Conexão direta com Google Gemini para processamento de linguagem natural e refinamento de texto em tempo real.',
-                    '<strong>UX Mãos Livres:</strong> Novo widget flutuante de voz e botões de microfone discretos integrados aos campos de Título, Insights, M.E.T.A. e Gatilhos.',
-                    '<strong>TECH:</strong> Implementação de nova arquitetura de serviços desacoplada (AI Service e Dictation Widget) para modularidade.'
+                    '<strong>Neuro-Voice (Beta):</strong> Funcionalidade de ditado inteligente com correção gramatical automática via IA.',
+                    '<strong>Integração Gemini:</strong> Processamento de linguagem natural para transformar fala em texto estruturado.',
+                    '<strong>UX Mãos Livres:</strong> Widget flutuante de voz para registro de insights sem interrupção da leitura.'
                 ]
             },
             {
-                title: 'v1.0.3 - Módulo de Retenção & Estabilidade',
+                title: 'v1.0.3 - Módulo de Retenção (C.A.P.E.)',
                 points: [
-                    '<strong>NOVO: Checklist de Retenção (C.A.P.E.):</strong> Implementação do método de validação cognitiva (Confronto, Ancoragem, Percepção, Esquema).',
-                    '<strong>UX:</strong> Novo modal visual com grid de conceitos e tabela de verificação de aprendizado.',
-                    '<strong>FIX:</strong> Correção crítica no orquestrador de eventos (main.js) onde botões de ação sem índice de plano não respondiam.',
-                    '<strong>TECH:</strong> Adição de telemetria de logs para diagnóstico de interações de interface.'
+                    '<strong>Checklist C.A.P.E.:</strong> Método de validação cognitiva (Confronto, Ancoragem, Percepção, Esquema).',
+                    '<strong>Modal de Retenção:</strong> Interface visual para verificação de aprendizado antes de concluir a sessão.'
                 ]
             },
             {
                 title: 'v1.0.2 - Neuro-Painel Granular',
                 points: [
-                    '<strong>UI Split-View:</strong> Redesign dos cards de leitura para exibir Cronograma (esquerda) e Painel Neuro (direita) lado a lado.',
-                    '<strong>Listas Dinâmicas:</strong> Agora é possível adicionar múltiplos Insights, Passos M.E.T.A. e Gatilhos por sessão, ao invés de apenas um campo de texto.',
-                    '<strong>Contexto de Leitura:</strong> Adicionado suporte para definir intervalo de páginas (Início/Fim) específico para cada anotação.',
-                    '<strong>Visual:</strong> Identificação visual por cores para tipos de anotação (Roxo para dúvidas, Laranja para alertas, etc.).'
+                    '<strong>UI Split-View:</strong> Visualização lado a lado de Cronograma e Painel Neuro.',
+                    '<strong>Listas Dinâmicas:</strong> Múltiplos Insights e Passos M.E.T.A. por sessão.',
+                    '<strong>Contexto Específico:</strong> Suporte para intervalos de páginas por anotação.'
                 ]
             },
             {
                 title: 'v1.0.1 - A Era Neuro-Learning',
                 points: [
-                    '<strong>Conceito M.E.T.A.:</strong> Introdução dos campos de Mapear, Engajar, Traduzir e Aplicar.',
-                    '<strong>Exportação Markdown:</strong> Funcionalidade para baixar resumos formatados compatíveis com Obsidian e Notion.',
-                    '<strong>Design System:</strong> Adoção da paleta de cores "Deep Blue & Burnt Orange" e tipografia serifada para títulos.',
-                    '<strong>Gatilhos de Memória:</strong> Primeiros campos para registro de "Erro de Predição" e "Codificação Dupla".'
-                ]
-            },
-            {
-                title: 'v1.0.0 - O Início (MVP)',
-                points: [
-                    '<strong>Gestão de Planos:</strong> Criação, edição e exclusão de planos de leitura.',
-                    '<strong>Cálculo Automático:</strong> Algoritmo de distribuição de páginas por dias da semana.',
-                    '<strong>Persistência:</strong> Integração com Firebase (Auth e Firestore) para salvar dados na nuvem.',
-                    '<strong>PWA:</strong> Suporte básico para instalação como aplicativo no celular.'
+                    '<strong>Metodologia M.E.T.A.:</strong> Introdução dos campos Mapear, Engajar, Traduzir e Aplicar.',
+                    '<strong>Exportação Markdown:</strong> Download de resumos formatados para "Segundo Cérebro".',
+                    '<strong>Design System:</strong> Nova identidade visual focada em leitura profunda.'
                 ]
             }
         ]
