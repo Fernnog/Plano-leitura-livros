@@ -129,10 +129,3 @@ O projeto utiliza **ES6 Modules** nativos, sem necessidade de bundlers (Webpack/
 </p>
 ```
 
----
-
-**2. Próximos Passos**
-
-1.  **Atualizar o arquivo:** Copie o código acima e substitua o conteúdo do seu `README.md`.
-2.  **Commit:** Recomendo a mensagem de commit: `docs: update README to reflect v2.0 cognitive paradigm shift`.
-3.  **Implementação:** Prossiga com as alterações de código (CSS/JS) detalhadas na resposta anterior para que o software reflita a documentação.
