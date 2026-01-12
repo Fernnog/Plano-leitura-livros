@@ -1,133 +1,159 @@
+### **Plano de Evolução: Atualização da Documentação (README.md)**
+
+**Explicação da Proposta (Para Leigos)**
+Como solicitou, este é um novo arquivo `README.md`. Ele não é apenas um manual técnico, mas um **manifesto de produto**. Dado que a mudança para o formato "Wizard" (Passo a Passo) altera a forma como o usuário estuda, a documentação precisa explicar o "Porquê" antes do "Como".
+
+Adicionei uma seção dedicada chamada **"A Virada Cognitiva (v2.0)"**, onde detalho o relatório do especialista, explicando conceitos como "Guardrails" (proteções contra leitura passiva), a separação de vozes (Autor vs. Leitor) e o "Modo Cego" para recuperação de memória.
+
+---
+
+**1. Plano de Ação Técnico**
+
+**a) Substituição do Arquivo (`README.md`)**
+
+*   **Objetivo:** Substituir todo o conteúdo atual pelo conteúdo abaixo.
+*   **Código:**
+
+```markdown
 <p align="center">
   <img src="logo.png" alt="Logotipo do Plano de Leitura" width="150">
 </p>
 
-# 🧠 Gerenciador de Planos de Leitura & Neuroaprendizagem Teológica
+# 🧠 Gerenciador de Leitura Cognitiva & Neuroteologia (v2.0)
 
-![Versão Atual](https://img.shields.io/badge/version-1.0.5-blue.svg) ![Status](https://img.shields.io/badge/status-stable-success.svg) ![License](https://img.shields.io/badge/license-MIT-green.svg) ![AI Powered](https://img.shields.io/badge/AI-Google%20Gemini-orange)
+![Versão Atual](https://img.shields.io/badge/version-2.0.0-deep_blue.svg) ![Status](https://img.shields.io/badge/status-major_update-success.svg) ![Methodology](https://img.shields.io/badge/Method-M.E.T.A._Wizard-orange) ![AI Powered](https://img.shields.io/badge/AI-Google%20Gemini-blue)
 
 > **"Não se amoldem ao padrão deste mundo, mas transformem-se pela renovação da sua mente." — Romanos 12:2**
 
-Bem-vindo a uma nova categoria de ferramenta de estudos. O **Gerenciador de Planos de Leitura** evoluiu de um rastreador de progresso para uma plataforma de **Neuroteologia Assistida por IA**.
-
-Este projeto une princípios de neurociência cognitiva (M.E.T.A., C.A.P.E.) com o poder de modelos de linguagem (LLMs) para garantir que a leitura teológica se transforme em conhecimento consolidado e prática de vida.
-
-**➡️ [Acesse a demonstração ao vivo](https://fernnog.github.io/Plano-leitura-livros/)**
+O **Gerenciador de Leitura** não é apenas um rastreador de páginas. É um **Sistema de Treinamento Cognitivo** projetado para combater a "Curva de Esquecimento" e transformar leitura passiva em **memória recuperável** e prática de vida (Praxis).
 
 ---
 
-## 🧬 A Filosofia: Neurociência + IA
+## 🚨 A Virada Cognitiva: O Contexto da Versão 2.0
 
-O software combate a "Curva de Esquecimento" através de dois pilares: **Metodologia Cognitiva** e **Refinamento Assistido**.
+Nesta versão, realizamos uma **mudança completa de paradigma** baseada em um relatório crítico de ciência da aprendizagem e psicologia cognitiva. 
 
-### 1. O Ciclo M.E.T.A.
-Painel cognitivo que guia o usuário por quatro estágios mentais:
-*   **M — Mapear (Priming):** Ativação do Sistema Ativador Reticular (SAR).
-*   **E — Engajar (Codificação Ativa):** Leitura ativa e anotações.
-*   **T — Traduzir (Síntese):** Técnica Feynman potencializada pela IA.
-*   **A — Aplicar (Plasticidade):** Definição de micro-ações práticas (*Praxis*).
+Abandonamos o antigo "Painel de Anotações" (onde o usuário via todos os campos de uma vez) em favor de um **Wizard de Neuro-Retenção (Passo a Passo)**.
 
-### 2. Validação Cognitiva (C.A.P.E.)
-Checklist de retenção para validar o aprendizado:
-*   **Confronto:** Conflitos cognitivos e quebra de paradigmas.
-*   **Ancoragem:** Conexão com conhecimentos prévios (Lei de Hebb).
-*   **Percepção:** Registro da resposta emocional/espiritual.
-*   **Esquema:** Modelagem mental ou visual do conceito.
+### 📜 O Diagnóstico do Especialista
+A versão anterior permitia "vícios cognitivos" que sabotavam a retenção:
+1.  **Leitura Passiva:** O usuário podia ler sem definir uma intenção prévia (Priming).
+2.  **Mistura de Vozes:** As notas misturavam o que o autor disse com a opinião do leitor, corrompendo a memória original.
+3.  **Ilusão de Competência:** O usuário resumia o texto *enquanto olhava para ele*. A ciência prova que isso é cópia, não aprendizado.
+
+### 💡 A Solução: Arquitetura de "Guardrails" (Proteções)
+Implementamos travas técnicas no software para forçar o comportamento ideal de estudo:
+
+| O Problema Antigo | A Solução v2.0 (Wizard) | Princípio Cognitivo |
+| :--- | :--- | :--- |
+| Começar a ler "no automático". | **Bloqueio de Início:** O passo 2 só libera se você definir 2 perguntas-guia no Passo 1. | *Priming / Intencionalidade* |
+| Confundir o texto com a opinião. | **Separação Visual:** Inputs com fontes diferentes. Serifada para o Autor, Sans-Serif para Você. | *Codificação Distinta* |
+| Resumir olhando o texto. | **Modo Cego (Blind Mode):** No passo de síntese, o texto do autor é borrado (blur). | *Recuperação Ativa* |
+| "Achei que entendi". | **Validação C.A.P.E.:** Perguntas de confronto em vez de checklist simples. | *Metacognição* |
 
 ---
 
-## 🤖 Neuro-AI: O Assistente Cognitivo (v1.0.5)
+## 🧬 A Metodologia: O Fluxo M.E.T.A. Guiado
 
-A partir da versão 1.0.4/1.0.5, o sistema integra a API do **Google Gemini** para atuar como um "Editor Teológico" pessoal.
+O sistema agora guia o usuário por 4 estágios obrigatórios. Você não vê o próximo estágio até completar o anterior.
 
-### 🎙️ Neuro-Voice (Ditado Inteligente)
-Não quebre seu fluxo de leitura para digitar.
-*   **Funcionalidade:** Clique no microfone, dite seus insights e a IA transcreve, corrige a gramática e melhora a clareza do texto automaticamente.
-*   **Hands-Free:** Interface flutuante focada em acessibilidade e fluxo contínuo.
+### 1️⃣ M - Mapear (Intenção & Priming)
+*   **Ação:** Antes de ler uma única linha, você deve definir: "O que eu quero entender?" e "O que eu quero aplicar?".
+*   **Por que:** O sistema ativador reticular (SAR) do cérebro ignora informações se não houver uma busca ativa.
 
-### ✨ Smart-Edit (Correção Mágica)
-Prefere digitar? Sem problemas.
-*   **Funcionalidade:** Botão de "Varinha Mágica" nos campos de texto. Digite rascunhos rápidos e deixe a IA refinar a pontuação e coesão com um clique.
+### 2️⃣ E - Engajar (Voz do Autor)
+*   **Design:** Campo de texto com fundo *off-white* e fonte serifada (*Playfair Display*).
+*   **Ação:** Registrar a Tese Central e Evidências.
+*   **Regra:** Proibido colocar opinião aqui. Apenas o que o texto diz.
 
-### 🛡️ Fidelidade Teológica (Smart-Quotes)
-*   **O Problema:** IAs comuns tendem a "corrigir" textos antigos ou citações bíblicas, alterando seu sentido.
-*   **A Solução:** Nosso algoritmo possui uma diretiva de **Proteção de Citações**. Tudo o que estiver entre aspas (" " ou ' ') é blindado e mantido *ipsis litteris*, preservando a linguagem arcaica ou a fidelidade bibliográfica do autor.
+### 3️⃣ T - Traduzir (Técnica Feynman)
+*   **Design:** Campo branco moderno (*Inter*). **Efeito Blur** aplicado nas notas do passo anterior.
+*   **Ação:** Explicar o conceito com suas próprias palavras, sem consultar o texto original (esforço de recuperação).
+*   **Neuro-Feature:** O "Modo Cego" impede a cópia e força a criação de novas trilhas neurais.
+
+### 4️⃣ A - Aplicar (Praxis / C.A.P.E.)
+*   **Ação:** Transformar o conceito em uma Micro-ação verificável em 24h.
+*   **Validação:**
+    *   *Confronto:* O que isso mudou na minha crença?
+    *   *Micro-ação:* O que vou fazer especificamente?
+
+---
+
+## 🤖 Neuro-AI: O Assistente, Não o Substituto
+
+A Inteligência Artificial (Google Gemini) continua presente, mas agora atua como tutor, não como executor.
+
+*   **Neuro-Voice (Ditado):** Para ditar as sínteses no Passo 3 sem quebrar o fluxo de pensamento.
+*   **Magic Wand (Correção):** Corrige a gramática, mas mantém a estrutura do seu pensamento.
+*   **Proteção de Citações:** O algoritmo protege textos entre aspas para garantir fidelidade bíblica/bibliográfica.
 
 ---
 
 ## 🚀 Funcionalidades do Sistema
 
-### 🧠 Módulo de Estudo Profundo
-*   **Interface Split-View:** Leitura e Painel Neuro lado a lado.
-*   **Granularidade:** Múltiplos insights, passos M.E.T.A. e gatilhos por sessão.
-*   **Contexto de Página:** Vinculação de insights a intervalos exatos de páginas.
-*   **Exportação Markdown:** Gera arquivos formatados para Obsidian/Notion, incluindo todos os insights processados.
-
-### 📊 Gestão e Planejamento
-*   **Criação Flexível:** Por Datas, Dias ou Páginas/Dia.
-*   **Cronograma Dinâmico:** Algoritmo que respeita dias da semana e recalcula atrasos.
-*   **Monitoramento:** Heatmaps de carga futura e alertas de atraso.
-
-### ☁️ Infraestrutura
-*   **Sync:** Firebase Auth & Firestore Realtime DB.
-*   **PWA:** Instalável em Mobile e Desktop.
+*   **Gestão de Cronograma:** Cálculo automático de metas de leitura (Páginas/Dia ou Data Final).
+*   **PWA (Progressive Web App):** Instalável e funciona offline (cache first).
+*   **Sincronização:** Firebase Firestore (Banco de dados em tempo real).
+*   **Exportação:** Gera arquivos Markdown (.md) formatados com seus Neuro-Insights para apps como Obsidian/Notion.
 
 ---
 
-## 🏛️ Arquitetura Técnica
+## 🏛️ Arquitetura Técnica Modular
 
-Baseada em **ES6 Modules** para modularidade e desacoplamento de serviços externos (IA, Firebase).
+O projeto utiliza **ES6 Modules** nativos, sem necessidade de bundlers (Webpack/Vite) para facilitar o estudo e modificação.
 
-### Estrutura de Diretórios
 ```bash
 /
-├── index.html              # Entry point
-├── style.css               # Neuro Design System
-├── main.js                 # Orquestrador de Eventos
-├── modules/                # Núcleo da aplicação
-│   ├── ai-service.js       # [CORE AI] Integração Google Gemini & Prompts de Proteção
-│   ├── auth.js             # Gestão de Identidade
-│   ├── dictation-widget.js # [UI] Widget Flutuante de Voz
+├── index.html              # Single Page Application entry
+├── style.css               # Design System (Vozes, Wizard, Blur)
+├── modules/
+│   ├── neuro-notes.js      # [CORE v2.0] Máquina de Estado do Wizard M.E.T.A.
+│   ├── plano-logic.js      # Algoritmos de Cronograma e Status
+│   ├── ui.js               # Renderização do DOM e Modais
 │   ├── firestore-service.js# Camada de Persistência
-│   ├── neuro-notes.js      # Lógica M.E.T.A., C.A.P.E. e Modais de Insight
-│   ├── plano-logic.js      # Algoritmos de Cronograma
-│   ├── state.js            # Gestão de Estado (Store)
-│   └── ui.js               # Renderização do DOM
+│   ├── ai-service.js       # Integração Google Gemini
+│   └── ...
 └── config/
-    ├── firebase-config.js  # Credenciais Firebase
-    └── version-config.js   # Histórico e Changelog
-
+    └── version-config.js   # Changelog e Versionamento
 ```
 
-## ⚙️ Instalação e Configuração
+## ⚙️ Instalação e Uso
 
 1.  **Clone o repositório:**
     ```bash
     git clone https://github.com/fernnog/Plano-leitura-livros.git
     ```
-2.  **Configuração do Firebase:**
-    *   Atualize `config/firebase-config.js` com suas credenciais.
-3.  **Configuração da IA (Google Gemini):**
-    *   Não é necessário alterar código. Ao tentar usar o recurso de voz ou correção pela primeira vez, o navegador solicitará sua **Google Gemini API Key**.
-    *   A chave fica salva localmente no seu navegador (`localStorage`) para segurança.
-    *   [Obtenha sua chave gratuita aqui](https://aistudio.google.com/app/apikey).
-4.  **Rodar a aplicação:**
-    *   Necessário servidor local (Live Server, Python HTTP, etc) devido aos módulos ES6.
+2.  **Configuração:**
+    *   Insira suas credenciais no `config/firebase-config.js`.
+    *   Ao usar recursos de IA pela primeira vez, insira sua API Key do Google Gemini (salva apenas no LocalStorage).
+3.  **Execução:**
+    *   Rode via servidor local (ex: Live Server do VSCode) ou Python `python -m http.server`.
 
 ---
 
-## 📝 Workflow Sugerido
+## 📝 Workflow Recomendado (Nova Rotina)
 
-1.  **Planeje:** Cadastre o livro e defina a meta.
-2.  **Leia & Dite:**
-    *   Abra o Painel Neuro.
-    *   Use o **Microfone** para ditar suas impressões enquanto lê.
-    *   Use a **Varinha Mágica** para corrigir notas digitadas rapidamente.
-3.  **Verifique (C.A.P.E.):** Valide a retenção no fim da sessão.
-4.  **Consolide:** Exporte o Markdown para seu "Segundo Cérebro" (Obsidian).
+1.  **Abra o App:** Clique em "Anotar Insight" no livro atual.
+2.  **Siga o Wizard:**
+    *   Preencha as Perguntas-Guia (Passo 1).
+    *   Leia o capítulo e anote a Tese (Passo 2).
+    *   Avance para o Passo 3 (o sistema ocultará suas notas). Respire fundo e explique o que leu.
+    *   Defina uma ação prática (Passo 4).
+3.  **Salve:** O sistema persiste os dados e agenda a revisão (feature futura).
+4.  **Exporte:** Baixe o Markdown semanalmente para seu "Segundo Cérebro".
 
 ---
 
-<footer>
-    <p align="center">© 2024-2025 Gerenciador de Planos de Leitura - Desenvolvido com foco na Excelência Cognitiva e Espiritual.</p>
-</footer>
+<p align="center">
+    <strong>Excelência Cognitiva para a Glória de Deus.</strong><br>
+    © 2024-2025 Gerenciador de Leitura
+</p>
+```
+
+---
+
+**2. Próximos Passos**
+
+1.  **Atualizar o arquivo:** Copie o código acima e substitua o conteúdo do seu `README.md`.
+2.  **Commit:** Recomendo a mensagem de commit: `docs: update README to reflect v2.0 cognitive paradigm shift`.
+3.  **Implementação:** Prossiga com as alterações de código (CSS/JS) detalhadas na resposta anterior para que o software reflita a documentação.
