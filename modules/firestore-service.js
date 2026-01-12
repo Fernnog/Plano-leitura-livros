@@ -3,138 +3,94 @@ import { doc, setDoc, getDoc } from 'https://www.gstatic.com/firebasejs/9.22.2/f
 import { db } from '../config/firebase-config.js';
 
 /**
- * Carrega e processa os planos de leitura de um usuário do Firestore.
- * Converte timestamps/strings de data em objetos Date e realiza migração de arquitetura de dados.
- * @param {object} user - O objeto de usuário autenticado do Firebase.
- * @returns {Promise<Array>} Uma promessa que resolve para um array de objetos de plano.
+ * Carrega e processa os planos de leitura.
+ * Assegura que a estrutura 'neuroAnnotations' seja preservada com todos os subtipos do Wizard.
  */
 export async function carregarPlanos(user) {
-    if (!user) return []; // Retorna array vazio se não houver usuário
+    if (!user) return [];
 
     const docRef = doc(db, 'users', user.uid);
-    console.log("[Firestore] Tentando carregar planos para userId:", user.uid);
+    console.log("[Firestore] Carregando planos...");
 
     try {
         const docSnap = await getDoc(docRef);
         if (!docSnap.exists()) {
-            console.log("[Firestore] Nenhum documento de usuário encontrado. Criando um novo.");
             await setDoc(docRef, { planos: [] });
             return [];
         }
 
         const planosDoFirestore = docSnap.data().planos || [];
-        console.log(`[Firestore] Documento encontrado. ${planosDoFirestore.length} planos brutos para processar.`);
 
-        // Processamento rigoroso: Converte strings de data para objetos Date e garante a integridade dos dados
-        const planosProcessados = planosDoFirestore.map((plano, index) => {
-            if (!plano || typeof plano.titulo !== 'string' || !plano.dataInicio || !plano.dataFim) {
-                console.warn(`[Firestore] Plano ${index} inválido/incompleto, será filtrado:`, plano);
-                return null;
-            }
+        const planosProcessados = planosDoFirestore.map((plano) => {
+            if (!plano || !plano.titulo) return null;
+
             const dataInicio = new Date(plano.dataInicio);
             const dataFim = new Date(plano.dataFim);
 
-            if (isNaN(dataInicio) || isNaN(dataFim)) {
-                console.warn(`[Firestore] Plano "${plano.titulo}" com datas inválidas, será filtrado.`);
-                return null;
-            }
+            if (isNaN(dataInicio) || isNaN(dataFim)) return null;
 
-            // --- MIGRAÇÃO DE ARQUITETURA NEURO (Prioridade 1) ---
-            // Extrai notas antigas presas em 'diasPlano' para a nova estrutura 'neuroAnnotations'
+            // --- PRESERVAÇÃO ESTRUTURAL (WIZARD NEURO) ---
+            // Garante que 'neuroAnnotations' seja um array.
+            // O Firestore armazena objetos JSON completos, então os campos 'subType', 'q1', 'q2'
+            // gerados pelo Wizard serão carregados automaticamente sem necessidade de mapeamento manual,
+            // desde que o array exista.
             let neuroAnnotations = plano.neuroAnnotations || [];
 
-            // Processa os dias
-            const diasProcessados = plano.diasPlano ? plano.diasPlano.map(dia => {
-                const dataDia = dia.data ? new Date(dia.data) : null;
-                if (dataDia && isNaN(dataDia)) {
-                    console.warn("[Firestore] Dia com data inválida no plano:", plano.titulo);
-                    return { ...dia, data: null };
-                }
-
-                // Lógica de Migração: Se não temos anotações globais, coletamos dos dias antigos
-                if (neuroAnnotations.length === 0 && dia.neuroNote && Object.keys(dia.neuroNote).length > 0) {
-                    neuroAnnotations.push({
-                        id: crypto.randomUUID(),
-                        pageStart: dia.neuroNote.pageStart || Number(dia.paginaInicioDia),
-                        pageEnd: dia.neuroNote.pageEnd || Number(dia.paginaFimDia),
-                        data: dia.neuroNote,
-                        createdAt: new Date().toISOString(),
-                        updatedAt: new Date().toISOString()
-                    });
-                }
-
-                return {
-                    ...dia,
-                    data: dataDia,
-                    lido: Boolean(dia.lido || false),
-                    ultimaPaginaLida: dia.ultimaPaginaLida ? Number(dia.ultimaPaginaLida) : null,
-                    // Mantemos neuroNote no dia por enquanto para compatibilidade visual (cache),
-                    // mas a fonte da verdade agora é neuroAnnotations
-                    neuroNote: dia.neuroNote || null
-                };
-            }) : [];
+            // Processamento dos Dias (Legado e Datas)
+            const diasProcessados = plano.diasPlano ? plano.diasPlano.map(dia => ({
+                ...dia,
+                data: dia.data ? new Date(dia.data) : null,
+                lido: Boolean(dia.lido || false),
+                neuroNote: dia.neuroNote || null // Mantém legado para visualização se necessário
+            })) : [];
 
             return {
                 ...plano,
                 id: plano.id || crypto.randomUUID(),
-                linkDrive: plano.linkDrive || '',
                 dataInicio,
                 dataFim,
                 diasPlano: diasProcessados,
-                // Nova propriedade centralizada de anotações (Dissociação de Dados)
-                neuroAnnotations: neuroAnnotations, 
-                paginaInicio: Number(plano.paginaInicio) || 1,
-                paginaFim: Number(plano.paginaFim) || 1,
-                totalPaginas: Number(plano.totalPaginas) || 0,
+                neuroAnnotations: neuroAnnotations, // Estrutura vital para o Wizard
                 paginasLidas: Number(plano.paginasLidas) || 0,
                 isPaused: plano.isPaused || false,
                 dataPausa: plano.dataPausa ? new Date(plano.dataPausa) : null,
             };
-        }).filter(plano => plano !== null); // Remove planos que falharam na validação
+        }).filter(p => p !== null);
 
-        console.log('[Firestore] Planos processados e válidos carregados:', planosProcessados.length);
         return planosProcessados;
 
     } catch (error) {
-        console.error('[Firestore] Erro CRÍTICO ao carregar planos:', error);
-        throw new Error("Erro grave ao carregar seus planos. Verifique sua conexão.");
+        console.error('[Firestore] Erro ao carregar:', error);
+        throw new Error("Erro ao carregar dados.");
     }
 }
 
 /**
- * Salva o array completo de planos para um usuário no Firestore.
- * Converte objetos Date de volta para strings ISO para armazenamento.
- * @param {object} user - O objeto de usuário autenticado do Firebase.
- * @param {Array} planosParaSalvar - O array de planos a ser salvo.
- * @returns {Promise<void>} Uma promessa que resolve quando a operação for concluída.
+ * Salva os planos no Firestore.
+ * O Wizard adiciona campos como 'subType' aos objetos dentro de 'neuroAnnotations'.
+ * Esta função apenas serializa as datas e passa o objeto completo para o banco.
  */
 export async function salvarPlanos(user, planosParaSalvar) {
-    if (!user) {
-        console.error('[Firestore] Tentativa de salvar sem usuário logado.');
-        throw new Error("Você precisa estar logado para salvar as alterações.");
-    }
+    if (!user) throw new Error("Usuário não logado.");
 
     const docRef = doc(db, 'users', user.uid);
-    console.log("[Firestore] Tentando salvar", planosParaSalvar.length, "planos para userId:", user.uid);
+    console.log("[Firestore] Salvando planos...");
 
-    // Prepara os dados para o Firestore (converte Date para ISOString, garante tipos)
     const planosParaFirestore = planosParaSalvar.map(plano => {
-        if (!plano || !plano.id || !plano.titulo || !(plano.dataInicio instanceof Date) || !(plano.dataFim instanceof Date) || isNaN(plano.dataInicio) || isNaN(plano.dataFim)) {
-            console.error("[Firestore] ERRO: Tentativa de salvar plano inválido. Plano ignorado:", plano);
-            return null;
-        }
+        if (!plano) return null;
+        
         return {
             ...plano,
             dataInicio: plano.dataInicio.toISOString(),
             dataFim: plano.dataFim.toISOString(),
             diasPlano: plano.diasPlano.map(dia => ({
                 ...dia,
-                data: (dia.data instanceof Date && !isNaN(dia.data)) ? dia.data.toISOString() : null,
-                lido: Boolean(dia.lido || false),
-                ultimaPaginaLida: dia.ultimaPaginaLida || null,
+                data: (dia.data instanceof Date) ? dia.data.toISOString() : null,
                 neuroNote: dia.neuroNote || null
             })),
-            // Salva a nova estrutura de dados dissociada
+            // O Firestore aceita objetos aninhados dinâmicos.
+            // As propriedades q1, q2, thesis, etc., criadas pelo Wizard
+            // serão salvas aqui automaticamente.
             neuroAnnotations: plano.neuroAnnotations || [],
             isPaused: plano.isPaused || false,
             dataPausa: (plano.isPaused && plano.dataPausa instanceof Date) ? plano.dataPausa.toISOString() : null,
@@ -142,11 +98,10 @@ export async function salvarPlanos(user, planosParaSalvar) {
     }).filter(p => p !== null);
 
     try {
-        // Usa setDoc com merge:true para sobrescrever o array 'planos' sem afetar outros campos do documento do usuário
         await setDoc(docRef, { planos: planosParaFirestore }, { merge: true });
-        console.log('[Firestore] Planos salvos com sucesso!');
+        console.log('[Firestore] Salvo com sucesso.');
     } catch (error) {
-        console.error('[Firestore] Erro CRÍTICO ao salvar planos:', error);
-        throw new Error('Erro grave ao salvar seus planos. Suas últimas alterações podem não ter sido salvas.');
+        console.error('[Firestore] Erro ao salvar:', error);
+        throw new Error('Erro grave ao salvar.');
     }
 }
