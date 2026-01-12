@@ -127,5 +127,3 @@ O projeto utiliza **ES6 Modules** nativos, sem necessidade de bundlers (Webpack/
     <strong>Excelência Cognitiva para a Glória de Deus.</strong><br>
     © 2024-2025 Gerenciador de Leitura
 </p>
-```
-
