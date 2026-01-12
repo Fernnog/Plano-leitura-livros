@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota e exportação.
-// ATUALIZADO: Implementação do Wizard Neuro-Retenção e Guardrails Cognitivos.
+// ATUALIZADO: Implementação do Wizard Neuro-Retenção e Sistema de Revisão Espaçada (SRS).
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -247,6 +247,11 @@ function closeNoteModal() {
 
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
+    const headerTitle = document.querySelector('#neuro-modal h2');
+    
+    // Reseta Título do Modal para o padrão Wizard
+    headerTitle.innerHTML = `<span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção`;
+
     const step = WIZARD_STEPS[currentStepIndex];
 
     // Configuração de Título e Páginas (Aparece sempre no topo)
@@ -372,7 +377,9 @@ function saveCurrentStepData() {
     if (confront !== undefined) upsertTrigger('confront', confront);
     
     // Atualiza cabeçalho também
-    window.updateContextData();
+    if (document.getElementById('neuro-chapter')) {
+        window.updateContextData();
+    }
 }
 
 function upsertMeta(type, text, subType = null) {
@@ -455,6 +462,12 @@ async function saveNote() {
         updatedAt: new Date().toISOString()
     };
 
+    // Mantém reviewsDone se já existir (para não resetar o ciclo SRS ao editar)
+    const existingNote = plano.neuroAnnotations?.find(n => n.id === novaNota.id);
+    if (existingNote && existingNote.reviewsDone) {
+        novaNota.reviewsDone = existingNote.reviewsDone;
+    }
+
     if (!plano.neuroAnnotations) plano.neuroAnnotations = [];
 
     const indexExistente = plano.neuroAnnotations.findIndex(n => n.id === novaNota.id);
@@ -493,6 +506,143 @@ async function handleResetNeuro() {
     currentStepIndex = 0;
     renderModalUI();
 }
+
+// --- NOVO: LÓGICA DE REVISÃO ESPAÇADA (SRS) - PRIORIDADES 2 e 3 ---
+
+export function openReviewMode(planoIndex, notaId, tipoRevisao) {
+    ensureModalExists();
+    currentPlanoIndex = planoIndex;
+    
+    const plano = state.getPlanoByIndex(planoIndex);
+    const nota = plano.neuroAnnotations.find(n => n.id === notaId);
+    
+    if (!nota) {
+        alert("Nota não encontrada para revisão.");
+        return;
+    }
+
+    const modal = document.getElementById('neuro-modal');
+    const modalBody = document.getElementById('neuro-modal-body');
+    const modalTitle = document.querySelector('#neuro-modal h2');
+    
+    modal.classList.add('visivel');
+    modalTitle.innerHTML = `<span class="material-symbols-outlined">school</span> Revisão Ativa: ${tipoRevisao}`;
+
+    // Conteúdo: Pergunta (Visível) vs Resposta (Oculta)
+    // Tenta pegar a pergunta guia 1, ou a 2, ou um fallback
+    const pergunta = nota.meta?.find(m => m.subType === 'q1')?.text 
+                  || nota.meta?.find(m => m.subType === 'q2')?.text 
+                  || "Qual a tese central deste trecho?";
+                  
+    // Tenta pegar a síntese própria (Translate) ou a tese do autor
+    const respostaOriginal = nota.meta?.find(m => m.type === 'translate')?.text 
+                          || nota.insights?.find(i => i.type === 'thesis')?.text 
+                          || "(Sem anotação original)";
+
+    modalBody.innerHTML = `
+        <div class="cape-alert-box" style="background: #f3e5f5; color: #8e44ad; border-color: #9b59b6;">
+            🧠 <strong>Esforço Cognitivo:</strong> Tente responder mentalmente antes de revelar.
+        </div>
+
+        <div class="neuro-input-group">
+            <label style="font-size:1.1em; color:#2c3e50;">Pergunta / Desafio:</label>
+            <div style="font-size: 1.2em; font-weight: bold; margin: 10px 0 20px 0; font-family: 'Playfair Display', serif;">
+                "${pergunta}"
+            </div>
+            
+            <textarea id="review-attempt" class="neuro-textarea-card" rows="4" placeholder="Digite sua lembrança aqui (opcional)..."></textarea>
+            ${createMicBtn('review-attempt')}
+        </div>
+
+        <div id="review-feedback-area" style="display: none; animation: fadeIn 0.5s;">
+            <div style="background: #fafafa; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60; margin-bottom: 20px;">
+                <label style="font-size:0.8em; text-transform:uppercase; color:#27ae60; font-weight:bold;">Sua Anotação Original:</label>
+                <p style="margin-top:5px; font-style:italic; color:#333;">"${respostaOriginal}"</p>
+            </div>
+            
+            <div style="text-align: center;">
+                <p style="margin-bottom:10px;">Como foi sua recuperação?</p>
+                <div style="display:flex; gap:10px; justify-content:center;">
+                    <button id="btn-review-success" class="button-confirm" style="background: #27ae60; padding:10px 20px;">
+                        Lembrei Bem
+                    </button>
+                    <button id="btn-review-fail" class="button-confirm" style="background: #e67e22; padding:10px 20px;">
+                        Preciso Melhorar
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Ações do Rodapé (Personalizado para Revisão)
+    const footer = document.querySelector('#neuro-modal .recalculo-modal-actions');
+    footer.innerHTML = `
+        <button id="btn-reveal-answer" class="button-confirm" style="width:100%; background-color:#8e44ad;">
+            👀 Conferir Resposta Original
+        </button>
+    `;
+
+    // Listeners Internos
+    document.getElementById('btn-reveal-answer').addEventListener('click', function() {
+        document.getElementById('review-feedback-area').style.display = 'block';
+        this.style.display = 'none'; // Esconde botão de revelar
+    });
+
+    attachToolsToInputs(); // Reativa o microfone se houver
+
+    // Função interna para processar a conclusão
+    const processarConclusao = async (sucesso) => {
+        await concluirRevisao(planoIndex, notaId, tipoRevisao, sucesso);
+    };
+
+    // Usando setTimeout para garantir que os botões existam no DOM após o reveal
+    // (Embora eles estejam no HTML oculto, o listener pode ser anexado imediatamente)
+    const btnSuccess = document.getElementById('btn-review-success');
+    const btnFail = document.getElementById('btn-review-fail');
+    
+    if(btnSuccess) btnSuccess.addEventListener('click', () => processarConclusao(true));
+    if(btnFail) btnFail.addEventListener('click', () => processarConclusao(false));
+}
+
+async function concluirRevisao(planoIndex, notaId, tipoRevisaoFull, sucesso) {
+    const plano = state.getPlanoByIndex(planoIndex);
+    const nota = plano.neuroAnnotations.find(n => n.id === notaId);
+    
+    // Mapeia string "D+1..." para chave "d1"
+    let key = '';
+    if (tipoRevisaoFull.includes('D+1')) key = 'd1';
+    else if (tipoRevisaoFull.includes('D+3')) key = 'd3';
+    else if (tipoRevisaoFull.includes('D+7')) key = 'd7';
+
+    if (key) {
+        if (!nota.reviewsDone) nota.reviewsDone = {};
+        nota.reviewsDone[key] = true;
+        
+        // Se falhou, podemos implementar lógica futura para resetar ou agendar nova revisão
+        // Por enquanto, apenas marca como feito o ciclo atual.
+    }
+
+    state.updatePlano(planoIndex, plano);
+    
+    // Feedback visual imediato e fechamento
+    ui.toggleLoading(true);
+    try {
+        const currentUser = state.getCurrentUser();
+        await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        
+        document.getElementById('neuro-modal').classList.remove('visivel');
+        
+        // Re-renderiza a aplicação para atualizar a fila de revisões (o card deve sumir)
+        ui.renderApp(state.getPlanos(), currentUser);
+        
+    } catch(e) {
+        console.error("Erro ao salvar revisão:", e);
+        alert("Erro ao salvar revisão. Tente novamente.");
+    } finally {
+        ui.toggleLoading(false);
+    }
+}
+
 
 // --- Exportação (Compatibilidade com novos Subtipos) ---
 
