@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota e exportação.
-// ATUALIZADO: Implementação do Wizard Neuro-Retenção e Sistema de Revisão Espaçada (SRS).
+// ATUALIZADO v2.0.1: Persistência Granular (Auto-Save), Debounce e Lazy Initialization.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -9,7 +9,7 @@ import * as ui from './ui.js';
 import { attachDictationToInput } from './dictation-widget.js';
 import { processTextWithAI } from './ai-service.js';
 
-// --- Variável de Estado Local ---
+// --- Variáveis de Estado Local ---
 let tempNoteData = {
     id: null,
     chapterTitle: '',
@@ -23,6 +23,10 @@ let tempNoteData = {
 let currentPlanoIndex = null;
 let currentDiaIndex = null;
 let currentStepIndex = 0; // Controle do passo atual do Wizard
+
+// --- Variáveis de Controle de Persistência (v2.0.1) ---
+let saveTimeout = null;
+let isDirty = false; // Indica se houve alteração real pendente de salvamento
 
 // --- Configuração dos Passos do Wizard (M.E.T.A.) ---
 const WIZARD_STEPS = [
@@ -201,6 +205,7 @@ export function openNoteModal(planoIndex, diaIndex = null) {
     currentPlanoIndex = planoIndex;
     currentDiaIndex = diaIndex;
     currentStepIndex = 0; // Reseta para o primeiro passo
+    isDirty = false; // Reseta estado de salvamento
 
     const plano = state.getPlanoByIndex(planoIndex);
     if (!plano) return;
@@ -221,10 +226,22 @@ export function openNoteModal(planoIndex, diaIndex = null) {
         annotationFound = annotations[annotations.length - 1];
     }
 
-    tempNoteData = migrateLegacyData(annotationFound);
-
-    // Inicialização de nova nota se necessário
-    if (!annotationFound) {
+    // Inicialização Inteligente (Lazy Initialization)
+    if (annotationFound) {
+        // Se já existe, usamos a referência direta do estado para permitir reactive updates
+        // Garantimos migração se necessário, mas mantendo a referência se possível
+        // ou atualizando o array do plano.
+        const migrated = migrateLegacyData(annotationFound);
+        // Atualiza no array para garantir estrutura nova
+        const idx = annotations.indexOf(annotationFound);
+        if(idx !== -1) plano.neuroAnnotations[idx] = migrated;
+        tempNoteData = migrated;
+    } else {
+        // Se NÃO existe, criamos um objeto "flutuante".
+        // Ele NÃO é adicionado ao plano ainda (evita rascunhos fantasmas).
+        // Será adicionado na primeira chamada de 'ensureAttachedToPlan' via 'upsert'.
+        tempNoteData = migrateLegacyData(null);
+        
         if (diaIndex !== null && plano.diasPlano[diaIndex]) {
             const dia = plano.diasPlano[diaIndex];
             tempNoteData.chapterTitle = `Leitura Pág. ${dia.paginaInicioDia} - ${dia.paginaFimDia}`;
@@ -240,7 +257,15 @@ export function openNoteModal(planoIndex, diaIndex = null) {
 }
 
 function closeNoteModal() {
-    document.getElementById('neuro-modal').classList.remove('visivel');
+    // Se houver salvamento pendente ao fechar, força execução imediata (tentativa)
+    if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        performSilentSave().then(() => {
+            document.getElementById('neuro-modal').classList.remove('visivel');
+        });
+    } else {
+        document.getElementById('neuro-modal').classList.remove('visivel');
+    }
 }
 
 // --- RENDERIZAÇÃO DO WIZARD (CORE) ---
@@ -254,8 +279,14 @@ function renderModalUI() {
 
     const step = WIZARD_STEPS[currentStepIndex];
 
-    // Configuração de Título e Páginas (Aparece sempre no topo)
+    // Configuração de Título e Páginas com Indicador de Status (v2.0.1)
     const headerContextHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
+             <span style="font-size:0.8em; font-weight:bold; color:#555;">Contexto da Anotação</span>
+             <span id="save-indicator" style="font-size:0.8em; color:#7f8c8d; font-style:italic; transition: color 0.3s;">
+                ${isDirty ? 'Não salvo' : 'Sincronizado'}
+             </span>
+        </div>
         <div style="display:flex; gap:10px; margin-bottom:20px; align-items:center; background:#fff; padding:10px; border-radius:6px; border:1px solid #eee;">
              <input type="text" id="neuro-chapter" value="${tempNoteData.chapterTitle}" placeholder="Título do Contexto" class="voice-me-input" style="flex:2; padding:8px; border:1px solid #ddd; border-radius:4px;" onchange="updateContextData()">
              <input type="number" id="neuro-range-start" value="${tempNoteData.pageStart || ''}" placeholder="Início" style="width:70px; padding:8px; border:1px solid #ddd; border-radius:4px;" onchange="updateContextData()">
@@ -308,7 +339,7 @@ function updateWizardButtons() {
 
             ${isLastStep ? `
             <button id="btn-save-neuro" class="button-confirm" style="background-color: #27ae60; padding: 10px 25px;">
-                Concluir e Salvar
+                Concluir Sessão
             </button>` : `
             <button id="btn-next-step" class="button-confirm" style="background-color: var(--neuro-accent); padding: 10px 25px; display:flex; align-items:center; gap:5px;">
                 Próximo Passo <span class="material-symbols-outlined" style="font-size:1em;">arrow_forward</span>
@@ -318,13 +349,14 @@ function updateWizardButtons() {
 
     document.getElementById('btn-next-step')?.addEventListener('click', handleNextStep);
     document.getElementById('btn-prev-step')?.addEventListener('click', () => {
-        saveCurrentStepData();
+        // Ao navegar, salvamos o estado dos inputs do passo atual no objeto
+        saveCurrentStepData(); 
         currentStepIndex--;
         renderModalUI();
     });
     document.getElementById('btn-save-neuro')?.addEventListener('click', async () => {
         saveCurrentStepData();
-        await saveNote(); 
+        await saveNote(); // SaveNote final fecha o modal
     });
     document.getElementById('btn-reset-neuro')?.addEventListener('click', handleResetNeuro);
 }
@@ -343,13 +375,97 @@ function handleNextStep() {
     renderModalUI();
 }
 
-// --- Helpers de Dados e Ferramentas ---
+// --- LÓGICA DE PERSISTÊNCIA AUTOMÁTICA (v2.0.1) ---
+
+function scheduleAutoSave() {
+    const saveIndicator = document.getElementById('save-indicator');
+    if (saveIndicator) {
+        saveIndicator.innerText = "Salvando em breve...";
+        saveIndicator.style.color = "#e67e22"; // Laranja
+    }
+    
+    // Cancela o timer anterior se o usuário continuou digitando
+    if (saveTimeout) clearTimeout(saveTimeout);
+
+    // Agenda o salvamento para 2 segundos após parar de digitar
+    saveTimeout = setTimeout(async () => {
+        await performSilentSave();
+    }, 2000);
+}
+
+async function performSilentSave() {
+    if (!isDirty) return; // Nada mudou, não gasta cota
+
+    const saveIndicator = document.getElementById('save-indicator');
+    if (saveIndicator) saveIndicator.innerText = "Sincronizando...";
+
+    try {
+        tempNoteData.updatedAt = new Date().toISOString();
+        
+        // Garante que o objeto está no plano antes de salvar
+        ensureAttachedToPlan();
+
+        // Persiste no Firestore
+        const currentUser = state.getCurrentUser();
+        if (currentUser) {
+            await firestoreService.salvarPlanos(currentUser, state.getPlanos());
+        }
+        
+        if (saveIndicator) {
+            saveIndicator.innerText = "Salvo ✓";
+            saveIndicator.style.color = "#27ae60"; // Verde
+        }
+        isDirty = false; // Reseta flag
+        saveTimeout = null;
+
+        // Atualiza UI em background sem reload total
+        // (Opcional, depende de quão reativa precisa ser a lista principal)
+    } catch (e) {
+        console.warn("Erro no auto-save:", e);
+        if (saveIndicator) {
+            saveIndicator.innerText = "⚠️ Offline (Salvo local)";
+            saveIndicator.style.color = "#c0392b";
+        }
+        // Dados permanecem em memória e isDirty true, tentará na próxima
+    }
+}
+
+function ensureAttachedToPlan() {
+    const plano = state.getPlanoByIndex(currentPlanoIndex);
+    if (!plano) return;
+    
+    if (!plano.neuroAnnotations) plano.neuroAnnotations = [];
+
+    // Verifica se este objeto (referência ou ID) já está no array
+    const exists = plano.neuroAnnotations.find(n => n.id === tempNoteData.id);
+    
+    if (!exists) {
+        // Se é um "rascunho flutuante", agora ele vira oficial
+        plano.neuroAnnotations.push(tempNoteData);
+        // Limpa legado se houver
+        if (currentDiaIndex !== null && plano.diasPlano && plano.diasPlano[currentDiaIndex]) {
+             if (plano.diasPlano[currentDiaIndex].neuroNote) plano.diasPlano[currentDiaIndex].neuroNote = null;
+        }
+    }
+}
+
+// --- Helpers de Dados e Ferramentas (Refatorados para Dirty Check) ---
 
 // Atualiza título e range no objeto global
 window.updateContextData = () => {
-    tempNoteData.chapterTitle = document.getElementById('neuro-chapter').value;
-    tempNoteData.pageStart = parseInt(document.getElementById('neuro-range-start').value, 10);
-    tempNoteData.pageEnd = parseInt(document.getElementById('neuro-range-end').value, 10);
+    const newTitle = document.getElementById('neuro-chapter').value;
+    const newStart = parseInt(document.getElementById('neuro-range-start').value, 10);
+    const newEnd = parseInt(document.getElementById('neuro-range-end').value, 10);
+
+    let changed = false;
+    if (tempNoteData.chapterTitle !== newTitle) { tempNoteData.chapterTitle = newTitle; changed = true; }
+    if (tempNoteData.pageStart !== newStart) { tempNoteData.pageStart = newStart; changed = true; }
+    if (tempNoteData.pageEnd !== newEnd) { tempNoteData.pageEnd = newEnd; changed = true; }
+
+    if (changed) {
+        isDirty = true;
+        scheduleAutoSave();
+    }
 };
 
 // Captura dados do DOM para o objeto tempNoteData
@@ -376,7 +492,7 @@ function saveCurrentStepData() {
     const confront = document.getElementById('apply-confront')?.value;
     if (confront !== undefined) upsertTrigger('confront', confront);
     
-    // Atualiza cabeçalho também
+    // Atualiza cabeçalho também (garantia)
     if (document.getElementById('neuro-chapter')) {
         window.updateContextData();
     }
@@ -384,30 +500,82 @@ function saveCurrentStepData() {
 
 function upsertMeta(type, text, subType = null) {
     const idx = tempNoteData.meta.findIndex(m => m.type === type && m.subType === subType);
-    if (idx >= 0) tempNoteData.meta[idx].text = text;
-    else tempNoteData.meta.push({ type, subType, text, page: 'Geral', timestamp: Date.now() });
+    let changed = false;
+
+    if (idx >= 0) {
+        if (tempNoteData.meta[idx].text !== text) {
+            tempNoteData.meta[idx].text = text;
+            tempNoteData.meta[idx].timestamp = Date.now();
+            changed = true;
+        }
+    } else if (text && text.trim() !== "") { // Só insere se tiver texto
+        tempNoteData.meta.push({ type, subType, text, page: 'Geral', timestamp: Date.now() });
+        changed = true;
+    }
+
+    if (changed) {
+        isDirty = true;
+        scheduleAutoSave();
+    }
 }
 
 function upsertInsight(type, text) {
     const idx = tempNoteData.insights.findIndex(i => i.type === type);
-    if (idx >= 0) tempNoteData.insights[idx].text = text;
-    else tempNoteData.insights.push({ type, text, page: 'Geral', timestamp: Date.now() });
+    let changed = false;
+
+    if (idx >= 0) {
+        if (tempNoteData.insights[idx].text !== text) {
+            tempNoteData.insights[idx].text = text;
+            tempNoteData.insights[idx].timestamp = Date.now();
+            changed = true;
+        }
+    } else if (text && text.trim() !== "") {
+        tempNoteData.insights.push({ type, text, page: 'Geral', timestamp: Date.now() });
+        changed = true;
+    }
+
+    if (changed) {
+        isDirty = true;
+        scheduleAutoSave();
+    }
 }
 
 function upsertTrigger(subType, text) {
      const idx = tempNoteData.triggers.findIndex(t => t.subType === subType);
-    if (idx >= 0) tempNoteData.triggers[idx].text = text;
-    else tempNoteData.triggers.push({ type: 'emotion', subType, text, page: 'Geral', timestamp: Date.now() });
+     let changed = false;
+
+     if (idx >= 0) {
+        if (tempNoteData.triggers[idx].text !== text) {
+            tempNoteData.triggers[idx].text = text;
+            tempNoteData.triggers[idx].timestamp = Date.now();
+            changed = true;
+        }
+    } else if (text && text.trim() !== "") {
+        tempNoteData.triggers.push({ type: 'emotion', subType, text, page: 'Geral', timestamp: Date.now() });
+        changed = true;
+    }
+
+    if (changed) {
+        isDirty = true;
+        scheduleAutoSave();
+    }
 }
 
-// Reconecta ferramentas de IA (Mic/Magic) aos novos inputs
+// Reconecta ferramentas de IA (Mic/Magic) aos novos inputs e adiciona listeners de Auto-Save (Backup)
 function attachToolsToInputs() {
     setTimeout(() => {
         const inputs = document.querySelectorAll('textarea, input[type="text"]');
         inputs.forEach(input => {
+            // Backup Auto-Save no Blur (caso feche sem digitar mais nada)
+            input.addEventListener('blur', () => {
+                if (isDirty) scheduleAutoSave(); // Ou force performSilentSave() se preferir agressividade
+            });
+
+            // Dictation
             const micBtn = document.getElementById(`mic-${input.id}`);
             if (micBtn) attachDictationToInput(input, micBtn);
 
+            // AI Correction
             const magicBtn = document.getElementById(`magic-${input.id}`);
             if (magicBtn) {
                 magicBtn.addEventListener('click', async (e) => {
@@ -423,7 +591,10 @@ function attachToolsToInputs() {
                     try {
                         const correctedText = await processTextWithAI(originalText);
                         input.value = correctedText;
-                        input.dispatchEvent(new Event('input'));
+                        input.dispatchEvent(new Event('input')); // Dispara input para ativar isDirty via listeners normais se houver
+                        // Força dirty manualmente pois mudamos programaticamente
+                        isDirty = true; 
+                        scheduleAutoSave();
                     } catch (error) {
                         console.error("Erro na correção:", error);
                         alert("Erro na IA.");
@@ -441,68 +612,55 @@ function attachToolsToInputs() {
 // --- Persistência e Reset ---
 
 async function saveNote() {
+    // Este botão agora atua como "Concluir e Fechar", já que o dado é salvo automaticamente.
+    // Ele força uma sincronização final imediata.
+
     const pStart = parseInt(tempNoteData.pageStart, 10);
     const pEnd = parseInt(tempNoteData.pageEnd, 10);
     
     if (isNaN(pStart) || isNaN(pEnd)) {
-        alert('Defina o intervalo de páginas no topo antes de salvar.');
+        alert('Defina o intervalo de páginas no topo antes de concluir.');
         return;
     }
 
-    const plano = state.getPlanoByIndex(currentPlanoIndex);
+    if (saveTimeout) clearTimeout(saveTimeout); // Cancela debounce pendente
+    isDirty = true; // Garante que performSilentSave rode
     
-    const novaNota = {
-        id: tempNoteData.id || crypto.randomUUID(),
-        pageStart: pStart,
-        pageEnd: pEnd,
-        chapterTitle: tempNoteData.chapterTitle,
-        insights: tempNoteData.insights,
-        meta: tempNoteData.meta,
-        triggers: tempNoteData.triggers,
-        updatedAt: new Date().toISOString()
-    };
+    // Assegura estrutura correta
+    ensureAttachedToPlan();
 
-    // Mantém reviewsDone se já existir (para não resetar o ciclo SRS ao editar)
-    const existingNote = plano.neuroAnnotations?.find(n => n.id === novaNota.id);
-    if (existingNote && existingNote.reviewsDone) {
-        novaNota.reviewsDone = existingNote.reviewsDone;
-    }
-
-    if (!plano.neuroAnnotations) plano.neuroAnnotations = [];
-
-    const indexExistente = plano.neuroAnnotations.findIndex(n => n.id === novaNota.id);
-    if (indexExistente >= 0) plano.neuroAnnotations[indexExistente] = novaNota;
-    else plano.neuroAnnotations.push(novaNota);
-
-    // Limpeza de legado
-    if (currentDiaIndex !== null && plano.diasPlano && plano.diasPlano[currentDiaIndex]) {
-        if (plano.diasPlano[currentDiaIndex].neuroNote) plano.diasPlano[currentDiaIndex].neuroNote = null;
-    }
-
-    state.updatePlano(currentPlanoIndex, plano);
-
+    ui.toggleLoading(true);
     try {
+        await performSilentSave(); // Aguarda save final
+        
+        ui.toggleLoading(false);
+        closeNoteModal();
+        // Atualiza a UI principal para refletir novos ícones/status
         const currentUser = state.getCurrentUser();
-        if (currentUser) {
-            ui.toggleLoading(true);
-            await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-            ui.toggleLoading(false);
-            closeNoteModal();
-            ui.renderApp(state.getPlanos(), currentUser);
-        }
+        if (currentUser) ui.renderApp(state.getPlanos(), currentUser);
+        
     } catch (error) {
         ui.toggleLoading(false);
-        console.error("Erro ao salvar:", error);
-        alert('Falha ao salvar. Verifique sua conexão.');
+        console.error("Erro ao salvar final:", error);
+        alert('Sua nota está salva localmente, mas houve erro ao sincronizar. Tente novamente.');
     }
 }
 
 async function handleResetNeuro() {
-    if (!confirm("Isso apagará o progresso atual deste contexto. Continuar?")) return;
-    tempNoteData = {
-        id: null, chapterTitle: '', pageStart: null, pageEnd: null,
-        insights: [], meta: [], triggers: []
-    };
+    if (!confirm("Isso apagará o progresso atual deste contexto e resetará para o início. Continuar?")) return;
+    
+    // Se estava salvo no plano, removemos ou limpamos
+    const plano = state.getPlanoByIndex(currentPlanoIndex);
+    if (plano && plano.neuroAnnotations) {
+        const idx = plano.neuroAnnotations.indexOf(tempNoteData);
+        if (idx !== -1) {
+            plano.neuroAnnotations.splice(idx, 1);
+            isDirty = true;
+            scheduleAutoSave(); // Sincroniza a remoção
+        }
+    }
+
+    tempNoteData = migrateLegacyData(null); // Reseta objeto em memória
     currentStepIndex = 0;
     renderModalUI();
 }
@@ -596,7 +754,6 @@ export function openReviewMode(planoIndex, notaId, tipoRevisao) {
     };
 
     // Usando setTimeout para garantir que os botões existam no DOM após o reveal
-    // (Embora eles estejam no HTML oculto, o listener pode ser anexado imediatamente)
     const btnSuccess = document.getElementById('btn-review-success');
     const btnFail = document.getElementById('btn-review-fail');
     
@@ -617,9 +774,6 @@ async function concluirRevisao(planoIndex, notaId, tipoRevisaoFull, sucesso) {
     if (key) {
         if (!nota.reviewsDone) nota.reviewsDone = {};
         nota.reviewsDone[key] = true;
-        
-        // Se falhou, podemos implementar lógica futura para resetar ou agendar nova revisão
-        // Por enquanto, apenas marca como feito o ciclo atual.
     }
 
     state.updatePlano(planoIndex, plano);
