@@ -612,3 +612,68 @@ export function calcularDataFimEstimada(dadosFormulario) {
 
     return dataFimEstimada;
 }
+
+/**
+ * Analisa todas as anotações Neuro e identifica quais precisam de revisão SRS (D+1, D+3, D+7).
+ * @param {Array} planos - Lista completa de planos.
+ * @returns {Array} Lista plana de itens a revisar.
+ */
+export function verificarRevisoesPendentes(planos) {
+    const revisoes = [];
+    const hoje = getHojeNormalizado();
+
+    planos.forEach(plano => {
+        // Ignora planos sem anotações ou pausados
+        if (!plano.neuroAnnotations || plano.isPaused) return;
+
+        plano.neuroAnnotations.forEach(nota => {
+            // Fallback: Se não tiver timestamp, usa a data de criação ou ignora
+            const dataBase = nota.updatedAt || nota.createdAt || nota.timestamp;
+            if (!dataBase) return;
+
+            const dataNota = new Date(dataBase);
+            dataNota.setHours(0, 0, 0, 0);
+
+            // Diferença em dias
+            const diffTime = hoje.getTime() - dataNota.getTime();
+            const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
+
+            // Inicializa estrutura de controle se não existir
+            if (!nota.reviewsDone) nota.reviewsDone = { d1: false, d3: false, d7: false };
+
+            let tipoRevisao = null;
+            let prioridade = 0;
+
+            // Lógica SRS: Apenas mostra se passou o dia E ainda não foi feito
+            if (diffDays >= 1 && !nota.reviewsDone.d1) {
+                tipoRevisao = 'D+1 (Flash)';
+                prioridade = 1;
+            } else if (diffDays >= 3 && nota.reviewsDone.d1 && !nota.reviewsDone.d3) {
+                tipoRevisao = 'D+3 (Consolidação)';
+                prioridade = 2;
+            } else if (diffDays >= 7 && nota.reviewsDone.d3 && !nota.reviewsDone.d7) {
+                tipoRevisao = 'D+7 (Final)';
+                prioridade = 3;
+            }
+
+            if (tipoRevisao) {
+                // Tenta encontrar uma pergunta guia (Mapear) para usar como desafio
+                const perguntaDesafio = nota.meta?.find(m => m.subType === 'q1' || m.subType === 'q2')?.text 
+                                      || "Relembre a tese principal deste trecho.";
+
+                revisoes.push({
+                    planoIndex: planos.indexOf(plano),
+                    planoTitulo: plano.titulo,
+                    notaId: nota.id,
+                    capitulo: nota.chapterTitle || `Pág. ${nota.pageStart}-${nota.pageEnd}`,
+                    tipo: tipoRevisao,
+                    prioridade: prioridade,
+                    desafio: perguntaDesafio
+                });
+            }
+        });
+    });
+
+    // Ordena por urgência (D+1 primeiro)
+    return revisoes.sort((a, b) => a.prioridade - b.prioridade);
+}
