@@ -1,4 +1,4 @@
-/* style.css (Completo - Versão 2.3 com Botão Magic AI e Wizard Neuro) */
+/* style.css (Completo - Versão 2.0.1 com Auto-Save Styles) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -1192,6 +1192,36 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     padding-bottom: 15px;
     margin-bottom: 15px;
 }
+
+/* Indicador de Auto-Save (Neuro Notes) - PRIORIDADE 3 (NOVO) */
+#save-indicator {
+    font-family: var(--neuro-font-main);
+    font-size: 0.85em;
+    color: #95a5a6; /* Cinza suave padrão */
+    font-style: italic;
+    transition: color 0.3s ease, opacity 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto; /* Empurra para a direita no flex container */
+    padding-left: 10px;
+}
+
+#save-indicator.saving {
+    color: var(--neuro-accent); /* Laranja */
+    opacity: 1;
+}
+
+#save-indicator.saved {
+    color: #27ae60; /* Verde */
+    opacity: 1;
+}
+
+#save-indicator.error {
+    color: #c0392b; /* Vermelho */
+    font-weight: bold;
+}
+/* ------------------------------------------------------------------ */
 
 .reavaliacao-modal-header h2 {
     font-family: 'Ubuntu', sans-serif;
