@@ -65,6 +65,11 @@ export function showCadastroForm(planoParaEditar = null) {
     DOMElements.leiturasAtrasadasSection.style.display = 'none';
     DOMElements.proximasLeiturasSection.style.display = 'none';
     DOMElements.planosPausadosSection.style.display = 'none';
+    
+    // Oculta seção de revisões se existir (não está em DOMElements ainda, então seleção direta por segurança)
+    const revisoesSection = document.getElementById('revisoes-section');
+    if (revisoesSection) revisoesSection.style.display = 'none';
+
     DOMElements.cadastroPlanoSection.style.display = 'block';
 
     DOMElements.formPlano.reset();
@@ -629,6 +634,58 @@ function renderizarPainelPlanosPausados(planos, totalPlanos) {
     }
 }
 
+// --- Renderização do Painel de Revisões SRS (NOVO) ---
+function renderizarPainelRevisoes(planos) {
+    // Busca elementos diretamente para garantir independência caso DOM Elements não tenha sido atualizado
+    const section = document.getElementById('revisoes-section');
+    const container = document.getElementById('lista-revisoes');
+    
+    if (!section || !container) return;
+
+    // Chama a lógica de verificação de datas (Priority 1 - Lógica)
+    // Assume que planoLogic.verificarRevisoesPendentes foi implementada
+    let revisoes = [];
+    try {
+        if (typeof planoLogic.verificarRevisoesPendentes === 'function') {
+            revisoes = planoLogic.verificarRevisoesPendentes(planos);
+        }
+    } catch (e) {
+        console.warn('Função SRS de verificação pendente no plano-logic.js');
+    }
+
+    if (revisoes.length === 0) {
+        section.style.display = 'none';
+        return;
+    }
+
+    section.style.display = 'block';
+    
+    container.innerHTML = revisoes.map(rev => `
+        <div class="neuro-item-card" style="border-left: 4px solid #8e44ad; display: block;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 8px;">
+                <div>
+                    <span class="status-tag" style="background: #8e44ad; color: white; border: none;">${rev.tipo}</span>
+                    <strong style="display: block; margin-top: 5px; color: #2c3e50; font-size: 1.05em;">${rev.planoTitulo}</strong>
+                    <span style="font-size: 0.85em; color: #7f8c8d;">${rev.capitulo}</span>
+                </div>
+                
+                <button class="button-confirm" 
+                        data-action="iniciar-revisao" 
+                        data-plano-index="${rev.planoIndex}" 
+                        data-nota-id="${rev.notaId}"
+                        data-tipo-revisao="${rev.tipo}"
+                        style="font-size: 0.9em; padding: 6px 12px; background-color: #8e44ad;">
+                    <span class="material-symbols-outlined" style="font-size: 1.2em; vertical-align: bottom;">play_arrow</span> Iniciar
+                </button>
+            </div>
+            
+            <div style="font-size: 0.85em; color: #555; background: #fff; padding: 10px; border-radius: 6px; border: 1px dashed #d1c4e9;">
+                <strong style="color:#8e44ad;">Desafio:</strong> ${rev.desafio}
+            </div>
+        </div>
+    `).join('');
+}
+
 function renderizarQuadroReavaliacao(dadosCarga) {
     let html = '';
     dadosCarga.forEach(dia => {
@@ -724,6 +781,9 @@ export function renderApp(planos, user) {
     }
 
     if (planos && planos.length > 0) {
+        // Chamada da nova função de renderização SRS
+        renderizarPainelRevisoes(planos);
+        
         renderizarPainelProximasLeituras(planos, planos.length);
         renderizarPainelLeiturasAtrasadas(planos, planos.length);
         renderizarPainelPlanosPausados(planos, planos.length);
@@ -735,6 +795,11 @@ export function renderApp(planos, user) {
         DOMElements.proximasLeiturasSection.style.display = 'none';
         DOMElements.leiturasAtrasadasSection.style.display = 'none';
         DOMElements.planosPausadosSection.style.display = 'none';
+        
+        // Esconde painel de revisões se não houver planos
+        const revSection = document.getElementById('revisoes-section');
+        if(revSection) revSection.style.display = 'none';
+        
         DOMElements.paginadorPlanosDiv.innerHTML = '';
         DOMElements.paginadorPlanosDiv.classList.add('hidden');
     }
