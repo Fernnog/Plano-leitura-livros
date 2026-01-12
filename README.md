@@ -1,24 +1,3 @@
-### **Plano de Evolução: Atualização da Documentação (README.md)**
-
-**Explicação da Proposta (Para Leigos)**
-Como solicitou, este é um novo arquivo `README.md`. Ele não é apenas um manual técnico, mas um **manifesto de produto**. Dado que a mudança para o formato "Wizard" (Passo a Passo) altera a forma como o usuário estuda, a documentação precisa explicar o "Porquê" antes do "Como".
-
-Adicionei uma seção dedicada chamada **"A Virada Cognitiva (v2.0)"**, onde detalho o relatório do especialista, explicando conceitos como "Guardrails" (proteções contra leitura passiva), a separação de vozes (Autor vs. Leitor) e o "Modo Cego" para recuperação de memória.
-
----
-
-**1. Plano de Ação Técnico**
-
-**a) Substituição do Arquivo (`README.md`)**
-
-*   **Objetivo:** Substituir todo o conteúdo atual pelo conteúdo abaixo.
-*   **Código:**
-
-```markdown
-<p align="center">
-  <img src="logo.png" alt="Logotipo do Plano de Leitura" width="150">
-</p>
-
 # 🧠 Gerenciador de Leitura Cognitiva & Neuroteologia (v2.0)
 
 ![Versão Atual](https://img.shields.io/badge/version-2.0.0-deep_blue.svg) ![Status](https://img.shields.io/badge/status-major_update-success.svg) ![Methodology](https://img.shields.io/badge/Method-M.E.T.A._Wizard-orange) ![AI Powered](https://img.shields.io/badge/AI-Google%20Gemini-blue)
