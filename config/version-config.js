@@ -1,9 +1,18 @@
 // config/version-config.js
 export const versionConfig = {
-    version: '2.0.1',
+    version: '2.0.2',
     changelog: {
-        title: 'Persistência & Memória (v2.0)',
+        title: 'Protocolo C.A.P.E. & Guardrails (v2.0.2)',
         sections: [
+            {
+                title: 'v2.0.2 - Refinamento Cognitivo (Expert Mode)',
+                points: [
+                    '<strong>Novos Campos M.E.T.A.:</strong> Inclusão de "Tema Central" (Mapear), separação de "Evidências" (Engajar) e campo de "Ponto de Confusão" (Traduzir) para maior precisão metacognitiva.',
+                    '<strong>S.R.S. Contextual:</strong> O sistema de revisão agora distingue a maturidade da memória. D+1 foca em checagem rápida (Perguntas Guia), enquanto D+7 exige reconstrução ativa (Desafio de Ensino).',
+                    '<strong>Guardrails de Qualidade:</strong> Implementação de contadores de caracteres para forçar o poder de síntese e evitar cópia passiva.',
+                    '<strong>Compromisso de Honestidade:</strong> Checkbox obrigatório no "Modo Cego" confirmando que a síntese foi feita sem consultar o texto original.'
+                ]
+            },
             {
                 title: 'v2.0.1 - Persistência Granular (Auto-Save)',
                 points: [
