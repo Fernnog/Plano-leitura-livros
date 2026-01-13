@@ -1,4 +1,4 @@
-/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.0) */
+/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.0 + Update Consolidação) */
 
 /* --- LAYOUT GRID DO PAINEL NEURO --- */
 .plano-leitura-grid {
@@ -184,6 +184,26 @@
     color: var(--neuro-primary);
 }
 
+/* Estilos para inputs de Sub-Período (Sessão) - NOVO PRIORIDADE 1 */
+.session-sub-range {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 8px;
+    font-size: 0.85em;
+    color: #666;
+}
+
+.session-sub-range input {
+    width: 55px;
+    padding: 6px;
+    border: 1px solid #ced4da;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 0.9em;
+    background-color: #fff;
+}
+
 .neuro-micro-context .micro-header-row {
     display: flex; 
     justify-content: space-between; 
@@ -299,6 +319,39 @@
     color: #7f8c8d;
 }
 
+/* Container de Ações de Capítulo (Consolidação) - NOVO PRIORIDADE 2 */
+.chapter-actions-container {
+    padding: 12px;
+    background: linear-gradient(to right, #f8f9fa, #e9ecef);
+    border-radius: 6px;
+    margin-bottom: 20px;
+    border: 1px solid #dee2e6;
+    text-align: center;
+    animation: fadeIn 0.3s ease-in-out;
+}
+
+.btn-consolidate {
+    background-color: var(--neuro-primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    font-family: var(--neuro-font-main);
+    font-weight: 600;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.btn-consolidate:hover {
+    background-color: #34495e;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
 .session-timeline {
     border-left: 2px solid #e0e0e0;
     margin-left: 10px;
@@ -393,6 +446,20 @@
     display: block;
 }
 
+/* Tag de Sub-Período (Ex: Pág 10-15) - NOVO PRIORIDADE 1 */
+.sub-period-tag {
+    font-size: 0.85em; /* Aumentado levemente para legibilidade */
+    background: #fff3e0;
+    color: var(--neuro-accent);
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 700;
+    border: 1px solid rgba(211, 84, 0, 0.2);
+    margin-left: 8px;
+    vertical-align: text-bottom;
+    display: inline-block;
+}
+
 .session-topic {
     font-size: 1em;
     color: #2c3e50;
@@ -425,10 +492,17 @@
 
 .spin { animation: spin 1s linear infinite; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
+@keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
 /* --- MEDIA QUERIES --- */
 @media (max-width: 700px) {
     .plano-leitura-grid { grid-template-columns: 1fr; }
     .neuro-panel { border-left: none; border-top: 3px solid var(--neuro-accent); border-radius: 0 0 8px 8px; }
     .inputs-row { flex-direction: column; align-items: stretch; }
+    
+    .session-sub-range {
+        flex-direction: row;
+        width: 100%;
+        justify-content: flex-start;
+    }
 }
