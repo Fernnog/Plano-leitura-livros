@@ -1,13 +1,14 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota, exportação e Diário de Bordo (Histórico).
-// ATUALIZADO v2.5.0: Consolidação Temática e Sub-períodos.
+// ATUALIZADO v2.0.5: Validação de Escopo e Timeline Narrativa.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
 import * as ui from './ui.js';
 import { attachDictationToInput } from './dictation-widget.js';
 import { processTextWithAI } from './ai-service.js';
+import { validateSessionRange, validateCognitiveQuality } from './validators.js'; // NOVO: Importação da arquitetura de validação
 
 // --- Variáveis de Estado Local ---
 let tempNoteData = {
@@ -411,6 +412,33 @@ function updateWizardButtons() {
 function handleNextStep() {
     const step = WIZARD_STEPS[currentStepIndex];
     saveCurrentStepData(); 
+
+    // --- NOVO: Integração com Validador Arquitetural (Prioridade 1) ---
+    // Passo 0: Mapear (Validação de Intervalo)
+    if (currentStepIndex === 0) {
+        const pStart = document.getElementById('session-p-start').value;
+        const pEnd = document.getElementById('session-p-end').value;
+        
+        // Valida se o sub-período está dentro do contexto do capítulo (tempNoteData)
+        const validation = validateSessionRange(pStart, pEnd, tempNoteData.pageStart, tempNoteData.pageEnd);
+        
+        if (!validation.valid) {
+            alert(`⚠️ Atenção Cognitiva: ${validation.msg}`);
+            return; // Bloqueia avanço
+        }
+    }
+
+    // Passo 1: Engajar (Validação de Qualidade da Tese)
+    if (currentStepIndex === 1) {
+        const thesis = document.getElementById('engage-thesis')?.value;
+        const validation = validateCognitiveQuality(thesis, 15);
+        if(!validation.valid) {
+            alert(`⚠️ Atenção Cognitiva: ${validation.msg}`);
+            return;
+        }
+    }
+    // ------------------------------------------------------------------
+
     if (step.validation && !step.validation()) {
         alert("⚠️ Guardrail Ativado: Por favor, preencha os campos essenciais para garantir sua retenção.");
         return;
@@ -703,8 +731,7 @@ export function openLogbook(planoIndex) {
     currentPlanoIndex = planoIndex;
     const plano = state.getPlanoByIndex(planoIndex);
     if (!plano) return;
-    // Pega a anotação mais recente ou adequada ao contexto (pode ser aprimorado para selecionar qual capítulo)
-    // Por padrão, abre o último capítulo ativo
+    // Pega a anotação mais recente ou adequada ao contexto
     const note = (plano.neuroAnnotations || []).slice(-1)[0];
     
     // Atualiza tempNoteData para que as ações de consolidar funcionem no contexto correto
@@ -727,8 +754,23 @@ function renderLogbookUI(note) {
     const container = document.getElementById('logbook-content');
     if (!note) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">Nenhum registro iniciado para este plano.</p>'; return; }
 
+    // --- NOVO (Prioridade 2): Wrapper de Progresso e Link para Timeline ---
+    let progressHTML = '';
+    if (note.pageStart && note.pageEnd) {
+        progressHTML = `
+        <div id="chapter-progress-wrapper" style="padding: 10px 15px; background: #fff; border-bottom: 1px solid #eee; margin-bottom: 15px; border-radius: 6px;">
+            <div style="display:flex; justify-content: space-between; font-size: 0.8em; color: #666; margin-bottom: 5px;">
+                <span>Cobertura do Capítulo</span>
+                <button id="btn-view-timeline" class="btn-history-small" style="border:none; background:none; color:var(--neuro-accent); cursor:pointer; padding:0;">
+                    Ver Linha do Tempo <span class="material-symbols-outlined" style="font-size:1.1em; vertical-align:middle;">open_in_new</span>
+                </button>
+            </div>
+            <div class="progress-track" id="chapter-coverage-bar"></div>
+        </div>`;
+    }
+
     let html = `
-    <!-- NOVO: Header com Ação de Consolidação -->
+    <!-- Header com Ação de Consolidação -->
     <div style="background: #eef2f7; padding: 15px; border-radius: 6px; margin-bottom: 20px; border-left: 4px solid var(--neuro-primary);">
         <div style="display:flex; justify-content:space-between; align-items:flex-start;">
             <div>
@@ -741,6 +783,8 @@ function renderLogbookUI(note) {
             </button>
         </div>
     </div>
+
+    ${progressHTML}
     
     <div class="session-timeline">`;
     
@@ -786,6 +830,72 @@ function renderLogbookUI(note) {
         </div></div>`;
 
     container.innerHTML = html;
+
+    // --- Invocação da Lógica Visual Pós-Render ---
+    setTimeout(() => {
+        renderVisualizations(note);
+    }, 100);
+}
+
+// --- NOVO: Função de Renderização Visual (Gaps e Timeline) ---
+function renderVisualizations(note) {
+    const bar = document.getElementById('chapter-coverage-bar');
+    if(bar && note.pageStart && note.pageEnd) {
+        const totalPages = note.pageEnd - note.pageStart + 1;
+        const allSessions = [...(note.sessions || []), note.currentSession];
+        
+        bar.innerHTML = ''; // Limpa
+        
+        allSessions.forEach(s => {
+            if(!s.pStart || !s.pEnd) return;
+            
+            // Cálculos para posicionamento absoluto (Visualização de Gaps)
+            const relativeStart = s.pStart - note.pageStart;
+            const percentStart = (relativeStart / totalPages) * 100;
+            const percentWidth = ((s.pEnd - s.pStart + 1) / totalPages) * 100;
+            
+            const seg = document.createElement('div');
+            seg.className = 'progress-segment';
+            seg.style.left = `${Math.max(0, percentStart)}%`;
+            seg.style.width = `${Math.min(100, percentWidth)}%`;
+            seg.title = `Pág. ${s.pStart}-${s.pEnd}: ${s.sessionTopic || 'Sessão'}`;
+            
+            bar.appendChild(seg);
+        });
+    }
+    
+    // Listener para abrir Timeline
+    document.getElementById('btn-view-timeline')?.addEventListener('click', () => openTimelineModal(note));
+}
+
+// --- NOVO: Função para Abrir e Popular a Timeline ---
+function openTimelineModal(note) {
+    const content = document.getElementById('timeline-content');
+    if (!content) return;
+
+    const allSessions = [...(note.sessions || []), note.currentSession].sort((a,b) => (a.pStart || 0) - (b.pStart || 0));
+    
+    content.innerHTML = allSessions.map(s => {
+        const thesis = s.insights.find(i => i.type === 'thesis')?.text || '<em>Nenhuma tese registrada nesta sessão.</em>';
+        return `
+            <div class="timeline-node">
+                <div style="font-size:0.75em; color:#999; text-transform:uppercase; margin-bottom:5px;">
+                    Pág. ${s.pStart || '?'}-${s.pEnd || '?'} • ${new Date(s.date).toLocaleDateString()}
+                </div>
+                <div style="font-family: var(--neuro-font-serif); color: #2c3e50; font-size: 1.05em; line-height: 1.5;">
+                    "${thesis}"
+                </div>
+            </div>
+        `;
+    }).join('');
+    
+    const modal = document.getElementById('timeline-modal');
+    if (modal) {
+        modal.classList.add('visivel');
+        // Fecha Timeline
+        const closeBtn = document.getElementById('close-timeline');
+        if (closeBtn) closeBtn.onclick = () => modal.classList.remove('visivel');
+    }
 }
 
 // Dispatcher global para os cliques nos botões do logbook
