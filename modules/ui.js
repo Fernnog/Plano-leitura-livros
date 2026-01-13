@@ -5,27 +5,17 @@
 import * as DOMElements from './dom-elements.js';
 import * as planoLogic from './plano-logic.js';
 import { versionConfig } from '../config/version-config.js'; 
-// Importação necessária para garantir que os listeners do neuro-notes sejam carregados
 import './neuro-notes.js'; 
 
 // --- Funções de Formatação e Helpers ---
 
-/**
- * Formata um objeto Date para uma string legível (dd/mm/aaaa).
- * @param {Date} date - O objeto Date a ser formatado.
- * @returns {string} A data formatada ou '' se a data for inválida.
- */
 function formatarData(date) {
     if (date instanceof Date && !isNaN(date)) {
-        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }); // UTC para evitar problemas de fuso
+        return date.toLocaleDateString('pt-BR', { timeZone: 'UTC' }); 
     }
     return '';
 }
 
-/**
- * Rola a tela até o card do plano e aplica um destaque visual temporário.
- * @param {number} planoIndex - O índice do plano a ser destacado.
- */
 export function highlightAndScrollToPlano(planoIndex) {
     const planoCard = document.getElementById(`plano-${planoIndex}`);
     if (!planoCard) return;
@@ -38,15 +28,10 @@ export function highlightAndScrollToPlano(planoIndex) {
     }, 1500);
 }
 
-/**
- * Rola a tela automaticamente para os dias marcados como alvo (Hoje/Próximo).
- */
 export function autoScrollParaDiaAtual() {
-    // Pequeno delay para garantir que o DOM foi renderizado e o layout calculado
     setTimeout(() => {
         const alvos = document.querySelectorAll('[data-scroll-target="true"]');
         if (alvos.length > 0) {
-            // Rola apenas para o primeiro alvo encontrado (prioridade para o plano mais recente)
             alvos[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
     }, 600);
@@ -66,7 +51,6 @@ export function showCadastroForm(planoParaEditar = null) {
     DOMElements.proximasLeiturasSection.style.display = 'none';
     DOMElements.planosPausadosSection.style.display = 'none';
     
-    // Oculta seção de revisões se existir (não está em DOMElements ainda, então seleção direta por segurança)
     const revisoesSection = document.getElementById('revisoes-section');
     if (revisoesSection) revisoesSection.style.display = 'none';
 
@@ -343,7 +327,6 @@ function renderizarPlanos(planos, user) {
         
         let diasOcultosCount = 0;
 
-        // Recupera as anotações globais (nova arquitetura) ou array vazio
         const globalAnnotations = plano.neuroAnnotations || [];
 
         const diasLeituraHTML = plano.diasPlano.map((dia, diaIndex) => {
@@ -366,31 +349,24 @@ function renderizarPlanos(planos, user) {
                 `;
             }
 
-            // --- LÓGICA NEURO ATUALIZADA (Dissociação de Dados) ---
-            // Verifica se existe alguma anotação global que intercepte as páginas deste dia
             const temAnnotationMatch = globalAnnotations.some(note => {
-                // Lógica de interseção: (InicioA <= FimB) e (FimA >= InicioB)
                 return (dia.paginaInicioDia <= note.pageEnd && dia.paginaFimDia >= note.pageStart);
             });
 
-            // Verifica legado (para dados antigos não migrados)
             const temLegacyNote = dia.neuroNote && (
                 (dia.neuroNote.insights && dia.neuroNote.insights.length > 0) ||
                 (dia.neuroNote.meta && dia.neuroNote.meta.length > 0) ||
                 (dia.neuroNote.triggers && dia.neuroNote.triggers.length > 0)
             );
             
-            // O ícone deve aparecer se houver match global OU nota legada
             const showNeuroIcon = temAnnotationMatch || temLegacyNote;
             
             const neuroIcon = showNeuroIcon 
                 ? `<span class="material-symbols-outlined" style="font-size: 1.1em; color: #d35400; vertical-align: middle; margin-left: 5px;" title="Neuro-contexto ativo nestas páginas">psychology</span>` 
                 : '';
             
-            // Destaque visual CSS para dias com contexto ativo
             const neuroClass = showNeuroIcon ? 'neuro-range-active' : '';
 
-            // --- LÓGICA DE AUTO-SCROLL ---
             const hoje = new Date();
             hoje.setHours(0,0,0,0);
             const dataDia = dia.data ? new Date(dia.data) : null;
@@ -404,8 +380,6 @@ function renderizarPlanos(planos, user) {
             
             const badgeHoje = isHoje ? '<span class="status-tag status-em-dia" style="font-size:0.7em; margin-left:5px; background-color:#e67e22; color:white; border:none;">HOJE</span>' : '';
 
-            // ** Lógica de Visibilidade (Foco Progressivo) **
-            // Mostra se não foi lido OU se tem anotações importantes
             const deveMostrar = !dia.lido || showNeuroIcon;
             let classeVisibilidade = '';
             
@@ -446,10 +420,8 @@ function renderizarPlanos(planos, user) {
                </button>` 
             : '';
 
-        // Estilo condicional para data de previsão (vermelho se atrasado em relação a hoje)
         const styleData = (plano.dataFim && new Date(plano.dataFim) < new Date() && status !== 'concluido') ? 'color: #e74c3c; font-weight: bold;' : '';
 
-        // CORREÇÃO: Adicionado type="button" e pointer-events: none nos filhos para evitar bugs de clique no Android
         html += `
             <div class="plano-leitura card-${status}" id="plano-${index}">
                 <div class="plano-header">
@@ -470,7 +442,7 @@ function renderizarPlanos(planos, user) {
                 }
                 ${avisoAtrasoHTML}
 
-                <!-- BARRA DE PROGRESSO & PREVISÃO (ALTERADO) -->
+                <!-- BARRA DE PROGRESSO & PREVISÃO -->
                 <div style="display: flex; justify-content: space-between; font-size: 0.9em; margin-bottom: 5px; color: #666;">
                     <span><strong>Progresso:</strong> ${progresso.toFixed(0)}% (${plano.paginasLidas}/${plano.totalPaginas})</span>
                     <span style="${styleData}"><strong>Previsão:</strong> ${formatarData(plano.dataFim)}</span>
@@ -479,7 +451,7 @@ function renderizarPlanos(planos, user) {
                     <span class="barra-progresso" style="width: ${progresso}%;"></span>
                 </div>
                 
-                <!-- NOVO LAYOUT DE GRID -->
+                <!-- LAYOUT DE GRID -->
                 <div class="plano-leitura-grid">
                     <!-- Coluna Esquerda: Cronograma -->
                     <div>
@@ -490,28 +462,26 @@ function renderizarPlanos(planos, user) {
                         <div class="dias-leitura">${diasLeituraHTML}</div>
                     </div>
 
-                    <!-- Coluna Direita: Painel Neuro-Cognitivo -->
+                    <!-- Coluna Direita: Painel Neuro-Cognitivo (LIMPO) -->
                     <div class="neuro-panel">
                         <h4 class="neuro-panel-title">Painel Neuro</h4>
                         
-                        <button type="button" class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
-                            <span class="material-symbols-outlined" style="pointer-events: none;">psychology_alt</span>
-                            <span style="pointer-events: none;">Anotar Insight</span>
-                        </button>
-                        
-                        <button type="button" class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
-                            <span class="material-symbols-outlined" style="pointer-events: none;">download</span>
-                            <span style="pointer-events: none;">Baixar Resumo</span>
-                        </button>
-                        
-                        <button type="button" class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
-                            <span class="material-symbols-outlined" style="pointer-events: none;">fact_check</span>
-                            <span style="pointer-events: none;">Checklist Retenção</span>
-                        </button>
-
-                         <div style="margin-top:auto; font-size:0.75em; color:#95a5a6; text-align:center; font-style:italic;">
-                            "Renovação da mente"
-                         </div>
+                        <div class="neuro-panel-actions" style="display:flex; flex-direction:column; gap:8px; flex-grow:1;">
+                            <button type="button" class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
+                                <span class="material-symbols-outlined" style="pointer-events: none;">psychology_alt</span>
+                                <span style="pointer-events: none;">Anotar Insight</span>
+                            </button>
+                            
+                            <button type="button" class="btn-neuro-action" data-action="download-md" data-plano-index="${index}" title="Baixar anotações em Markdown">
+                                <span class="material-symbols-outlined" style="pointer-events: none;">download</span>
+                                <span style="pointer-events: none;">Baixar Resumo</span>
+                            </button>
+                            
+                            <button type="button" class="btn-neuro-action" data-action="open-checklist" title="Verificar checklist de retenção">
+                                <span class="material-symbols-outlined" style="pointer-events: none;">fact_check</span>
+                                <span style="pointer-events: none;">Checklist Retenção</span>
+                            </button>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -634,16 +604,12 @@ function renderizarPainelPlanosPausados(planos, totalPlanos) {
     }
 }
 
-// --- Renderização do Painel de Revisões SRS (NOVO) ---
 function renderizarPainelRevisoes(planos) {
-    // Busca elementos diretamente para garantir independência caso DOM Elements não tenha sido atualizado
     const section = document.getElementById('revisoes-section');
     const container = document.getElementById('lista-revisoes');
     
     if (!section || !container) return;
 
-    // Chama a lógica de verificação de datas (Priority 1 - Lógica)
-    // Assume que planoLogic.verificarRevisoesPendentes foi implementada
     let revisoes = [];
     try {
         if (typeof planoLogic.verificarRevisoesPendentes === 'function') {
@@ -781,7 +747,6 @@ export function renderApp(planos, user) {
     }
 
     if (planos && planos.length > 0) {
-        // Chamada da nova função de renderização SRS
         renderizarPainelRevisoes(planos);
         
         renderizarPainelProximasLeituras(planos, planos.length);
@@ -796,7 +761,6 @@ export function renderApp(planos, user) {
         DOMElements.leiturasAtrasadasSection.style.display = 'none';
         DOMElements.planosPausadosSection.style.display = 'none';
         
-        // Esconde painel de revisões se não houver planos
         const revSection = document.getElementById('revisoes-section');
         if(revSection) revSection.style.display = 'none';
         
