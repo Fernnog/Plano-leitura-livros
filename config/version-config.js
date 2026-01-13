@@ -2,10 +2,19 @@
 // RESPONSABILIDADE: Centralizar o controle de versão e o histórico de melhorias (Changelog)
 
 export const versionConfig = {
-    version: '2.0.3',
+    version: '2.0.4',
     changelog: {
-        title: 'Gestão de Sessões & Edição Temporal (v2.0.3)',
+        title: 'Consolidação Temática & Sub-períodos (v2.0.4)',
         sections: [
+            {
+                title: 'v2.0.4 - Consolidação de Capítulo (Agregação de Conhecimento)',
+                points: [
+                    '<strong>Novo Paradigma de Estudo:</strong> Transição da visão puramente diária para o "Contexto Temático". Agora o sistema entende que várias sessões de estudo compõem um único Capítulo.',
+                    '<strong>Consolidação em Um Clique:</strong> Novo botão no Diário de Bordo que unifica todas as sessões de um capítulo em um único relatório estruturado.',
+                    '<strong>Sub-períodos de Leitura:</strong> Capacidade de definir intervalos de páginas específicos (ex: pág 10-15) para cada sessão dentro de um capítulo maior, permitindo granularidade no registro.',
+                    '<strong>Relatório Mestre (Markdown):</strong> A exportação agora gera um arquivo completo do capítulo, organizando cronologicamente a "Voz do Autor" e a "Minha Síntese" de todas as sessões.'
+                ]
+            },
             {
                 title: 'v2.0.3 - Diário de Bordo Ativo (Edição de Histórico)',
                 points: [
