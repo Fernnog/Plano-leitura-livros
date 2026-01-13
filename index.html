@@ -7,7 +7,7 @@
     
     <!-- Link CSS Principal (Base e Layout) -->
     <link rel="stylesheet" href="css/style.css">
-    <!-- Link CSS Neuro-Learning (Módulo Cognitivo e Wizard) - NOVO -->
+    <!-- Link CSS Neuro-Learning (Módulo Cognitivo e Wizard) - ATUALIZADO v2.0.5 -->
     <link rel="stylesheet" href="css/neuro-style.css">
 
     <!-- Link para Material Symbols (Google Fonts) -->
@@ -370,7 +370,7 @@
             </div>
         </div>
 
-        <!-- NOVO MODAL: CHECKLIST DE RETENÇÃO (CAPE) - CONTEÚDO SUBSTITUÍDO CONFORME SOLICITAÇÃO -->
+        <!-- NOVO MODAL: CHECKLIST DE RETENÇÃO (CAPE) -->
         <div id="checklist-modal" class="reavaliacao-modal-overlay">
             <div class="reavaliacao-modal-content neuro-theme">
                 <!-- Header Personalizado -->
@@ -461,7 +461,7 @@
             </div>
         </div>
 
-        <!-- NOVO MODAL: DIÁRIO DE BORDO (HISTÓRICO DE SESSÕES) - ATUALIZADO COM AÇÃO DE CONSOLIDAÇÃO -->
+        <!-- NOVO MODAL: DIÁRIO DE BORDO (HISTÓRICO DE SESSÕES) -->
         <div id="logbook-modal" class="reavaliacao-modal-overlay">
             <div class="reavaliacao-modal-content neuro-theme" style="max-width: 600px; display: flex; flex-direction: column; max-height: 85vh;">
                 <!-- Header -->
@@ -492,6 +492,19 @@
                     <button id="btn-new-session-logbook" class="button-confirm" style="background-color: var(--neuro-accent); display: flex; align-items: center; gap: 5px;">
                         <span class="material-symbols-outlined" style="font-size: 1.1em;">add_circle</span> Nova Sessão
                     </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- NOVO MODAL: TIMELINE (FIO DA MEADA) - v2.0.5 -->
+        <div id="timeline-modal" class="reavaliacao-modal-overlay">
+            <div class="reavaliacao-modal-content neuro-theme" style="max-width: 600px;">
+                <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #2c3e50, #8e44ad); color: white;">
+                    <h2 style="color: white; margin: 0;"><span class="material-symbols-outlined">timeline</span> Fio da Meada</h2>
+                    <button id="close-timeline" class="reavaliacao-modal-close" style="color: white;">×</button>
+                </div>
+                <div id="timeline-content" class="timeline-v-flow" style="padding: 20px;">
+                    <!-- Conteúdo injetado via JS -->
                 </div>
             </div>
         </div>
