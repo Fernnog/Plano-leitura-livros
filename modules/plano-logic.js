@@ -79,13 +79,11 @@ export function verificarVisibilidadeDia(dia) {
     if (!dia.lido) return true;
 
     // Se foi lido, verifica se tem anotações relevantes (Neuro-Notes)
-    // Verifica existência do objeto e se arrays de conteúdo têm itens
     if (dia.neuroNote) {
         const temInsights = Array.isArray(dia.neuroNote.insights) && dia.neuroNote.insights.length > 0;
         const temMeta = Array.isArray(dia.neuroNote.meta) && dia.neuroNote.meta.length > 0;
         const temTriggers = Array.isArray(dia.neuroNote.triggers) && dia.neuroNote.triggers.length > 0;
         
-        // Se tiver qualquer tipo de anotação, mantém visível para revisão
         if (temInsights || temMeta || temTriggers) return true;
     }
 
@@ -132,11 +130,6 @@ export function atualizarPaginasLidas(plano) {
 
 /**
  * Gera um array de dias de leitura com base em datas de início/fim e periodicidade.
- * @param {Date} dataInicio
- * @param {Date} dataFim
- * @param {string} periodicidade - 'diario' ou 'semanal'
- * @param {number[]} diasSemana - Array de números de 0 (Dom) a 6 (Sáb).
- * @returns {Array<object>}
  */
 export function gerarDiasPlanoPorDatas(dataInicio, dataFim, periodicidade, diasSemana) {
     const dias = [];
@@ -163,11 +156,6 @@ export function gerarDiasPlanoPorDatas(dataInicio, dataFim, periodicidade, diasS
 
 /**
  * Gera um array de dias de leitura com base na data de início, número de dias e periodicidade.
- * @param {Date} dataInicio
- * @param {number} numeroDias
- * @param {string} periodicidade
- * @param {number[]} diasSemana
- * @returns {Array<object>}
  */
 export function gerarDiasPlanoPorDias(dataInicio, numeroDias, periodicidade, diasSemana) {
     const dias = [];
@@ -189,20 +177,13 @@ export function gerarDiasPlanoPorDias(dataInicio, numeroDias, periodicidade, dia
          safetyCounter++;
     }
      if (diasAdicionados < numeroDias) {
-         throw new Error(`Não foi possível gerar os ${numeroDias} dias solicitados com a periodicidade fornecida. Apenas ${diasAdicionados} foram gerados.`);
+         throw new Error(`Não foi possível gerar os ${numeroDias} dias solicitados.`);
      }
     return dias;
 }
 
 /**
  * Gera um array de dias de leitura com base na meta de páginas por dia.
- * @param {Date} dataInicio
- * @param {number} paginasPorDia
- * @param {number} paginaInicioLivro
- * @param {number} paginaFimLivro
- * @param {string} periodicidade
- * @param {number[]} diasSemana
- * @returns {Array<object>}
  */
 export function gerarDiasPlanoPorPaginas(dataInicio, paginasPorDia, paginaInicioLivro, paginaFimLivro, periodicidade, diasSemana) {
     if (!paginasPorDia || paginasPorDia <= 0) {
@@ -221,7 +202,6 @@ export function gerarDiasPlanoPorPaginas(dataInicio, paginasPorDia, paginaInicio
 
 /**
  * Distribui as páginas de um plano entre seus dias de leitura. Modifica o objeto plano.
- * @param {object} plano - O objeto do plano a ser modificado.
  */
 export function distribuirPaginasPlano(plano) {
     if (!plano || !plano.diasPlano || plano.diasPlano.length === 0 || typeof plano.paginaInicio !== 'number' || typeof plano.paginaFim !== 'number' || plano.paginaFim < plano.paginaInicio) {
@@ -257,9 +237,6 @@ export function distribuirPaginasPlano(plano) {
 
 /**
  * Recalcula um plano atrasado com base em uma nova data de fim.
- * @param {object} planoOriginal - O plano a ser recalculado.
- * @param {Date} novaDataFim - A nova data de término.
- * @returns {object} Um novo objeto de plano recalculado.
  */
 export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
     if (!planoOriginal || !(novaDataFim instanceof Date) || isNaN(novaDataFim)) {
@@ -270,11 +247,9 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
         throw new Error("A nova data de fim deve ser posterior à data de hoje.");
     }
     
-    // IMPORTANTE: Deep copy para não afetar o original durante os cálculos
     const planoRecalculado = JSON.parse(JSON.stringify(planoOriginal));
     
-    // GARANTIA DE INTEGRIDADE: Preserva anotações globais independentemente da redistribuição de dias.
-    // Isso assegura que o Painel Neuro não seja resetado, mas sim persistido mesmo se os dias mudarem.
+    // GARANTIA DE INTEGRIDADE: Preserva anotações globais
     planoRecalculado.neuroAnnotations = planoOriginal.neuroAnnotations || [];
     
     planoRecalculado.dataInicio = new Date(planoRecalculado.dataInicio);
@@ -302,7 +277,7 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
     }
     
     if (novaDataFim < dataInicioRecalculo) {
-        throw new Error(`A nova data de fim (${novaDataFim.toLocaleDateString('pt-BR')}) não pode ser anterior ao próximo dia de leitura válido (${dataInicioRecalculo.toLocaleDateString('pt-BR')}).`);
+        throw new Error(`A nova data de fim não pode ser anterior ao próximo dia de leitura válido.`);
     }
 
     const novosDiasGerados = gerarDiasPlanoPorDatas(dataInicioRecalculo, novaDataFim, periodicidadePlano, diasSemanaPlano);
@@ -332,10 +307,7 @@ export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
 }
 
 /**
- * Analisa a carga de leitura semanal de todos os planos combinados.
- * @param {Array<object>} planos - A lista completa de planos do usuário.
- * @param {number} totalPlanos - O número total de planos para referência de numeração visual.
- * @returns {Array<object>} Um array de 7 objetos, um para cada dia da semana, com os dados da carga.
+ * Analisa a carga de leitura semanal.
  */
 export function analisarCargaSemanal(planos, totalPlanos) {
     const diasDaSemana = [
@@ -427,18 +399,10 @@ export function construirObjetoPlano(formData, planoEditado) {
         totalPaginas: formData.paginaFim - formData.paginaInicio + 1,
         isPaused: planoEditado ? planoEditado.isPaused : false,
         dataPausa: planoEditado ? planoEditado.dataPausa : null,
-        
-        // CORREÇÃO: Garante a persistência das anotações Neuro ao editar/recalcular
         neuroAnnotations: planoEditado ? (planoEditado.neuroAnnotations || []) : [] 
     };
 }
 
-/**
- * Recalcula um plano atrasado com base em uma meta de páginas por dia.
- * @param {object} planoOriginal - O plano a ser recalculado.
- * @param {number} paginasPorDia - A meta de páginas a serem lidas por dia.
- * @returns {object} Um novo objeto de plano recalculado.
- */
 export function recalcularPlanoPorPaginasDia(planoOriginal, paginasPorDia) {
     if (!planoOriginal || !paginasPorDia || paginasPorDia <= 0) {
         throw new Error("Dados inválidos para o recálculo do plano.");
@@ -469,7 +433,7 @@ export function recalcularPlanoPorPaginasDia(planoOriginal, paginasPorDia) {
     const novosDiasGerados = gerarDiasPlanoPorDias(dataInicioRecalculo, diasLeituraNecessarios, periodicidadePlano, diasSemanaPlano);
 
     if (novosDiasGerados.length === 0) {
-        throw new Error("Não foi possível gerar um novo cronograma. Verifique as configurações do plano.");
+        throw new Error("Não foi possível gerar um novo cronograma.");
     }
 
     const novaDataFim = novosDiasGerados[novosDiasGerados.length - 1].data;
@@ -477,11 +441,6 @@ export function recalcularPlanoPorPaginasDia(planoOriginal, paginasPorDia) {
     return recalcularPlanoComNovaData(planoOriginal, novaDataFim);
 }
 
-/**
- * Retoma um plano pausado, ajustando as datas futuras.
- * @param {object} plano - O plano a ser retomado.
- * @returns {object} O objeto do plano modificado.
- */
 export function retomarPlano(plano) {
     if (!plano.isPaused || !plano.dataPausa) return plano;
 
@@ -520,13 +479,6 @@ export function retomarPlano(plano) {
     return plano;
 }
 
-/**
- * Gera o conteúdo de um arquivo .ics a partir dos planos de leitura ativos.
- * @param {Array<object>} planos - A lista de todos os planos do usuário.
- * @param {string} horaInicio - A hora de início no formato "HH:mm".
- * @param {string} horaFim - A hora de fim no formato "HH:mm".
- * @returns {string} O conteúdo completo do arquivo .ics.
- */
 export function gerarConteudoICS(planos, horaInicio, horaFim) {
     const [startHour, startMinute] = horaInicio.split(':');
     const [endHour, endMinute] = horaFim.split(':');
@@ -576,15 +528,9 @@ export function gerarConteudoICS(planos, horaInicio, horaFim) {
     return icsContent.join('\r\n');
 }
 
-/**
- * Calcula a data de término estimada de um plano com base nos dados do formulário.
- * @param {object} dadosFormulario - Objeto contendo dataInicio, paginasPorDia, etc.
- * @returns {Date|null} - A data de término estimada ou null se for impossível calcular.
- */
 export function calcularDataFimEstimada(dadosFormulario) {
     const { dataInicio, paginasPorDia, paginaInicio, paginaFim, periodicidade, diasSemana } = dadosFormulario;
 
-    // Validações essenciais para evitar cálculos com dados incompletos
     if (!dataInicio || isNaN(dataInicio) || !paginasPorDia || paginasPorDia <= 0 || !paginaInicio || !paginaFim || paginaFim < paginaInicio) {
         return null;
     }
@@ -614,37 +560,30 @@ export function calcularDataFimEstimada(dadosFormulario) {
 }
 
 /**
- * Analisa todas as anotações Neuro e identifica quais precisam de revisão SRS (D+1, D+3, D+7).
- * @param {Array} planos - Lista completa de planos.
- * @returns {Array} Lista plana de itens a revisar.
+ * Analisa anotações Neuro para revisões SRS (D+1, D+3, D+7).
  */
 export function verificarRevisoesPendentes(planos) {
     const revisoes = [];
     const hoje = getHojeNormalizado();
 
     planos.forEach(plano => {
-        // Ignora planos sem anotações ou pausados
         if (!plano.neuroAnnotations || plano.isPaused) return;
 
         plano.neuroAnnotations.forEach(nota => {
-            // Fallback: Se não tiver timestamp, usa a data de criação ou ignora
             const dataBase = nota.updatedAt || nota.createdAt || nota.timestamp;
             if (!dataBase) return;
 
             const dataNota = new Date(dataBase);
             dataNota.setHours(0, 0, 0, 0);
 
-            // Diferença em dias
             const diffTime = hoje.getTime() - dataNota.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
 
-            // Inicializa estrutura de controle se não existir
             if (!nota.reviewsDone) nota.reviewsDone = { d1: false, d3: false, d7: false };
 
             let tipoRevisao = null;
             let prioridade = 0;
 
-            // Lógica SRS: Apenas mostra se passou o dia E ainda não foi feito
             if (diffDays >= 1 && !nota.reviewsDone.d1) {
                 tipoRevisao = 'D+1 (Flash)';
                 prioridade = 1;
@@ -657,9 +596,10 @@ export function verificarRevisoesPendentes(planos) {
             }
 
             if (tipoRevisao) {
-                // Tenta encontrar uma pergunta guia (Mapear) para usar como desafio
-                const perguntaDesafio = nota.meta?.find(m => m.subType === 'q1' || m.subType === 'q2')?.text 
-                                      || "Relembre a tese principal deste trecho.";
+                // Tenta usar o Tema Central novo, senão a pergunta guia
+                const desafioBase = nota.theme 
+                    ? `Tema: ${nota.theme}` 
+                    : (nota.meta?.find(m => m.subType === 'q1')?.text || "Recupere a tese principal.");
 
                 revisoes.push({
                     planoIndex: planos.indexOf(plano),
@@ -668,12 +608,11 @@ export function verificarRevisoesPendentes(planos) {
                     capitulo: nota.chapterTitle || `Pág. ${nota.pageStart}-${nota.pageEnd}`,
                     tipo: tipoRevisao,
                     prioridade: prioridade,
-                    desafio: perguntaDesafio
+                    desafio: desafioBase
                 });
             }
         });
     });
 
-    // Ordena por urgência (D+1 primeiro)
     return revisoes.sort((a, b) => a.prioridade - b.prioridade);
 }
