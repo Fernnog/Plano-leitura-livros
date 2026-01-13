@@ -1,9 +1,18 @@
 // config/version-config.js
 export const versionConfig = {
-    version: '2.0.0',
+    version: '2.0.1',
     changelog: {
-        title: 'A Revolução da Memória (SRS)',
+        title: 'Persistência & Memória (v2.0)',
         sections: [
+            {
+                title: 'v2.0.1 - Persistência Granular (Auto-Save)',
+                points: [
+                    '<strong>Auto-Save Inteligente:</strong> Seus insights agora são salvos automaticamente em segundo plano. O sistema utiliza lógica de "Debounce" (espera 2s após a digitação) para sincronizar sem consumir recursos excessivos.',
+                    '<strong>Gestão de Rascunhos (Lazy Init):</strong> Fim dos "rascunhos fantasmas". O sistema agora só cria um registro no banco de dados quando você efetivamente digita a primeira letra, mantendo sua base de dados limpa.',
+                    '<strong>Feedback de Status em Tempo Real:</strong> Novo indicador visual no cabeçalho do Wizard ("Sincronizado", "Salvando...", "Não salvo") para garantir total transparência sobre a segurança dos seus dados.',
+                    '<strong>Proteção de Dados (Dirty Check):</strong> Otimização que impede chamadas desnecessárias ao servidor se nenhuma alteração real foi feita no texto.'
+                ]
+            },
             {
                 title: 'v2.0.0 - Sistema de Repetição Espaçada',
                 points: [
