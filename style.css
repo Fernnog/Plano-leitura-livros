@@ -1,4 +1,4 @@
-/* style.css (Completo - Versão 2.0.1 com Auto-Save Styles) */
+/* style.css (Completo - Versão 2.1.0 com Suporte a Neuro-Retenção Avançada) */
 
 /* Importando fontes do Google Fonts */
 @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&family=Ubuntu:wght@700&display=swap');
@@ -1884,4 +1884,64 @@ footer { text-align: center; padding: 15px 0; background-color: #343a40; color: 
     border-radius: 6px;
     margin-bottom: 20px;
     padding: 15px;
+}
+
+/* --- NOVOS ESTILOS NEURO-RETENÇÃO (v2.1) --- */
+
+/* Contador de Caracteres (Guardrails) */
+.char-counter {
+    display: block;
+    text-align: right;
+    font-size: 0.75em;
+    color: #95a5a6;
+    margin-top: 4px;
+    font-family: var(--neuro-font-main);
+    transition: color 0.3s ease;
+}
+.char-counter.limit-near { color: #e67e22; } /* Laranja quando perto do limite */
+.char-counter.limit-reached { color: #c0392b; font-weight: bold; } /* Vermelho quando atingiu */
+
+/* Destaque para Caixa de Confusão (Metacognição) */
+.input-gap-container {
+    background-color: #fff3e0;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ffe0b2;
+    margin-top: 15px;
+    box-shadow: 0 1px 3px rgba(230, 81, 0, 0.05);
+}
+
+.input-gap-label {
+    color: #e65100;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+/* Container do Checkbox de Honestidade (Blind Mode) */
+.blind-mode-check-container {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f1f8e9;
+    border: 1px solid #dcedc8;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.blind-mode-check-container:hover {
+    background-color: #e8f5e9;
+    border-color: #c5e1a5;
+}
+
+.blind-mode-check-container label {
+    font-size: 0.9em;
+    color: #33691e;
+    cursor: pointer;
+    font-weight: 500;
 }
