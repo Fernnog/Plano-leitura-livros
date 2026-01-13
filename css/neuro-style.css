@@ -841,3 +841,86 @@
     .range-inputs { justify-content: flex-start; }
     .micro-header-row { flex-direction: column; align-items: flex-start; gap: 5px; }
 }
+
+/* --- DIÁRIO DE BORDO (LOGBOOK) --- */
+.logbook-header-info {
+    background-color: #f0f4f8;
+    border-left: 4px solid #2c3e50;
+    padding: 15px;
+    margin-bottom: 20px;
+    border-radius: 4px;
+}
+.logbook-chapter-title {
+    font-family: var(--neuro-font-serif);
+    font-size: 1.2em;
+    color: var(--neuro-primary);
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+.logbook-meta-info {
+    font-size: 0.85em;
+    color: #7f8c8d;
+}
+
+/* Linha do tempo das sessões */
+.session-timeline {
+    border-left: 2px solid #e0e0e0;
+    margin-left: 10px;
+    padding-left: 20px;
+}
+.session-card {
+    position: relative;
+    background: #fff;
+    border: 1px solid #eee;
+    border-radius: 6px;
+    padding: 12px;
+    margin-bottom: 15px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: transform 0.2s;
+}
+.session-card:hover {
+    transform: translateX(3px);
+    border-color: #cbd5e0;
+}
+/* Bolinha da timeline */
+.session-card::before {
+    content: '';
+    position: absolute;
+    left: -26px; /* Ajuste conforme padding da timeline */
+    top: 15px;
+    width: 10px;
+    height: 10px;
+    background: #bdc3c7;
+    border-radius: 50%;
+    border: 2px solid #fff;
+    box-shadow: 0 0 0 1px #bdc3c7;
+}
+.session-card.active-session {
+    border-left: 3px solid var(--neuro-accent);
+    background-color: #fffdf9;
+}
+.session-card.active-session::before {
+    background: var(--neuro-accent);
+    box-shadow: 0 0 0 2px rgba(230, 126, 34, 0.2);
+}
+
+.session-date {
+    font-size: 0.8em;
+    color: #95a5a6;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin-bottom: 4px;
+    display: block;
+}
+.session-topic {
+    font-size: 1em;
+    color: #2c3e50;
+    font-weight: 600;
+    margin-bottom: 5px;
+}
+.session-preview {
+    font-size: 0.9em;
+    color: #555;
+    font-style: italic;
+}
