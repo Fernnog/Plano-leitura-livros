@@ -2,10 +2,19 @@
 // RESPONSABILIDADE: Centralizar o controle de versão e o histórico de melhorias (Changelog)
 
 export const versionConfig = {
-    version: '2.0.4',
+    version: '2.0.5',
     changelog: {
-        title: 'Consolidação Temática & Sub-períodos (v2.0.4)',
+        title: 'Integridade & Narrativa (v2.0.5)',
         sections: [
+            {
+                title: 'v2.0.5 - Integridade & Narrativa Visual',
+                points: [
+                    '<strong>Arquitetura Desacoplada (Validators):</strong> Criação do módulo dedicado <code>validators.js</code>. Centralização das regras de negócio e validação, reduzindo a complexidade do controlador principal e facilitando a manutenção futura.',
+                    '<strong>Guardrails de Escopo:</strong> Implementação de travas lógicas que impedem o registro de sessões com páginas fora do intervalo definido para o capítulo atual, garantindo a integridade sanitária dos dados.',
+                    '<strong>Mapeamento Visual de Gaps:</strong> Nova barra de progresso no Diário de Bordo com renderização absoluta. Diferente de uma barra comum, ela revela visualmente as lacunas (buracos) na leitura do capítulo, incentivando a cobertura completa.',
+                    '<strong>Timeline "Fio da Meada":</strong> Nova visualização modal que ignora os detalhes operacionais e conecta exclusivamente as "Teses" de cada sessão, permitindo uma revisão rápida da macro-narrativa do autor.'
+                ]
+            },
             {
                 title: 'v2.0.4 - Consolidação de Capítulo (Agregação de Conhecimento)',
                 points: [
