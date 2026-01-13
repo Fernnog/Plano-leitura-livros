@@ -289,10 +289,11 @@ const actionHandlers = {
     'recalcular': handleRecalcularPlano,
     'salvar-parcial': handleSalvarParcial,
     'open-neuro': handleOpenNeuro,
+    // --- NOVA AÇÃO: Diário de Bordo ---
+    'open-logbook': handleOpenLogbook,
     'download-md': handleDownloadMarkdown,
     'open-checklist': () => document.getElementById('checklist-modal').classList.add('visivel'),
     'toggle-historico': handleToggleHistorico,
-    // --- NOVO HANDLER REGISTRADO (SRS) ---
     'iniciar-revisao': handleIniciarRevisao
 };
 
@@ -448,6 +449,11 @@ function handleRecalcularPlano(target, plano, planoIndex, currentUser) {
 function handleOpenNeuro(target, plano, planoIndex, currentUser) {
     let targetDiaIndex = target.dataset.diaIndex ? parseInt(target.dataset.diaIndex, 10) : null;
     neuroNotes.openNoteModal(planoIndex, targetDiaIndex);
+}
+
+// --- Handler Diário de Bordo ---
+function handleOpenLogbook(target, plano, planoIndex, currentUser) {
+    neuroNotes.openLogbook(planoIndex);
 }
 
 // --- NOVO HANDLER SRS (Revisão Espaçada) ---
