@@ -467,6 +467,12 @@ function renderizarPlanos(planos, user) {
                         <h4 class="neuro-panel-title">Painel Neuro</h4>
                         
                         <div class="neuro-panel-actions" style="display:flex; flex-direction:column; gap:8px; flex-grow:1;">
+                            <!-- NOVO BOTÃO: DIÁRIO DE BORDO -->
+                            <button type="button" class="btn-neuro-action" data-action="open-logbook" data-plano-index="${index}" title="Gerenciar histórico deste capítulo">
+                                <span class="material-symbols-outlined" style="pointer-events: none;">history_edu</span>
+                                <span style="pointer-events: none;">Diário de Bordo</span>
+                            </button>
+
                             <button type="button" class="btn-neuro-action" data-action="open-neuro" data-plano-index="${index}" title="Registrar aprendizado M.E.T.A.">
                                 <span class="material-symbols-outlined" style="pointer-events: none;">psychology_alt</span>
                                 <span style="pointer-events: none;">Anotar Insight</span>
