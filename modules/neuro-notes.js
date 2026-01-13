@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota e exportação.
-// ATUALIZADO v2.0.1: Persistência Granular (Auto-Save), Debounce e Lazy Initialization.
+// ATUALIZADO v2.1.0: Protocolo C.A.P.E. Refinado & S.R.S. Avançado
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -13,39 +13,47 @@ import { processTextWithAI } from './ai-service.js';
 let tempNoteData = {
     id: null,
     chapterTitle: '',
+    theme: '', // NOVO: Tema Central (1 linha)
     pageStart: null,
     pageEnd: null,
-    insights: [], // Array para tese, conceitos (Engage)
-    meta: [],     // Array para Map, Translate, Apply
-    triggers: []  // Array para Gatilhos/Confronto
+    insights: [], // Array para tese, conceitos, evidências
+    meta: [],     // Array para Map, Translate (gap), Apply
+    triggers: [], // Array para Gatilhos/Confronto
+    flags: {      // NOVO: Controle de comportamento
+        blindModeRespect: false
+    }
 };
 
 let currentPlanoIndex = null;
 let currentDiaIndex = null;
-let currentStepIndex = 0; // Controle do passo atual do Wizard
-
-// --- Variáveis de Controle de Persistência (v2.0.1) ---
+let currentStepIndex = 0;
 let saveTimeout = null;
-let isDirty = false; // Indica se houve alteração real pendente de salvamento
+let isDirty = false;
 
-// --- Configuração dos Passos do Wizard (M.E.T.A.) ---
+// --- Configuração dos Passos do Wizard (M.E.T.A. v2.1) ---
 const WIZARD_STEPS = [
     {
         id: 'map',
-        title: 'M - Mapear (Intenção)',
+        title: 'M - Mapear (Priming)',
         icon: 'map',
-        guide: '<strong>Priming:</strong> O cérebro ignora o que não busca. Antes de ler, defina 2 perguntas que você quer responder.',
+        guide: '<strong>Priming:</strong> O cérebro ignora o que não busca. Defina o tema e suas perguntas.',
         validation: () => {
+             const theme = document.getElementById('meta-theme')?.value;
              const q1 = document.getElementById('meta-map-q1')?.value;
-             const q2 = document.getElementById('meta-map-q2')?.value;
-             return q1 && q1.trim().length > 3 && q2 && q2.trim().length > 3;
+             return theme && theme.length > 3 && q1 && q1.length > 3;
         },
         render: (data) => `
             <div class="neuro-input-group">
+                <label>Tema Central (Sobre o que é este trecho em 1 linha?)</label>
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                    <input type="text" id="meta-theme" class="neuro-textarea-card voice-me-input" maxlength="100" placeholder="Ex: A justificação pela fé..." value="${data.theme || ''}">
+                    <span id="counter-meta-theme" class="char-counter">0/100</span>
+                </div>
+            </div>
+            <div class="neuro-input-group">
                 <label>Pergunta Guia 1 (O que quero entender?)</label>
                 <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
-                    <input type="text" id="meta-map-q1" class="neuro-textarea-card voice-me-input" placeholder="Ex: Qual é o argumento central deste capítulo?" value="${data.meta.find(m => m.subType === 'q1')?.text || ''}" style="flex-grow: 1;">
-                    ${createMagicBtn('meta-map-q1')}
+                    <input type="text" id="meta-map-q1" class="neuro-textarea-card voice-me-input" placeholder="Ex: Qual é o argumento central?" value="${data.meta.find(m => m.subType === 'q1')?.text || ''}" style="flex-grow: 1;">
                     ${createMicBtn('meta-map-q1')}
                 </div>
             </div>
@@ -53,7 +61,6 @@ const WIZARD_STEPS = [
                 <label>Pergunta Guia 2 (O que quero aplicar?)</label>
                 <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
                     <input type="text" id="meta-map-q2" class="neuro-textarea-card voice-me-input" placeholder="Ex: Como isso muda minha prática?" value="${data.meta.find(m => m.subType === 'q2')?.text || ''}" style="flex-grow: 1;">
-                    ${createMagicBtn('meta-map-q2')}
                     ${createMicBtn('meta-map-q2')}
                 </div>
             </div>
@@ -63,23 +70,34 @@ const WIZARD_STEPS = [
         id: 'engage',
         title: 'E - Engajar (Voz do Autor)',
         icon: 'menu_book',
-        guide: '<strong>Leitura Ativa:</strong> Registre o que o AUTOR disse. Seja fiel ao texto. Não misture sua opinião agora.',
+        guide: '<strong>Leitura Ativa:</strong> Registre o que o AUTOR disse. Seja fiel ao texto. Limite-se ao essencial.',
         validation: () => document.getElementById('engage-thesis')?.value.trim().length > 5,
         render: (data) => `
             <div class="neuro-input-group">
-                <label>Frase-Tese do Autor (O que ele está afirmando?)</label>
-                <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
-                    <textarea id="engage-thesis" class="neuro-textarea-card voice-author-input" rows="3" placeholder="O autor argumenta que..." style="flex-grow: 1;">${data.insights.find(i => i.type === 'thesis')?.text || ''}</textarea>
-                    ${createMagicBtn('engage-thesis')}
-                    ${createMicBtn('engage-thesis')}
+                <label>Frase-Tese do Autor (Ideia Central)</label>
+                <div style="display: flex; flex-direction: column; width: 100%;">
+                    <div style="display: flex; gap: 8px; align-items: flex-start;">
+                        <textarea id="engage-thesis" class="neuro-textarea-card voice-author-input" rows="3" maxlength="900" placeholder="O autor argumenta que..." style="flex-grow: 1;">${data.insights.find(i => i.type === 'thesis')?.text || ''}</textarea>
+                        ${createMagicBtn('engage-thesis')}
+                        ${createMicBtn('engage-thesis')}
+                    </div>
+                    <span id="counter-engage-thesis" class="char-counter">0/900 (Forçar Síntese)</span>
                 </div>
             </div>
+            
             <div class="neuro-input-group">
-                <label>Conceitos Chave / Evidências</label>
+                <label>Conceitos Chave (Bullets)</label>
                 <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
-                    <textarea id="engage-concepts" class="neuro-textarea-card voice-author-input" rows="3" placeholder="- Conceito A&#10;- Conceito B" style="flex-grow: 1;">${data.insights.find(i => i.type === 'concepts')?.text || ''}</textarea>
-                    ${createMagicBtn('engage-concepts')}
+                    <textarea id="engage-concepts" class="neuro-textarea-card voice-author-input" rows="2" placeholder="- Conceito A&#10;- Conceito B" style="flex-grow: 1;">${data.insights.find(i => i.type === 'concepts')?.text || ''}</textarea>
                     ${createMicBtn('engage-concepts')}
+                </div>
+            </div>
+
+            <div class="neuro-input-group">
+                <label>Evidência / Referência (O que sustenta a tese?)</label>
+                <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
+                    <input type="text" id="engage-evidence" class="neuro-textarea-card voice-author-input" placeholder="Ex: Citação de Romanos 5 ou Exemplo do Barco..." value="${data.insights.find(i => i.type === 'evidence')?.text || ''}" style="flex-grow: 1;">
+                    ${createMicBtn('engage-evidence')}
                 </div>
             </div>
         `
@@ -88,20 +106,30 @@ const WIZARD_STEPS = [
         id: 'translate',
         title: 'T - Traduzir (Recuperação)',
         icon: 'psychology',
-        guide: '<strong>Modo Cego:</strong> Sem olhar suas notas anteriores (ocultas abaixo), explique o conceito com suas palavras (Técnica Feynman).',
+        guide: '<strong>Modo Cego:</strong> Sem olhar suas notas anteriores, explique o conceito. Identifique onde travou.',
         render: (data) => `
-            <div style="margin-bottom: 20px; padding: 10px; background: #eee; border-radius: 5px;" class="blind-mode-overlay">
-                <strong>Notas Anteriores (Ocultas para fortalecer memória):</strong><br>
+            <div style="margin-bottom: 20px; padding: 10px; background: #eee; border-radius: 5px; filter: blur(4px); transition: filter 0.3s;" onmouseenter="this.style.filter='none'" onmouseleave="this.style.filter='blur(4px)'">
+                <small>Notas Anteriores (Passe o mouse se necessário):</small><br>
                 <em>${data.insights.find(i => i.type === 'thesis')?.text || '...'}</em>
             </div>
             
             <div class="neuro-input-group">
-                <label>Minha Síntese (Minha Voz)</label>
+                <label>Minha Síntese (Técnica Feynman)</label>
                 <div style="display: flex; gap: 8px; align-items: flex-start; width: 100%;">
                     <textarea id="translate-feynman" class="neuro-textarea-card voice-me-input" rows="4" placeholder="Basicamente, isso significa que..." style="flex-grow: 1;">${data.meta.find(m => m.type === 'translate')?.text || ''}</textarea>
                     ${createMagicBtn('translate-feynman')}
                     ${createMicBtn('translate-feynman')}
                 </div>
+            </div>
+
+            <div class="neuro-input-group" style="border-left: 3px solid #e67e22; padding-left: 10px;">
+                <label style="color:#e67e22;">Ponto de Confusão (O que não ficou claro?)</label>
+                <input type="text" id="translate-gap" class="neuro-textarea-card" placeholder="Ex: Não entendi a relação entre X e Y..." value="${data.meta.find(m => m.subType === 'gap')?.text || ''}">
+            </div>
+
+            <div style="margin-top:15px; display:flex; align-items:center; gap:8px;">
+                <input type="checkbox" id="check-blind-mode" ${data.flags?.blindModeRespect ? 'checked' : ''} onchange="updateFlagData('blindModeRespect', this.checked)">
+                <label for="check-blind-mode" style="font-size:0.9em; color:#555;">Confirmo que escrevi a síntese <strong>sem olhar</strong> o texto original.</label>
             </div>
         `
     },
@@ -152,21 +180,25 @@ function migrateLegacyData(oldData) {
     if (!oldData) return {
         id: crypto.randomUUID(),
         chapterTitle: '',
+        theme: '',
         pageStart: null,
         pageEnd: null,
         insights: [],
         meta: [],
-        triggers: []
+        triggers: [],
+        flags: { blindModeRespect: false }
     };
 
     const newData = {
         id: oldData.id || crypto.randomUUID(),
         chapterTitle: oldData.chapterTitle || '',
+        theme: oldData.theme || '',
         pageStart: oldData.pageStart || null,
         pageEnd: oldData.pageEnd || null,
         insights: oldData.insights || [],
         meta: oldData.meta && Array.isArray(oldData.meta) ? oldData.meta : [],
-        triggers: oldData.triggers && Array.isArray(oldData.triggers) ? oldData.triggers : []
+        triggers: oldData.triggers && Array.isArray(oldData.triggers) ? oldData.triggers : [],
+        flags: oldData.flags || { blindModeRespect: false }
     };
     return newData;
 }
@@ -204,8 +236,8 @@ export function openNoteModal(planoIndex, diaIndex = null) {
     ensureModalExists();
     currentPlanoIndex = planoIndex;
     currentDiaIndex = diaIndex;
-    currentStepIndex = 0; // Reseta para o primeiro passo
-    isDirty = false; // Reseta estado de salvamento
+    currentStepIndex = 0;
+    isDirty = false;
 
     const plano = state.getPlanoByIndex(planoIndex);
     if (!plano) return;
@@ -213,7 +245,6 @@ export function openNoteModal(planoIndex, diaIndex = null) {
     let annotationFound = null;
     const annotations = plano.neuroAnnotations || [];
 
-    // Lógica de Contexto
     if (diaIndex !== null && plano.diasPlano && plano.diasPlano[diaIndex]) {
         const dia = plano.diasPlano[diaIndex];
         annotationFound = annotations.find(note => 
@@ -226,22 +257,13 @@ export function openNoteModal(planoIndex, diaIndex = null) {
         annotationFound = annotations[annotations.length - 1];
     }
 
-    // Inicialização Inteligente (Lazy Initialization)
     if (annotationFound) {
-        // Se já existe, usamos a referência direta do estado para permitir reactive updates
-        // Garantimos migração se necessário, mas mantendo a referência se possível
-        // ou atualizando o array do plano.
         const migrated = migrateLegacyData(annotationFound);
-        // Atualiza no array para garantir estrutura nova
         const idx = annotations.indexOf(annotationFound);
         if(idx !== -1) plano.neuroAnnotations[idx] = migrated;
         tempNoteData = migrated;
     } else {
-        // Se NÃO existe, criamos um objeto "flutuante".
-        // Ele NÃO é adicionado ao plano ainda (evita rascunhos fantasmas).
-        // Será adicionado na primeira chamada de 'ensureAttachedToPlan' via 'upsert'.
         tempNoteData = migrateLegacyData(null);
-        
         if (diaIndex !== null && plano.diasPlano[diaIndex]) {
             const dia = plano.diasPlano[diaIndex];
             tempNoteData.chapterTitle = `Leitura Pág. ${dia.paginaInicioDia} - ${dia.paginaFimDia}`;
@@ -257,7 +279,6 @@ export function openNoteModal(planoIndex, diaIndex = null) {
 }
 
 function closeNoteModal() {
-    // Se houver salvamento pendente ao fechar, força execução imediata (tentativa)
     if (saveTimeout) {
         clearTimeout(saveTimeout);
         performSilentSave().then(() => {
@@ -274,12 +295,10 @@ function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
     const headerTitle = document.querySelector('#neuro-modal h2');
     
-    // Reseta Título do Modal para o padrão Wizard
     headerTitle.innerHTML = `<span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção`;
 
     const step = WIZARD_STEPS[currentStepIndex];
 
-    // Configuração de Título e Páginas com Indicador de Status (v2.0.1)
     const headerContextHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:5px;">
              <span style="font-size:0.8em; font-weight:bold; color:#555;">Contexto da Anotação</span>
@@ -294,12 +313,10 @@ function renderModalUI() {
         </div>
     `;
     
-    // Indicadores de Progresso
     const progressHTML = WIZARD_STEPS.map((s, idx) => `
         <div class="neuro-step-indicator ${idx === currentStepIndex ? 'active' : ''} ${idx < currentStepIndex ? 'completed' : ''}"></div>
     `).join('');
 
-    // Renderiza Corpo
     modalBody.innerHTML = `
         ${headerContextHTML}
         <div class="neuro-wizard-progress">${progressHTML}</div>
@@ -322,6 +339,7 @@ function renderModalUI() {
 
     updateWizardButtons();
     attachToolsToInputs();
+    attachCharCounters(); // Novo: Ativa contadores
 }
 
 function updateWizardButtons() {
@@ -349,14 +367,13 @@ function updateWizardButtons() {
 
     document.getElementById('btn-next-step')?.addEventListener('click', handleNextStep);
     document.getElementById('btn-prev-step')?.addEventListener('click', () => {
-        // Ao navegar, salvamos o estado dos inputs do passo atual no objeto
         saveCurrentStepData(); 
         currentStepIndex--;
         renderModalUI();
     });
     document.getElementById('btn-save-neuro')?.addEventListener('click', async () => {
         saveCurrentStepData();
-        await saveNote(); // SaveNote final fecha o modal
+        await saveNote(); 
     });
     document.getElementById('btn-reset-neuro')?.addEventListener('click', handleResetNeuro);
 }
@@ -365,7 +382,6 @@ function handleNextStep() {
     const step = WIZARD_STEPS[currentStepIndex];
     saveCurrentStepData(); 
 
-    // Guardrail: Validação Obrigatória
     if (step.validation && !step.validation()) {
         alert("⚠️ Guardrail Ativado: Por favor, preencha os campos essenciais para garantir sua retenção.");
         return;
@@ -375,37 +391,32 @@ function handleNextStep() {
     renderModalUI();
 }
 
-// --- LÓGICA DE PERSISTÊNCIA AUTOMÁTICA (v2.0.1) ---
+// --- LÓGICA DE PERSISTÊNCIA AUTOMÁTICA (v2.1) ---
 
 function scheduleAutoSave() {
     const saveIndicator = document.getElementById('save-indicator');
     if (saveIndicator) {
         saveIndicator.innerText = "Salvando em breve...";
-        saveIndicator.style.color = "#e67e22"; // Laranja
+        saveIndicator.style.color = "#e67e22";
     }
     
-    // Cancela o timer anterior se o usuário continuou digitando
     if (saveTimeout) clearTimeout(saveTimeout);
 
-    // Agenda o salvamento para 2 segundos após parar de digitar
     saveTimeout = setTimeout(async () => {
         await performSilentSave();
     }, 2000);
 }
 
 async function performSilentSave() {
-    if (!isDirty) return; // Nada mudou, não gasta cota
+    if (!isDirty) return;
 
     const saveIndicator = document.getElementById('save-indicator');
     if (saveIndicator) saveIndicator.innerText = "Sincronizando...";
 
     try {
         tempNoteData.updatedAt = new Date().toISOString();
-        
-        // Garante que o objeto está no plano antes de salvar
         ensureAttachedToPlan();
 
-        // Persiste no Firestore
         const currentUser = state.getCurrentUser();
         if (currentUser) {
             await firestoreService.salvarPlanos(currentUser, state.getPlanos());
@@ -413,20 +424,16 @@ async function performSilentSave() {
         
         if (saveIndicator) {
             saveIndicator.innerText = "Salvo ✓";
-            saveIndicator.style.color = "#27ae60"; // Verde
+            saveIndicator.style.color = "#27ae60";
         }
-        isDirty = false; // Reseta flag
+        isDirty = false;
         saveTimeout = null;
-
-        // Atualiza UI em background sem reload total
-        // (Opcional, depende de quão reativa precisa ser a lista principal)
     } catch (e) {
         console.warn("Erro no auto-save:", e);
         if (saveIndicator) {
             saveIndicator.innerText = "⚠️ Offline (Salvo local)";
             saveIndicator.style.color = "#c0392b";
         }
-        // Dados permanecem em memória e isDirty true, tentará na próxima
     }
 }
 
@@ -436,22 +443,18 @@ function ensureAttachedToPlan() {
     
     if (!plano.neuroAnnotations) plano.neuroAnnotations = [];
 
-    // Verifica se este objeto (referência ou ID) já está no array
     const exists = plano.neuroAnnotations.find(n => n.id === tempNoteData.id);
     
     if (!exists) {
-        // Se é um "rascunho flutuante", agora ele vira oficial
         plano.neuroAnnotations.push(tempNoteData);
-        // Limpa legado se houver
         if (currentDiaIndex !== null && plano.diasPlano && plano.diasPlano[currentDiaIndex]) {
              if (plano.diasPlano[currentDiaIndex].neuroNote) plano.diasPlano[currentDiaIndex].neuroNote = null;
         }
     }
 }
 
-// --- Helpers de Dados e Ferramentas (Refatorados para Dirty Check) ---
+// --- Helpers de Dados e Ferramentas ---
 
-// Atualiza título e range no objeto global
 window.updateContextData = () => {
     const newTitle = document.getElementById('neuro-chapter').value;
     const newStart = parseInt(document.getElementById('neuro-range-start').value, 10);
@@ -468,23 +471,39 @@ window.updateContextData = () => {
     }
 };
 
-// Captura dados do DOM para o objeto tempNoteData
+window.updateFlagData = (key, value) => {
+    if (!tempNoteData.flags) tempNoteData.flags = {};
+    if (tempNoteData.flags[key] !== value) {
+        tempNoteData.flags[key] = value;
+        isDirty = true;
+        scheduleAutoSave();
+    }
+}
+
 function saveCurrentStepData() {
-    // Passo 1: Map
+    // Passo 1: Map (Atualizado com Theme)
+    const theme = document.getElementById('meta-theme')?.value;
+    if (theme !== undefined) {
+        if (tempNoteData.theme !== theme) { tempNoteData.theme = theme; isDirty = true; scheduleAutoSave(); }
+    }
     const q1 = document.getElementById('meta-map-q1')?.value;
     if (q1 !== undefined) upsertMeta('map', q1, 'q1');
     const q2 = document.getElementById('meta-map-q2')?.value;
     if (q2 !== undefined) upsertMeta('map', q2, 'q2');
 
-    // Passo 2: Engage
+    // Passo 2: Engage (Atualizado com Evidence)
     const thesis = document.getElementById('engage-thesis')?.value;
     if (thesis !== undefined) upsertInsight('thesis', thesis);
     const concepts = document.getElementById('engage-concepts')?.value;
     if (concepts !== undefined) upsertInsight('concepts', concepts);
+    const evidence = document.getElementById('engage-evidence')?.value;
+    if (evidence !== undefined) upsertInsight('evidence', evidence);
 
-    // Passo 3: Translate
+    // Passo 3: Translate (Atualizado com Gap)
     const feynman = document.getElementById('translate-feynman')?.value;
     if (feynman !== undefined) upsertMeta('translate', feynman);
+    const gap = document.getElementById('translate-gap')?.value;
+    if (gap !== undefined) upsertMeta('translate', gap, 'gap');
 
     // Passo 4: Apply
     const action = document.getElementById('apply-action')?.value;
@@ -492,7 +511,6 @@ function saveCurrentStepData() {
     const confront = document.getElementById('apply-confront')?.value;
     if (confront !== undefined) upsertTrigger('confront', confront);
     
-    // Atualiza cabeçalho também (garantia)
     if (document.getElementById('neuro-chapter')) {
         window.updateContextData();
     }
@@ -508,7 +526,7 @@ function upsertMeta(type, text, subType = null) {
             tempNoteData.meta[idx].timestamp = Date.now();
             changed = true;
         }
-    } else if (text && text.trim() !== "") { // Só insere se tiver texto
+    } else if (text && text.trim() !== "") {
         tempNoteData.meta.push({ type, subType, text, page: 'Geral', timestamp: Date.now() });
         changed = true;
     }
@@ -561,21 +579,45 @@ function upsertTrigger(subType, text) {
     }
 }
 
-// Reconecta ferramentas de IA (Mic/Magic) aos novos inputs e adiciona listeners de Auto-Save (Backup)
+// Novo: Ativa contadores de caracteres para guardrails
+function attachCharCounters() {
+    const updateCounter = (input, counterId) => {
+        const counter = document.getElementById(counterId);
+        if (!counter) return;
+        const current = input.value.length;
+        const max = input.getAttribute('maxlength');
+        counter.innerText = `${current}/${max}`;
+        
+        if (current > max * 0.9) counter.classList.add('limit-reached');
+        else if (current > max * 0.7) counter.classList.add('limit-near');
+        else counter.classList.remove('limit-reached', 'limit-near');
+    };
+
+    const inputsWithCounters = [
+        { inputId: 'meta-theme', counterId: 'counter-meta-theme' },
+        { inputId: 'engage-thesis', counterId: 'counter-engage-thesis' }
+    ];
+
+    inputsWithCounters.forEach(item => {
+        const input = document.getElementById(item.inputId);
+        if (input) {
+            updateCounter(input, item.counterId); // Init
+            input.addEventListener('input', () => updateCounter(input, item.counterId));
+        }
+    });
+}
+
 function attachToolsToInputs() {
     setTimeout(() => {
         const inputs = document.querySelectorAll('textarea, input[type="text"]');
         inputs.forEach(input => {
-            // Backup Auto-Save no Blur (caso feche sem digitar mais nada)
             input.addEventListener('blur', () => {
-                if (isDirty) scheduleAutoSave(); // Ou force performSilentSave() se preferir agressividade
+                if (isDirty) scheduleAutoSave();
             });
 
-            // Dictation
             const micBtn = document.getElementById(`mic-${input.id}`);
             if (micBtn) attachDictationToInput(input, micBtn);
 
-            // AI Correction
             const magicBtn = document.getElementById(`magic-${input.id}`);
             if (magicBtn) {
                 magicBtn.addEventListener('click', async (e) => {
@@ -591,8 +633,7 @@ function attachToolsToInputs() {
                     try {
                         const correctedText = await processTextWithAI(originalText);
                         input.value = correctedText;
-                        input.dispatchEvent(new Event('input')); // Dispara input para ativar isDirty via listeners normais se houver
-                        // Força dirty manualmente pois mudamos programaticamente
+                        input.dispatchEvent(new Event('input'));
                         isDirty = true; 
                         scheduleAutoSave();
                     } catch (error) {
@@ -612,9 +653,6 @@ function attachToolsToInputs() {
 // --- Persistência e Reset ---
 
 async function saveNote() {
-    // Este botão agora atua como "Concluir e Fechar", já que o dado é salvo automaticamente.
-    // Ele força uma sincronização final imediata.
-
     const pStart = parseInt(tempNoteData.pageStart, 10);
     const pEnd = parseInt(tempNoteData.pageEnd, 10);
     
@@ -623,49 +661,46 @@ async function saveNote() {
         return;
     }
 
-    if (saveTimeout) clearTimeout(saveTimeout); // Cancela debounce pendente
-    isDirty = true; // Garante que performSilentSave rode
+    if (saveTimeout) clearTimeout(saveTimeout);
+    isDirty = true;
     
-    // Assegura estrutura correta
     ensureAttachedToPlan();
 
     ui.toggleLoading(true);
     try {
-        await performSilentSave(); // Aguarda save final
+        await performSilentSave();
         
         ui.toggleLoading(false);
         closeNoteModal();
-        // Atualiza a UI principal para refletir novos ícones/status
         const currentUser = state.getCurrentUser();
         if (currentUser) ui.renderApp(state.getPlanos(), currentUser);
         
     } catch (error) {
         ui.toggleLoading(false);
         console.error("Erro ao salvar final:", error);
-        alert('Sua nota está salva localmente, mas houve erro ao sincronizar. Tente novamente.');
+        alert('Erro ao sincronizar. Tente novamente.');
     }
 }
 
 async function handleResetNeuro() {
-    if (!confirm("Isso apagará o progresso atual deste contexto e resetará para o início. Continuar?")) return;
+    if (!confirm("Isso apagará o progresso atual deste contexto. Continuar?")) return;
     
-    // Se estava salvo no plano, removemos ou limpamos
     const plano = state.getPlanoByIndex(currentPlanoIndex);
     if (plano && plano.neuroAnnotations) {
         const idx = plano.neuroAnnotations.indexOf(tempNoteData);
         if (idx !== -1) {
             plano.neuroAnnotations.splice(idx, 1);
             isDirty = true;
-            scheduleAutoSave(); // Sincroniza a remoção
+            scheduleAutoSave();
         }
     }
 
-    tempNoteData = migrateLegacyData(null); // Reseta objeto em memória
+    tempNoteData = migrateLegacyData(null);
     currentStepIndex = 0;
     renderModalUI();
 }
 
-// --- NOVO: LÓGICA DE REVISÃO ESPAÇADA (SRS) - PRIORIDADES 2 e 3 ---
+// --- REVISÃO ESPAÇADA (SRS) ATUALIZADA (Protocolo D+1/D+7) ---
 
 export function openReviewMode(planoIndex, notaId, tipoRevisao) {
     ensureModalExists();
@@ -686,53 +721,80 @@ export function openReviewMode(planoIndex, notaId, tipoRevisao) {
     modal.classList.add('visivel');
     modalTitle.innerHTML = `<span class="material-symbols-outlined">school</span> Revisão Ativa: ${tipoRevisao}`;
 
-    // Conteúdo: Pergunta (Visível) vs Resposta (Oculta)
-    // Tenta pegar a pergunta guia 1, ou a 2, ou um fallback
-    const pergunta = nota.meta?.find(m => m.subType === 'q1')?.text 
-                  || nota.meta?.find(m => m.subType === 'q2')?.text 
-                  || "Qual a tese central deste trecho?";
-                  
-    // Tenta pegar a síntese própria (Translate) ou a tese do autor
-    const respostaOriginal = nota.meta?.find(m => m.type === 'translate')?.text 
-                          || nota.insights?.find(i => i.type === 'thesis')?.text 
-                          || "(Sem anotação original)";
+    // Dados de Recuperação
+    const q1 = nota.meta?.find(m => m.subType === 'q1')?.text;
+    const q2 = nota.meta?.find(m => m.subType === 'q2')?.text;
+    const thesis = nota.insights?.find(i => i.type === 'thesis')?.text || "(Sem tese registrada)";
+    const gap = nota.meta?.find(m => m.subType === 'gap')?.text || "Nenhuma dúvida registrada.";
+    
+    let conteudoEspecifico = '';
+
+    // LÓGICA CONDICIONAL DE REVISÃO (SRS)
+    if (tipoRevisao.includes('D+1')) {
+        // D+1: Checagem Rápida (Mapear + Tese)
+        conteudoEspecifico = `
+            <div class="cape-alert-box" style="background: #e3f2fd; color: #1565c0; border-color: #2196f3;">
+                🚀 <strong>Revisão D+1 (Flash):</strong> Responda mentalmente às perguntas de intenção e verifique se a Tese ainda está fresca.
+            </div>
+            <div class="neuro-input-group">
+                <p><strong>1. Intenção (Mapear):</strong></p>
+                <ul style="list-style: none; padding-left: 0; font-style: italic;">
+                    <li>Q1: "${q1 || 'Não definida'}"</li>
+                    <li>Q2: "${q2 || 'Não definida'}"</li>
+                </ul>
+            </div>
+            <div class="neuro-input-group">
+                <label>Recuperação da Tese (Tente reescrever a ideia central):</label>
+                <textarea id="review-attempt" class="neuro-textarea-card" rows="3" placeholder="A tese central era..."></textarea>
+                ${createMicBtn('review-attempt')}
+            </div>
+        `;
+    } else if (tipoRevisao.includes('D+7')) {
+        // D+7: Ensino e Consolidação (Feynman + Gap)
+        conteudoEspecifico = `
+            <div class="cape-alert-box" style="background: #f3e5f5; color: #8e44ad; border-color: #9b59b6;">
+                🗣️ <strong>Revisão D+7 (Ensino):</strong> Imagine que você está explicando este conceito para um amigo em 90 segundos.
+            </div>
+            <div class="neuro-input-group">
+                <label>Desafio de Ensino (Explique em voz alta ou escreva):</label>
+                <textarea id="review-attempt" class="neuro-textarea-card" rows="5" placeholder="Veja bem, o ponto principal aqui é..."></textarea>
+                ${createMicBtn('review-attempt')}
+            </div>
+            <div style="margin-top:15px; background:#fff3e0; padding:10px; border-radius:5px;">
+                <strong>Verificação de Lacuna (Gap):</strong><br>
+                <small>Na leitura original, você teve dúvida em: <em>"${gap}"</em>. Isso ficou claro agora?</small>
+            </div>
+        `;
+    } else {
+        // D+3: Padrão (Fallback)
+        conteudoEspecifico = `
+            <div class="cape-alert-box">🧠 <strong>Revisão de Manutenção:</strong> Recupere a ideia principal.</div>
+            <div class="neuro-input-group">
+                <label>Resumo Rápido:</label>
+                <textarea id="review-attempt" class="neuro-textarea-card" rows="3"></textarea>
+                ${createMicBtn('review-attempt')}
+            </div>
+        `;
+    }
 
     modalBody.innerHTML = `
-        <div class="cape-alert-box" style="background: #f3e5f5; color: #8e44ad; border-color: #9b59b6;">
-            🧠 <strong>Esforço Cognitivo:</strong> Tente responder mentalmente antes de revelar.
-        </div>
-
-        <div class="neuro-input-group">
-            <label style="font-size:1.1em; color:#2c3e50;">Pergunta / Desafio:</label>
-            <div style="font-size: 1.2em; font-weight: bold; margin: 10px 0 20px 0; font-family: 'Playfair Display', serif;">
-                "${pergunta}"
-            </div>
-            
-            <textarea id="review-attempt" class="neuro-textarea-card" rows="4" placeholder="Digite sua lembrança aqui (opcional)..."></textarea>
-            ${createMicBtn('review-attempt')}
-        </div>
-
-        <div id="review-feedback-area" style="display: none; animation: fadeIn 0.5s;">
+        ${conteudoEspecifico}
+        
+        <div id="review-feedback-area" style="display: none; animation: fadeIn 0.5s; margin-top:20px;">
             <div style="background: #fafafa; padding: 15px; border-radius: 8px; border-left: 4px solid #27ae60; margin-bottom: 20px;">
-                <label style="font-size:0.8em; text-transform:uppercase; color:#27ae60; font-weight:bold;">Sua Anotação Original:</label>
-                <p style="margin-top:5px; font-style:italic; color:#333;">"${respostaOriginal}"</p>
+                <label style="font-size:0.8em; text-transform:uppercase; color:#27ae60; font-weight:bold;">Gabarito (Tese Original):</label>
+                <p style="margin-top:5px; font-style:italic; color:#333;">"${thesis}"</p>
             </div>
-            
             <div style="text-align: center;">
-                <p style="margin-bottom:10px;">Como foi sua recuperação?</p>
+                <p>Classifique sua recuperação:</p>
                 <div style="display:flex; gap:10px; justify-content:center;">
-                    <button id="btn-review-success" class="button-confirm" style="background: #27ae60; padding:10px 20px;">
-                        Lembrei Bem
-                    </button>
-                    <button id="btn-review-fail" class="button-confirm" style="background: #e67e22; padding:10px 20px;">
-                        Preciso Melhorar
-                    </button>
+                    <button id="btn-review-success" class="button-confirm" style="background: #27ae60;">Lembrei Bem</button>
+                    <button id="btn-review-fail" class="button-confirm" style="background: #e67e22;">Preciso Melhorar</button>
                 </div>
             </div>
         </div>
     `;
 
-    // Ações do Rodapé (Personalizado para Revisão)
     const footer = document.querySelector('#neuro-modal .recalculo-modal-actions');
     footer.innerHTML = `
         <button id="btn-reveal-answer" class="button-confirm" style="width:100%; background-color:#8e44ad;">
@@ -740,32 +802,29 @@ export function openReviewMode(planoIndex, notaId, tipoRevisao) {
         </button>
     `;
 
-    // Listeners Internos
     document.getElementById('btn-reveal-answer').addEventListener('click', function() {
         document.getElementById('review-feedback-area').style.display = 'block';
-        this.style.display = 'none'; // Esconde botão de revelar
+        this.style.display = 'none';
     });
 
-    attachToolsToInputs(); // Reativa o microfone se houver
+    attachToolsToInputs();
 
-    // Função interna para processar a conclusão
     const processarConclusao = async (sucesso) => {
         await concluirRevisao(planoIndex, notaId, tipoRevisao, sucesso);
     };
 
-    // Usando setTimeout para garantir que os botões existam no DOM após o reveal
-    const btnSuccess = document.getElementById('btn-review-success');
-    const btnFail = document.getElementById('btn-review-fail');
-    
-    if(btnSuccess) btnSuccess.addEventListener('click', () => processarConclusao(true));
-    if(btnFail) btnFail.addEventListener('click', () => processarConclusao(false));
+    // Delay para garantir que listeners peguem os elementos criados no reveal
+    // Usando delegação ou checagem posterior seria melhor, mas mantendo padrão do projeto:
+    document.getElementById('neuro-modal-body').addEventListener('click', (e) => {
+        if(e.target.id === 'btn-review-success') processarConclusao(true);
+        if(e.target.id === 'btn-review-fail') processarConclusao(false);
+    });
 }
 
 async function concluirRevisao(planoIndex, notaId, tipoRevisaoFull, sucesso) {
     const plano = state.getPlanoByIndex(planoIndex);
     const nota = plano.neuroAnnotations.find(n => n.id === notaId);
     
-    // Mapeia string "D+1..." para chave "d1"
     let key = '';
     if (tipoRevisaoFull.includes('D+1')) key = 'd1';
     else if (tipoRevisaoFull.includes('D+3')) key = 'd3';
@@ -778,27 +837,19 @@ async function concluirRevisao(planoIndex, notaId, tipoRevisaoFull, sucesso) {
 
     state.updatePlano(planoIndex, plano);
     
-    // Feedback visual imediato e fechamento
     ui.toggleLoading(true);
     try {
         const currentUser = state.getCurrentUser();
         await firestoreService.salvarPlanos(currentUser, state.getPlanos());
-        
         document.getElementById('neuro-modal').classList.remove('visivel');
-        
-        // Re-renderiza a aplicação para atualizar a fila de revisões (o card deve sumir)
         ui.renderApp(state.getPlanos(), currentUser);
-        
     } catch(e) {
         console.error("Erro ao salvar revisão:", e);
-        alert("Erro ao salvar revisão. Tente novamente.");
+        alert("Erro ao salvar revisão.");
     } finally {
         ui.toggleLoading(false);
     }
 }
-
-
-// --- Exportação (Compatibilidade com novos Subtipos) ---
 
 export function downloadMarkdown(plano) {
     if (!plano) return;
@@ -807,40 +858,47 @@ export function downloadMarkdown(plano) {
     const allNotes = [...(plano.neuroAnnotations || [])].sort((a,b) => (a.pageStart||0) - (b.pageStart||0));
     
     allNotes.forEach((note, idx) => {
-        mdContent += `## ${note.chapterTitle || `Sessão ${idx+1}`} (Pág. ${note.pageStart}-${note.pageEnd})\n\n`;
+        mdContent += `## ${note.chapterTitle || `Sessão ${idx+1}`} (Pág. ${note.pageStart}-${note.pageEnd})\n`;
+        if (note.theme) mdContent += `**Tema:** ${note.theme}\n\n`;
         
-        // Mapear (Intenção)
+        // Mapear
         const q1 = note.meta?.find(m => m.subType === 'q1');
         const q2 = note.meta?.find(m => m.subType === 'q2');
         if (q1 || q2) {
-            mdContent += `### 🗺️ Mapear (Intenção)\n`;
-            if (q1) mdContent += `- **Entender:** ${q1.text}\n`;
-            if (q2) mdContent += `- **Aplicar:** ${q2.text}\n`;
+            mdContent += `### 🗺️ Mapear\n`;
+            if (q1) mdContent += `- **Q1:** ${q1.text}\n`;
+            if (q2) mdContent += `- **Q2:** ${q2.text}\n`;
             mdContent += `\n`;
         }
 
-        // Engajar (Autor)
+        // Engajar
         const thesis = note.insights?.find(i => i.type === 'thesis');
         const concepts = note.insights?.find(i => i.type === 'concepts');
-        if (thesis || concepts) {
-            mdContent += `### 📖 Engajar (Voz do Autor)\n`;
+        const evidence = note.insights?.find(i => i.type === 'evidence');
+        if (thesis || concepts || evidence) {
+            mdContent += `### 📖 Engajar\n`;
             if (thesis) mdContent += `> **Tese:** ${thesis.text}\n\n`;
+            if (evidence) mdContent += `**Evidência:** ${evidence.text}\n\n`;
             if (concepts) mdContent += `**Conceitos:**\n${concepts.text}\n\n`;
         }
 
-        // Traduzir (Eu)
+        // Traduzir
         const feynman = note.meta?.find(m => m.type === 'translate');
-        if (feynman) {
-            mdContent += `### 🧠 Traduzir (Minha Síntese)\n${feynman.text}\n\n`;
+        const gap = note.meta?.find(m => m.subType === 'gap');
+        if (feynman || gap) {
+            mdContent += `### 🧠 Traduzir\n`;
+            if (feynman) mdContent += `${feynman.text}\n`;
+            if (gap) mdContent += `\n> *Ponto de Confusão: ${gap.text}*\n`;
+            mdContent += `\n`;
         }
 
         // Aplicar
         const action = note.meta?.find(m => m.type === 'apply');
         const confront = note.triggers?.find(t => t.subType === 'confront');
         if (action || confront) {
-            mdContent += `### 🚀 Aplicar (Praxis)\n`;
+            mdContent += `### 🚀 Aplicar\n`;
             if (confront) mdContent += `- **Confronto:** ${confront.text}\n`;
-            if (action) mdContent += `- **Ação 24h:** ${action.text}\n`;
+            if (action) mdContent += `- **Ação:** ${action.text}\n`;
         }
         mdContent += `---\n\n`;
     });
@@ -854,7 +912,6 @@ export function downloadMarkdown(plano) {
     document.body.removeChild(a);
 }
 
-// Necessário para o botão de salvar externo no main.js, caso usado
 export function extractNoteDataFromDOM() {
     return tempNoteData;
 }
