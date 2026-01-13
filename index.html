@@ -461,6 +461,35 @@
             </div>
         </div>
 
+        <!-- NOVO MODAL: DIÁRIO DE BORDO (HISTÓRICO DE SESSÕES) -->
+        <div id="logbook-modal" class="reavaliacao-modal-overlay">
+            <div class="reavaliacao-modal-content neuro-theme" style="max-width: 600px; display: flex; flex-direction: column; max-height: 85vh;">
+                <!-- Header -->
+                <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #2c3e50 0%, #4ca1af 100%); color: white; flex-shrink: 0;">
+                    <h2 style="color: white; font-family: var(--neuro-font-serif); margin: 0; display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined">history_edu</span> Diário de Bordo
+                    </h2>
+                    <button id="close-logbook-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
+                </div>
+                
+                <!-- Body (Scrollable) -->
+                <div id="logbook-content" style="padding: 20px; overflow-y: auto; flex-grow: 1; background-color: #fdfdfd;">
+                    <!-- O conteúdo (Capítulo + Lista de Sessões) será injetado aqui via JS -->
+                </div>
+
+                <!-- Footer (Fixed) -->
+                <div class="recalculo-modal-actions" style="background: #f8f9fa; border-top: 1px solid #e0e0e0; margin-top: 0; border-radius: 0 0 8px 8px; justify-content: space-between; padding: 15px; flex-shrink: 0;">
+                    <span style="font-size: 0.8em; color: #7f8c8d; align-self: center; font-style: italic;">
+                        <span class="material-symbols-outlined" style="font-size: 1em; vertical-align: middle;">info</span>
+                        Gerenciamento de Contexto
+                    </span>
+                    <button id="btn-new-session-logbook" class="button-confirm" style="background-color: var(--neuro-accent); display: flex; align-items: center; gap: 5px;">
+                        <span class="material-symbols-outlined" style="font-size: 1.1em;">add_circle</span> Nova Sessão
+                    </button>
+                </div>
+            </div>
+        </div>
+
     </main>
 
     <footer>
