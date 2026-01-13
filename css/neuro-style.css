@@ -1,4 +1,4 @@
-/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.0 + Update Consolidação) */
+/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.0 + Update Consolidação + v2.0.5) */
 
 /* --- LAYOUT GRID DO PAINEL NEURO --- */
 .plano-leitura-grid {
@@ -494,6 +494,83 @@
 @keyframes spin { 100% { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
+/* --- VISUALIZAÇÃO DE PROGRESSO E TIMELINE (v2.0.5) --- */
+
+/* Wrapper de Progresso no Header do Logbook */
+#chapter-progress-wrapper {
+    padding: 10px 15px; 
+    background: #fff; 
+    border-bottom: 1px solid #eee;
+    margin-top: 10px;
+    border-radius: 4px;
+}
+
+/* Barra de Progresso Segmentada */
+.progress-track {
+    display: flex;
+    height: 10px;
+    background: #e2e8f0; /* Cor do "vazio" (gap) */
+    border-radius: 5px;
+    overflow: hidden;
+    position: relative; /* Necessário para segmentos absolutos */
+    margin-top: 5px;
+}
+
+.progress-segment {
+    position: absolute; /* Permite visualizar lacunas (gaps) reais */
+    height: 100%;
+    background: var(--neuro-accent);
+    opacity: 0.85;
+    border-right: 1px solid rgba(255,255,255,0.4);
+    transition: width 0.3s ease, left 0.3s ease;
+    mix-blend-mode: multiply; /* Melhoria UX: Permite ver sobreposições de leitura */
+    cursor: help;
+}
+
+.progress-segment:hover {
+    opacity: 1;
+    z-index: 10;
+}
+
+/* Timeline Vertical (Fio da Meada) */
+.timeline-v-flow {
+    position: relative;
+    padding-left: 25px;
+    border-left: 2px solid #e0e0e0;
+    margin-left: 10px;
+    margin-top: 10px;
+}
+
+.timeline-node {
+    position: relative;
+    margin-bottom: 25px;
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #eee;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.03);
+    transition: transform 0.2s;
+}
+
+.timeline-node:hover {
+    transform: translateX(3px);
+    border-color: var(--neuro-accent);
+}
+
+.timeline-node::before {
+    content: '';
+    position: absolute;
+    left: -32px; /* Alinha com a borda vertical */
+    top: 20px;
+    width: 12px;
+    height: 12px;
+    background: var(--neuro-accent);
+    border-radius: 50%;
+    border: 3px solid #fff;
+    box-shadow: 0 0 0 2px var(--neuro-accent);
+    z-index: 2;
+}
+
 /* --- MEDIA QUERIES --- */
 @media (max-width: 700px) {
     .plano-leitura-grid { grid-template-columns: 1fr; }
@@ -504,5 +581,10 @@
         flex-direction: row;
         width: 100%;
         justify-content: flex-start;
+    }
+
+    /* Ajuste Mobile para Timeline */
+    .timeline-node::before {
+        left: -32px; /* Mantém alinhamento */
     }
 }
