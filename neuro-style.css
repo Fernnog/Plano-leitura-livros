@@ -1,0 +1,749 @@
+/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.1.0) */
+
+/*
+   NOTA: Este arquivo depende das variáveis CSS definidas no :root do style.css.
+   Certifique-se de carregar o style.css antes deste arquivo.
+*/
+
+/* --- LAYOUT GRID DO PAINEL NEURO --- */
+.plano-leitura-grid {
+    display: grid;
+    grid-template-columns: 1fr 220px; /* Coluna esquerda (dias) | Painel Neuro (direita) */
+    gap: 20px;
+    margin-top: 15px;
+}
+
+/* Painel Lateral (Card do Livro) */
+.neuro-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background-color: var(--neuro-bg);
+    border-left: 3px solid var(--neuro-accent);
+    padding: 15px;
+    border-radius: 0 8px 8px 0;
+    justify-content: flex-start;
+}
+
+.neuro-panel-title {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+    font-size: 0.95em;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin: 0 0 10px 0;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 5px;
+}
+
+/* Botões do Painel Lateral */
+.btn-neuro-action {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    color: #555;
+    padding: 10px 12px;
+    border-radius: 6px;
+    font-family: var(--neuro-font-main);
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    width: 100%;
+    text-align: left;
+}
+
+.btn-neuro-action:hover {
+    background-color: #fff;
+    border-color: var(--neuro-accent);
+    color: var(--neuro-accent);
+    transform: translateX(3px);
+    box-shadow: 0 4px 6px rgba(0,0,0,0.08);
+}
+
+.btn-neuro-action .material-symbols-outlined {
+    font-size: 1.3em;
+    color: var(--neuro-primary);
+    transition: color 0.2s;
+}
+
+.btn-neuro-action:hover .material-symbols-outlined {
+    color: var(--neuro-accent);
+}
+
+/* --- MODAL WIZARD NEURO --- */
+.neuro-theme h2, .neuro-theme h3, .neuro-theme h4 {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+}
+
+.neuro-theme h2 .material-symbols-outlined {
+    color: var(--neuro-accent);
+    vertical-align: bottom;
+}
+
+/* Cards de Input (Campos de Texto) */
+.neuro-textarea-card {
+    width: 100%;
+    padding: 12px 15px;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    background-color: #fafafa;
+    font-family: var(--neuro-font-main);
+    font-size: 0.95em;
+    line-height: 1.5;
+    color: #333;
+    transition: all 0.3s ease;
+    resize: vertical;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.neuro-textarea-card:focus {
+    background-color: #fff;
+    border-color: var(--neuro-accent);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.1);
+}
+
+.neuro-textarea-card.input-error {
+    border-color: #e74c3c;
+    background-color: #fce4ec;
+}
+
+/* Layout Interno do Modal */
+.neuro-input-group {
+    margin-bottom: 20px;
+}
+
+.neuro-input-group label {
+    display: block;
+    font-family: var(--neuro-font-main);
+    font-weight: 600;
+    color: var(--neuro-primary);
+    margin-bottom: 8px;
+    font-size: 0.9em;
+}
+
+/* Intervalo de Páginas */
+.neuro-range-group {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.neuro-range-group .input-wrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.neuro-range-group label {
+    font-family: var(--neuro-font-main);
+    font-weight: 600;
+    color: var(--neuro-primary);
+    margin-bottom: 5px;
+    font-size: 0.85em;
+}
+
+.neuro-section-title {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+    border-bottom: 2px solid var(--neuro-accent);
+    display: inline-block;
+    margin-top: 25px;
+    margin-bottom: 15px;
+}
+
+.neuro-hint {
+    display: block;
+    font-size: 0.8em;
+    color: #7f8c8d;
+    font-style: italic;
+    margin-bottom: 8px;
+    margin-top: -4px;
+}
+
+.meta-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+/* --- LISTAS DINÂMICAS NEURO --- */
+.neuro-list-container {
+    margin-bottom: 20px;
+    background: var(--neuro-bg);
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+}
+
+.neuro-item-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    padding: 12px;
+    border-radius: 6px;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    transition: transform 0.2s ease;
+}
+
+.neuro-item-card:hover {
+    transform: translateX(2px);
+}
+
+/* Identificadores Visuais por Tipo */
+.border-question { border-left: 4px solid #8e44ad; }
+.border-exclamation { border-left: 4px solid #e67e22; }
+.border-trigger { border-left: 4px solid #27ae60; }
+.border-dual { border-left: 4px solid #3498db; }
+.border-meta { border-left: 4px solid #34495e; }
+
+.neuro-item-content {
+    flex: 1;
+    margin-right: 15px;
+}
+
+.neuro-item-meta {
+    font-size: 0.8em;
+    color: #7f8c8d;
+    display: block;
+    margin-bottom: 6px;
+    font-weight: bold;
+    font-family: var(--neuro-font-main);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.neuro-item-text {
+    font-size: 0.95em;
+    color: #2c3e50;
+    white-space: pre-wrap;
+    line-height: 1.5;
+    font-family: var(--neuro-font-main);
+}
+
+.neuro-add-form {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    margin-top: 10px;
+    margin-bottom: 25px;
+    border: 1px dashed #cbd5e0;
+}
+
+.neuro-add-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.btn-add-item {
+    background-color: var(--neuro-accent);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.9em;
+    font-weight: 600;
+    transition: background-color 0.2s;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-add-item:hover {
+    background-color: var(--neuro-accent-hover);
+}
+
+.btn-remove-item {
+    color: #e74c3c;
+    cursor: pointer;
+    background: none;
+    border: none;
+    padding: 5px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+.btn-remove-item:hover {
+    background-color: #fce4ec;
+}
+
+/* Indicador de Auto-Save */
+#save-indicator {
+    font-family: var(--neuro-font-main);
+    font-size: 0.85em;
+    color: #95a5a6;
+    font-style: italic;
+    transition: color 0.3s ease, opacity 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    margin-left: auto;
+    padding-left: 10px;
+}
+
+#save-indicator.saving { color: var(--neuro-accent); opacity: 1; }
+#save-indicator.saved { color: #27ae60; opacity: 1; }
+#save-indicator.error { color: #c0392b; font-weight: bold; }
+
+/* --- CHECKLIST DE RETENÇÃO (CAPE) --- */
+.checklist-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+}
+
+.checklist-table th {
+    background-color: var(--neuro-primary);
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-family: var(--neuro-font-main);
+    font-weight: 600;
+}
+
+.checklist-table td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    color: #444;
+    font-family: var(--neuro-font-main);
+}
+
+.checklist-table tr:hover { background-color: #f9f9f9; }
+
+.cape-header { text-align: center; margin-bottom: 20px; }
+.cape-header h3 {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+    font-size: 1.8em;
+    margin: 0 0 5px 0;
+}
+.cape-header p {
+    color: #7f8c8d;
+    font-weight: 500;
+    margin: 0;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-size: 0.85em;
+}
+
+.cape-alert-box {
+    background: linear-gradient(135deg, var(--neuro-accent) 0%, #e67e22 100%);
+    color: white;
+    padding: 15px;
+    border-radius: 8px;
+    margin-bottom: 25px;
+    font-size: 0.95em;
+    font-weight: 600;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(211, 84, 0, 0.2);
+    border-left: 5px solid #a04000;
+}
+
+.cape-cards-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.cape-card {
+    background: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 8px;
+    padding: 15px;
+    transition: all 0.3s ease;
+    border-top: 3px solid transparent;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.cape-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 15px rgba(0,0,0,0.08);
+    border-top-color: var(--neuro-primary);
+}
+
+.cape-card strong {
+    display: block;
+    font-family: var(--neuro-font-serif);
+    font-size: 1.1em;
+    color: var(--neuro-primary);
+    margin-bottom: 8px;
+}
+
+.cape-card p {
+    color: #555;
+    font-size: 0.9em;
+    line-height: 1.4;
+    margin: 0;
+}
+
+.cape-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 10px;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+}
+
+.cape-table thead th {
+    background-color: var(--neuro-primary);
+    color: white;
+    padding: 12px;
+    text-align: left;
+    font-family: var(--neuro-font-main);
+    font-size: 0.9em;
+    text-transform: uppercase;
+}
+
+.cape-table tbody td {
+    padding: 12px;
+    border-bottom: 1px solid #eee;
+    color: #333;
+    font-size: 0.95em;
+    vertical-align: middle;
+}
+
+.cape-table tbody tr:last-child td { border-bottom: none; }
+.cape-table .check-cell { text-align: center; background-color: #fcfcfc; }
+.cape-table input[type="checkbox"] { transform: scale(1.3); accent-color: var(--neuro-primary); cursor: pointer; }
+.cape-table .meta-cell { color: #666; font-size: 0.9em; background-color: var(--neuro-bg); }
+
+/* --- NEURO-VOICE (DITADO) --- */
+.btn-neuro-mic {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: var(--neuro-primary);
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    height: 42px;
+}
+.btn-neuro-mic:hover {
+    background-color: #e8f5e9;
+    color: #2e7d32;
+    border-color: #a5d6a7;
+}
+
+.btn-neuro-magic {
+    background: transparent;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    color: #8e44ad;
+    cursor: pointer;
+    padding: 0 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    height: 42px;
+    margin-right: 5px;
+}
+
+.btn-neuro-magic:hover {
+    background-color: #f3e5f5;
+    color: #9b59b6;
+    border-color: #d7bde2;
+}
+
+/* WIDGET FLUTUANTE DE VOZ */
+.voice-widget-overlay {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.5);
+    z-index: 2000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s;
+}
+.voice-widget-overlay.visible {
+    opacity: 1;
+    visibility: visible;
+}
+
+.voice-widget-content {
+    background: white;
+    padding: 20px;
+    border-radius: 12px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    text-align: center;
+}
+
+.voice-header {
+    margin-bottom: 15px;
+    font-weight: bold;
+    color: var(--neuro-primary);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.voice-pulse {
+    background: #e74c3c;
+    color: white;
+    border-radius: 50%;
+    padding: 8px;
+    animation: pulse-red 1.5s infinite;
+}
+
+.voice-preview-box {
+    background: #f8f9fa;
+    border: 1px dashed #ccc;
+    padding: 15px;
+    min-height: 100px;
+    max-height: 200px;
+    overflow-y: auto;
+    border-radius: 8px;
+    margin-bottom: 20px;
+    text-align: left;
+    font-family: var(--neuro-font-main);
+    color: #555;
+    font-size: 1.1em;
+}
+
+.voice-actions { display: flex; gap: 10px; justify-content: center; }
+
+.btn-voice-confirm {
+    background: var(--neuro-primary);
+    color: white;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+.btn-voice-cancel {
+    background: transparent;
+    color: #777;
+    border: 1px solid #ccc;
+    padding: 10px 20px;
+    border-radius: 6px;
+    cursor: pointer;
+}
+
+@keyframes pulse-red {
+    0% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(231, 76, 60, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(231, 76, 60, 0); }
+}
+
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
+
+/* --- WIZARD NEURO-RETENÇÃO (M.E.T.A.) --- */
+.neuro-wizard-progress {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 25px;
+    padding: 0 5px;
+    gap: 8px;
+}
+
+.neuro-step-indicator {
+    flex: 1;
+    height: 6px;
+    background-color: #e0e0e0;
+    border-radius: 4px;
+    position: relative;
+    transition: all 0.4s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.neuro-step-indicator.active {
+    background-color: var(--neuro-accent);
+    box-shadow: 0 0 8px rgba(211, 84, 0, 0.4);
+}
+
+.neuro-step-indicator.completed { background-color: #27ae60; }
+
+.wizard-step-container { animation: fadeIn 0.4s ease-in-out; }
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(5px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.wizard-step-title {
+    font-family: var(--neuro-font-serif);
+    color: var(--neuro-primary);
+    font-size: 1.5em;
+    margin-bottom: 15px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    border-bottom: 1px solid rgba(0,0,0,0.05);
+    padding-bottom: 10px;
+}
+
+.neuro-guide-box {
+    background-color: #f8f9fa;
+    border-left: 4px solid var(--neuro-primary);
+    padding: 15px;
+    margin-bottom: 25px;
+    border-radius: 0 6px 6px 0;
+    font-family: var(--neuro-font-main);
+    font-size: 0.95em;
+    color: #555;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.03);
+}
+
+.neuro-guide-box .material-symbols-outlined {
+    color: var(--neuro-accent);
+    font-size: 1.4em;
+}
+
+/* Distinção Visual de Vozes */
+.voice-author-input {
+    font-family: 'Playfair Display', serif !important;
+    background-color: #faf9f6 !important;
+    border-color: #dcdcdc !important;
+    font-size: 1.15em !important;
+    line-height: 1.6 !important;
+    color: #2c3e50 !important;
+    border-left: 4px solid #7f8c8d !important;
+    border-radius: 4px;
+    box-shadow: inset 0 1px 3px rgba(0,0,0,0.02);
+}
+
+.voice-me-input {
+    font-family: 'Inter', sans-serif !important;
+    background-color: #fff !important;
+    border-left: 4px solid var(--neuro-accent) !important;
+    font-weight: 500 !important;
+    color: #333 !important;
+    font-size: 1em !important;
+}
+
+/* Modo Recuperação (Blind Mode) */
+.blind-mode-overlay {
+    filter: blur(6px);
+    pointer-events: none;
+    opacity: 0.6;
+    user-select: none;
+    transition: all 0.6s ease;
+    background-color: #f0f0f0;
+    border-radius: 6px;
+    margin-bottom: 20px;
+    padding: 15px;
+}
+
+/* Guardrails & Contadores */
+.char-counter {
+    display: block;
+    text-align: right;
+    font-size: 0.75em;
+    color: #95a5a6;
+    margin-top: 4px;
+    font-family: var(--neuro-font-main);
+    transition: color 0.3s ease;
+}
+.char-counter.limit-near { color: #e67e22; }
+.char-counter.limit-reached { color: #c0392b; font-weight: bold; }
+
+.input-gap-container {
+    background-color: #fff3e0;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid #ffe0b2;
+    margin-top: 15px;
+    box-shadow: 0 1px 3px rgba(230, 81, 0, 0.05);
+}
+
+.input-gap-label {
+    color: #e65100;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 0.9em;
+    margin-bottom: 8px;
+}
+
+.blind-mode-check-container {
+    margin-top: 15px;
+    padding: 10px;
+    background-color: #f1f8e9;
+    border: 1px solid #dcedc8;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    transition: background-color 0.3s ease;
+}
+
+.blind-mode-check-container:hover {
+    background-color: #e8f5e9;
+    border-color: #c5e1a5;
+}
+
+.blind-mode-check-container label {
+    font-size: 0.9em;
+    color: #33691e;
+    cursor: pointer;
+    font-weight: 500;
+}
+
+/* --- MEDIA QUERIES ESPECÍFICAS NEURO --- */
+@media (max-width: 700px) {
+    .plano-leitura-grid {
+        grid-template-columns: 1fr;
+    }
+    .neuro-panel {
+        border-left: none;
+        border-top: 3px solid var(--neuro-accent);
+        border-radius: 0 0 8px 8px;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    .neuro-panel .btn-neuro-action {
+        flex: 1;
+        justify-content: center;
+    }
+    .neuro-panel-title {
+        width: 100%;
+        margin-bottom: 10px;
+    }
+    .meta-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .neuro-add-row {
+        flex-direction: column;
+        gap: 8px;
+    }
+    .neuro-add-row input, .neuro-add-row select {
+        width: 100% !important;
+    }
+    
+    .cape-cards-grid {
+        grid-template-columns: 1fr 1fr;
+    }
+    .cape-card { padding: 10px; }
+    .cape-card strong { font-size: 1em; }
+    .cape-card p { font-size: 0.8em; }
+}
