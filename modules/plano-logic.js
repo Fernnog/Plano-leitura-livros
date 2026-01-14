@@ -570,7 +570,9 @@ export function verificarRevisoesPendentes(planos) {
         if (!plano.neuroAnnotations || plano.isPaused) return;
 
         plano.neuroAnnotations.forEach(nota => {
-            const dataBase = nota.updatedAt || nota.createdAt || nota.timestamp;
+            // CORREÇÃO SRS: Busca a data em múltiplos locais (raiz ou sessão atual)
+            const dataBase = nota.updatedAt || nota.createdAt || nota.timestamp || (nota.currentSession ? nota.currentSession.date : null);
+            
             if (!dataBase) return;
 
             const dataNota = new Date(dataBase);
