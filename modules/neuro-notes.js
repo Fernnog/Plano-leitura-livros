@@ -2,13 +2,14 @@
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota, exportação e Diário de Bordo (Histórico).
 // ATUALIZADO v2.0.5: Validação de Escopo e Timeline Narrativa.
+// ATUALIZADO v2.0.6: Modo Foco (Expandir Modal) e Correção de SRS Timestamp.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
 import * as ui from './ui.js';
 import { attachDictationToInput } from './dictation-widget.js';
 import { processTextWithAI } from './ai-service.js';
-import { validateSessionRange, validateCognitiveQuality } from './validators.js'; // NOVO: Importação da arquitetura de validação
+import { validateSessionRange, validateCognitiveQuality } from './validators.js'; 
 
 // --- Variáveis de Estado Local ---
 let tempNoteData = {
@@ -256,14 +257,14 @@ function ensureModalExists() {
                 <h2 style="color: white; font-family: 'Playfair Display', serif; margin:0; display:flex; align-items:center; gap:10px;">
                     <span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção
                 </h2>
-                <button id="close-neuro-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
+                <!-- Header Controls injetado dinamicamente em renderModalUI -->
             </div>
             <div id="neuro-modal-body" class="neuro-modal-body" style="padding: 20px; overflow-y: auto; flex-grow: 1;"></div>
             <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0; flex-shrink: 0;"></div>
         </div>
     </div>`;
     document.body.insertAdjacentHTML('beforeend', modalHTML);
-    document.getElementById('close-neuro-modal').addEventListener('click', closeNoteModal);
+    // Listener do close será adicionado em renderModalUI para consistência
 }
 
 export function openNoteModal(planoIndex, diaIndex = null) {
@@ -333,10 +334,14 @@ function closeNoteModal() {
     if (saveTimeout) {
         clearTimeout(saveTimeout);
         performSilentSave().then(() => {
-            document.getElementById('neuro-modal').classList.remove('visivel');
+            const modal = document.getElementById('neuro-modal');
+            modal.classList.remove('visivel');
+            modal.querySelector('.reavaliacao-modal-content').classList.remove('modal-expanded'); // Reset foco
         });
     } else {
-        document.getElementById('neuro-modal').classList.remove('visivel');
+        const modal = document.getElementById('neuro-modal');
+        modal.classList.remove('visivel');
+        modal.querySelector('.reavaliacao-modal-content').classList.remove('modal-expanded'); // Reset foco
     }
 }
 
@@ -344,11 +349,35 @@ function closeNoteModal() {
 
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
-    const headerTitle = document.querySelector('#neuro-modal h2');
+    const headerTitle = document.querySelector('#neuro-modal .reavaliacao-modal-header');
     
-    headerTitle.innerHTML = editingSessionId 
+    // Atualiza o Header com Título e BOTÕES (Incluindo Modo Foco)
+    const titleText = editingSessionId 
         ? `<span class="material-symbols-outlined" style="color:var(--neuro-accent);">history_edu</span> Edição de Histórico`
         : `<span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção`;
+
+    headerTitle.innerHTML = `
+        <h2 style="color: white; font-family: 'Playfair Display', serif; margin:0; display:flex; align-items:center; gap:10px;">
+            ${titleText}
+        </h2>
+        <div style="display:flex; align-items:center;">
+            <!-- NOVO BOTÃO MODO FOCO -->
+            <button id="toggle-focus-neuro" class="btn-expand-modal" title="Modo Foco (Expandir/Contrair)">
+                <span class="material-symbols-outlined">open_in_full</span>
+            </button>
+            <button id="close-neuro-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
+        </div>
+    `;
+
+    // Listeners do Header
+    document.getElementById('close-neuro-modal').addEventListener('click', closeNoteModal);
+    document.getElementById('toggle-focus-neuro').addEventListener('click', function() {
+        const modalContent = this.closest('.reavaliacao-modal-content');
+        modalContent.classList.toggle('modal-expanded');
+        const icon = this.querySelector('span');
+        const isExpanded = modalContent.classList.contains('modal-expanded');
+        icon.textContent = isExpanded ? 'close_fullscreen' : 'open_in_full';
+    });
 
     const step = WIZARD_STEPS[currentStepIndex];
 
@@ -488,11 +517,16 @@ async function performSilentSave() {
 
     // LÓGICA DE SALVAMENTO DIFERENCIADA (PASSADO vs PRESENTE)
     const annotation = plano.neuroAnnotations.find(n => n.id === tempNoteData.id);
+    const timestampAgora = new Date().toISOString(); // Para SRS e Logs
+
     if (annotation) {
         annotation.chapterTitle = tempNoteData.chapterTitle;
         annotation.theme = tempNoteData.theme;
         annotation.pageStart = tempNoteData.pageStart;
         annotation.pageEnd = tempNoteData.pageEnd;
+        
+        // CORREÇÃO CRÍTICA SRS: Atualiza timestamp da raiz para cálculo de D+1
+        annotation.updatedAt = timestampAgora;
 
         // Se houver sessões antigas no tempNoteData (devido a migração ou uso), atualiza
         annotation.sessions = tempNoteData.sessions;
@@ -506,6 +540,11 @@ async function performSilentSave() {
             annotation.currentSession = { ...tempNoteData.currentSession };
         }
     } else {
+        // CORREÇÃO CRÍTICA SRS: Criação de campos raiz para novas notas
+        tempNoteData.createdAt = timestampAgora;
+        tempNoteData.updatedAt = timestampAgora;
+        if (!tempNoteData.timestamp) tempNoteData.timestamp = Date.now(); // Fallback para lógica legada
+
         plano.neuroAnnotations.push(tempNoteData);
     }
 
@@ -739,7 +778,17 @@ export function openLogbook(planoIndex) {
     
     renderLogbookUI(note);
     document.getElementById('logbook-modal').classList.add('visivel');
-    document.getElementById('close-logbook-modal').onclick = () => document.getElementById('logbook-modal').classList.remove('visivel');
+    
+    // Listener do Close adicionado dentro do renderLogbookUI, mas mantemos o fallback aqui se necessário
+    const closeBtn = document.getElementById('close-logbook-modal');
+    if (closeBtn) {
+        closeBtn.onclick = () => {
+             const modal = document.getElementById('logbook-modal');
+             modal.classList.remove('visivel');
+             modal.querySelector('.reavaliacao-modal-content').classList.remove('modal-expanded'); // Reset foco
+        };
+    }
+    
     document.getElementById('btn-new-session-logbook').onclick = () => {
         if (!note) { openNoteModal(planoIndex); return; }
         // Se já existe nota, garante que tempNoteData está atualizado e chama nova sessão
@@ -752,6 +801,40 @@ export function openLogbook(planoIndex) {
 
 function renderLogbookUI(note) {
     const container = document.getElementById('logbook-content');
+    const headerTitle = document.querySelector('#logbook-modal .reavaliacao-modal-header');
+
+    // Injeta Header com Botão Modo Foco
+    headerTitle.innerHTML = `
+        <h2 style="color: white; font-family: var(--neuro-font-serif); margin: 0; display: flex; align-items: center; gap: 10px;">
+            <span class="material-symbols-outlined">history_edu</span> Diário de Bordo
+        </h2>
+        <div style="display:flex; align-items:center;">
+             <!-- NOVO BOTÃO MODO FOCO -->
+            <button id="toggle-focus-logbook" class="btn-expand-modal" title="Modo Foco">
+                <span class="material-symbols-outlined">open_in_full</span>
+            </button>
+            <button id="close-logbook-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8;">×</button>
+        </div>
+    `;
+
+    // Listeners do Header Logbook
+    setTimeout(() => {
+        document.getElementById('toggle-focus-logbook')?.addEventListener('click', function() {
+            const modalContent = this.closest('.reavaliacao-modal-content');
+            modalContent.classList.toggle('modal-expanded');
+            const icon = this.querySelector('span');
+            icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
+        });
+        
+        // Garante que o botão fechar funcione após a re-renderização do header
+        document.getElementById('close-logbook-modal').onclick = () => {
+             const modal = document.getElementById('logbook-modal');
+             modal.classList.remove('visivel');
+             modal.querySelector('.reavaliacao-modal-content').classList.remove('modal-expanded');
+        };
+    }, 100);
+
+
     if (!note) { container.innerHTML = '<p style="text-align:center; padding:20px; color:#666;">Nenhum registro iniciado para este plano.</p>'; return; }
 
     // --- NOVO (Prioridade 2): Wrapper de Progresso e Link para Timeline ---
@@ -914,7 +997,9 @@ window.dispatchLogbookAction = (action, noteId, sessionId) => {
     }
 
     // Para outras ações, fecha o modal de logbook
-    document.getElementById('logbook-modal').classList.remove('visivel');
+    const modal = document.getElementById('logbook-modal');
+    modal.classList.remove('visivel');
+    modal.querySelector('.reavaliacao-modal-content').classList.remove('modal-expanded'); // Reset foco
 
     if (action === 'edit') {
         editSessionFromHistory(currentPlanoIndex, noteId, sessionId);
