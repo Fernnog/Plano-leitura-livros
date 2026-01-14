@@ -560,48 +560,66 @@ export function calcularDataFimEstimada(dadosFormulario) {
 }
 
 /**
- * Analisa anotações Neuro para revisões SRS (D+1, D+3, D+7).
+ * Analisa anotações Neuro para revisões SRS (D+1, D+7, D+14).
+ * ATUALIZADO v2.1: Implementa lógica estrita baseada no relatório de neurociência.
  */
 export function verificarRevisoesPendentes(planos) {
     const revisoes = [];
-    const hoje = getHojeNormalizado();
+    const hoje = new Date(); // Usa data completa para precisão
+    hoje.setHours(0, 0, 0, 0);
 
     planos.forEach(plano => {
         if (!plano.neuroAnnotations || plano.isPaused) return;
 
         plano.neuroAnnotations.forEach(nota => {
-            // CORREÇÃO SRS: Busca a data em múltiplos locais (raiz ou sessão atual)
-            const dataBase = nota.updatedAt || nota.createdAt || nota.timestamp || (nota.currentSession ? nota.currentSession.date : null);
+            // Garante a obtenção da data base correta (prioridade para updatedAt, fallback para createdAt/timestamp/session)
+            const dataBaseStr = nota.updatedAt || nota.createdAt || nota.timestamp || (nota.currentSession ? nota.currentSession.date : null);
             
-            if (!dataBase) return;
+            if (!dataBaseStr) return;
 
-            const dataNota = new Date(dataBase);
+            const dataNota = new Date(dataBaseStr);
             dataNota.setHours(0, 0, 0, 0);
 
+            // Diferença em dias corridos
             const diffTime = hoje.getTime() - dataNota.getTime();
             const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
 
-            if (!nota.reviewsDone) nota.reviewsDone = { d1: false, d3: false, d7: false };
+            // Inicializa flags de revisão se não existirem
+            if (!nota.reviewsDone) nota.reviewsDone = { d1: false, d7: false, d14: false };
 
             let tipoRevisao = null;
             let prioridade = 0;
+            let desafio = "";
 
-            if (diffDays >= 1 && !nota.reviewsDone.d1) {
-                tipoRevisao = 'D+1 (Flash)';
+            // PROTOCOLO NEUROCIÊNCIA (D+1, D+7, D+14)
+
+            // D+1 (Janela de Estabilização: dia 1 a 6 se não feito)
+            // Foco: Ideia Central / Mini-teste
+            if (diffDays >= 1 && diffDays < 7 && !nota.reviewsDone.d1) {
+                tipoRevisao = 'D+1 (Estabilização)';
                 prioridade = 1;
-            } else if (diffDays >= 3 && nota.reviewsDone.d1 && !nota.reviewsDone.d3) {
-                tipoRevisao = 'D+3 (Consolidação)';
+                desafio = "Foque na Ideia Central. Responda 3 das 5 perguntas do mini-teste ou recupere a tese.";
+            } 
+            // D+7 (Janela de Conexão: dia 7 a 13)
+            // Foco: Ensinar de cabeça (Feynman) + Conexão nova
+            else if (diffDays >= 7 && diffDays < 14 && nota.reviewsDone.d1 && !nota.reviewsDone.d7) {
+                tipoRevisao = 'D+7 (Conexão)';
                 prioridade = 2;
-            } else if (diffDays >= 7 && nota.reviewsDone.d3 && !nota.reviewsDone.d7) {
-                tipoRevisao = 'D+7 (Final)';
+                desafio = "Ensine de cabeça (Feynman) e crie uma nova conexão prática.";
+            } 
+            // D+14 (Janela de Consolidação: dia 14 até 29 - Exclui D+30 por enquanto)
+            // Foco: Consolidação rápida
+            else if (diffDays >= 14 && diffDays < 30 && nota.reviewsDone.d7 && !nota.reviewsDone.d14) {
+                tipoRevisao = 'D+14 (Consolidação)';
                 prioridade = 3;
+                desafio = "Explique o capítulo em 90-120 segundos sem consulta.";
             }
 
             if (tipoRevisao) {
-                // Tenta usar o Tema Central novo, senão a pergunta guia
-                const desafioBase = nota.theme 
+                // Se não houver desafio específico, usa o tema central como fallback
+                const desafioBase = desafio || (nota.theme 
                     ? `Tema: ${nota.theme}` 
-                    : (nota.meta?.find(m => m.subType === 'q1')?.text || "Recupere a tese principal.");
+                    : "Recupere a tese principal.");
 
                 revisoes.push({
                     planoIndex: planos.indexOf(plano),
