@@ -2,10 +2,18 @@
 // RESPONSABILIDADE: Centralizar o controle de versão e o histórico de melhorias (Changelog)
 
 export const versionConfig = {
-    version: '2.0.5',
+    version: '2.0.6',
     changelog: {
-        title: 'Integridade & Narrativa (v2.0.5)',
+        title: 'Imersão & Precisão (v2.0.6)',
         sections: [
+            {
+                title: 'v2.0.6 - Modo Foco & Correção Temporal',
+                points: [
+                    '<strong>Modo Foco (Imersão Cognitiva):</strong> Nova funcionalidade "Expandir" nos modais de Insight e Diário de Bordo. Permite alternar para visualização em tela cheia, eliminando distrações visuais e oferecendo mais espaço para a produção de textos longos.',
+                    '<strong>Correção Crítica SRS (Spaced Repetition):</strong> Ajuste na camada de persistência de dados. O sistema agora grava corretamente a data de atualização (`updatedAt`) na raiz das anotações, corrigindo o cálculo de intervalo que impedia o aparecimento das revisões D+1, D+3 e D+7.',
+                    '<strong>Estabilidade de Renderização UI:</strong> Refatoração da lógica de injeção de HTML nos cabeçalhos dos modais. Substituição de renderização destrutiva por manipulação granular do DOM, garantindo que botões de controle (Fechar, Expandir) permaneçam visíveis e funcionais durante a navegação.'
+                ]
+            },
             {
                 title: 'v2.0.5 - Integridade & Narrativa Visual',
                 points: [
