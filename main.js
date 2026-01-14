@@ -10,6 +10,7 @@ import * as planoLogic from './modules/plano-logic.js';
 import * as formHandler from './modules/form-handler.js';
 import * as pwaHandler from './modules/pwa-handler.js';
 import * as neuroNotes from './modules/neuro-notes.js'; // Módulo de Neuro-Anotações
+import * as srsEngine from './modules/srs-engine.js'; // NOVO: Motor de Revisão SRS
 
 // --- Inicialização da Aplicação ---
 document.addEventListener('DOMContentLoaded', initApp);
@@ -21,6 +22,7 @@ function initApp() {
     setupEventHandlers();
     formHandler.init(); 
     authService.setupAuthStateObserver(handleAuthStateChange);
+    srsEngine.init(); // Inicializa o modal SRS (injeta HTML se necessário)
 }
 
 // --- Gerenciamento Central de Autenticação ---
@@ -170,6 +172,9 @@ function setupEventHandlers() {
 
             const checklistModalEl = document.getElementById('checklist-modal');
             if (checklistModalEl && checklistModalEl.classList.contains('visivel')) checklistModalEl.classList.remove('visivel');
+            
+            const srsModalEl = document.getElementById('srs-modal');
+            if (srsModalEl && srsModalEl.classList.contains('visivel')) srsModalEl.classList.remove('visivel');
         }
     });
 }
@@ -456,7 +461,7 @@ function handleOpenLogbook(target, plano, planoIndex, currentUser) {
     neuroNotes.openLogbook(planoIndex);
 }
 
-// --- NOVO HANDLER SRS (Revisão Espaçada) ---
+// --- NOVO HANDLER SRS (Revisão Espaçada) - ATUALIZADO ---
 function handleIniciarRevisao(target) {
     const planoIndex = parseInt(target.dataset.planoIndex, 10);
     const notaId = target.dataset.notaId;
@@ -467,7 +472,8 @@ function handleIniciarRevisao(target) {
         return;
     }
 
-    neuroNotes.openReviewMode(planoIndex, notaId, tipoRevisao);
+    // Chama o novo motor dedicado para iniciar a sessão
+    srsEngine.startSession(planoIndex, notaId, tipoRevisao);
 }
 
 function handleDownloadMarkdown(target, plano, planoIndex, currentUser) {
