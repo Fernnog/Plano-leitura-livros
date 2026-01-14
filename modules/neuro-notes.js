@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota, exportação e Diário de Bordo (Histórico).
-// ATUALIZADO v2.0.5: Validação de Escopo, Timeline Narrativa e MODO FOCO.
+// ATUALIZADO v2.0.7: Implementação nativa do Modo Foco (Expandir) no Wizard.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -21,8 +21,8 @@ let tempNoteData = {
     currentSession: {
         id: null,
         sessionTopic: '',
-        pStart: null, // NOVO: Início do sub-período da sessão
-        pEnd: null,   // NOVO: Fim do sub-período da sessão
+        pStart: null, 
+        pEnd: null,   
         date: null,
         insights: [],
         meta: [],
@@ -53,7 +53,7 @@ const WIZARD_STEPS = [
              return theme && theme.length > 3 && q1 && q1.length > 3;
         },
         render: (data) => `
-            <!-- NOVO: Definição de Sub-período da Sessão -->
+            <!-- Definição de Sub-período da Sessão -->
             <div class="neuro-input-group" style="background: #f8f9fa; padding: 10px; border-radius: 6px; border: 1px dashed #ced4da; margin-bottom: 15px;">
                 <label style="color: var(--neuro-accent); font-weight: bold;">Recorte desta Sessão (Sub-período)</label>
                 <div style="display: flex; gap: 10px; align-items: center; margin-top: 5px;">
@@ -203,7 +203,7 @@ function migrateLegacyData(oldData) {
             theme: '',
             pageStart: null,
             pageEnd: null,
-            sessions: [],
+            sessions: [], 
             currentSession: {
                 id: crypto.randomUUID(),
                 sessionTopic: '',
@@ -244,10 +244,12 @@ function migrateLegacyData(oldData) {
     };
 }
 
-// --- Gerenciamento do Modal Principal ---
+// --- Gerenciamento do Modal Principal (ATUALIZADO PARA MODO FOCO) ---
 
 function ensureModalExists() {
     if (document.getElementById('neuro-modal')) return;
+    
+    // Estrutura HTML completa com Header Flexbox e Botão de Expansão
     const modalHTML = `
     <div id="neuro-modal" class="reavaliacao-modal-overlay">
         <div class="reavaliacao-modal-content neuro-theme" style="max-width: 800px; padding: 0; display: flex; flex-direction: column; max-height: 90vh;">
@@ -280,6 +282,8 @@ function ensureModalExists() {
     document.getElementById('toggle-focus-neuro').addEventListener('click', function() {
         const modalContent = this.closest('.reavaliacao-modal-content');
         modalContent.classList.toggle('modal-expanded');
+        
+        // Alterna o ícone entre Expandir e Contrair
         const icon = this.querySelector('span');
         icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
     });
