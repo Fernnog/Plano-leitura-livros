@@ -571,6 +571,39 @@
     z-index: 2;
 }
 
+/* --- MODO FOCO (EXPANDIDO) - v2.0.6 --- */
+.reavaliacao-modal-content.modal-expanded {
+    width: 95vw !important;
+    height: 95vh !important;
+    max-width: none !important;
+    max-height: none !important;
+    display: flex;
+    flex-direction: column;
+    transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.modal-expanded .neuro-modal-body,
+.modal-expanded #logbook-content {
+    flex-grow: 1 !important;
+    max-height: none !important;
+}
+
+.btn-expand-modal {
+    background: none;
+    border: none;
+    color: rgba(255,255,255,0.7);
+    cursor: pointer;
+    margin-right: 5px;
+    transition: color 0.2s;
+    padding: 0 5px;
+    display: flex;
+    align-items: center;
+}
+
+.btn-expand-modal:hover {
+    color: #fff;
+}
+
 /* --- MEDIA QUERIES --- */
 @media (max-width: 700px) {
     .plano-leitura-grid { grid-template-columns: 1fr; }
