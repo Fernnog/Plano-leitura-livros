@@ -126,6 +126,26 @@ function setupEventHandlers() {
     if (closeNeuroBtn) {
         closeNeuroBtn.addEventListener('click', () => document.getElementById('neuro-modal').classList.remove('visivel'));
     }
+    
+    // Listener para o Modo Foco (Wizard de Insights) - ATUALIZAÇÃO v2.1
+    const toggleFocusNeuroBtn = document.getElementById('toggle-focus-neuro');
+    if (toggleFocusNeuroBtn) {
+        toggleFocusNeuroBtn.addEventListener('click', function() {
+            // Encontra o container pai do conteúdo
+            const modalContent = this.closest('.reavaliacao-modal-content');
+            
+            // Alterna a classe de expansão
+            modalContent.classList.toggle('modal-expanded');
+            
+            // Alterna o ícone (Expandir <-> Contrair)
+            const icon = this.querySelector('span');
+            icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
+            
+            // Dica visual de UX: Troca o título do botão
+            this.title = modalContent.classList.contains('modal-expanded') ? 'Sair do Modo Foco' : 'Modo Foco (Expandir)';
+        });
+    }
+
     const neuroModal = document.getElementById('neuro-modal');
     if (neuroModal) {
         neuroModal.addEventListener('click', (e) => { if (e.target === neuroModal) neuroModal.classList.remove('visivel'); });
