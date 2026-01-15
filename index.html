@@ -353,9 +353,18 @@
         <!-- NOVO MODAL: NEURO-INSIGHTS & M.E.T.A. -->
         <div id="neuro-modal" class="reavaliacao-modal-overlay">
             <div class="reavaliacao-modal-content neuro-theme">
-                <div class="reavaliacao-modal-header">
-                    <h2 id="neuro-modal-title"><span class="material-symbols-outlined">psychology</span> Neuro-Insights</h2>
-                    <button id="close-neuro-modal" class="reavaliacao-modal-close">×</button>
+                
+                <!-- ATUALIZAÇÃO: Cabeçalho reestruturado com Modo Foco -->
+                <div class="reavaliacao-modal-header" style="display: flex; justify-content: space-between; align-items: center;">
+                    <h2 id="neuro-modal-title" style="margin: 0;"><span class="material-symbols-outlined">psychology</span> Neuro-Insights</h2>
+                    
+                    <!-- Container de Controles (Foco + Fechar) -->
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <button id="toggle-focus-neuro" class="btn-expand-modal" title="Modo Foco (Expandir)" style="background: none; border: none; color: white; cursor: pointer; display: flex; align-items: center; opacity: 0.9;">
+                            <span class="material-symbols-outlined" style="font-size: 1.2em;">open_in_full</span>
+                        </button>
+                        <button id="close-neuro-modal" class="reavaliacao-modal-close" style="line-height: 1; padding: 0;">×</button>
+                    </div>
                 </div>
                 
                 <!-- Conteúdo Dinâmico Injetado via JS -->
