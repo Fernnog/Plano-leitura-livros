@@ -1,4 +1,4 @@
-/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.0 + Update Consolidação + v2.0.5) */
+/* neuro-style.css - Módulo de Estilos Neuro-Cognitivos e Wizard (v2.2.1 - Update Visual & Contraste) */
 
 /* --- LAYOUT GRID DO PAINEL NEURO --- */
 .plano-leitura-grid {
@@ -71,7 +71,36 @@
     color: var(--neuro-accent);
 }
 
-/* --- MODAL WIZARD NEURO --- */
+/* --- MODAL WIZARD NEURO E HEADER ESTILIZADO (NOVO) --- */
+
+/* Classes Utilitárias para Headers Coloridos */
+.neuro-header-gradient-blue {
+    background: linear-gradient(135deg, #2c3e50 0%, #3498db 100%) !important;
+    color: white !important;
+}
+
+.neuro-header-gradient-orange {
+    background: linear-gradient(135deg, #f39c12 0%, #d35400 100%) !important;
+    color: white !important;
+}
+
+/* Garante visibilidade dos elementos dentro do header colorido */
+.reavaliacao-modal-header.neuro-header-gradient-blue h2,
+.reavaliacao-modal-header.neuro-header-gradient-orange h2,
+.reavaliacao-modal-header.neuro-header-gradient-blue .material-symbols-outlined,
+.reavaliacao-modal-header.neuro-header-gradient-orange .material-symbols-outlined,
+.reavaliacao-modal-header.neuro-header-gradient-blue .reavaliacao-modal-close,
+.reavaliacao-modal-header.neuro-header-gradient-orange .reavaliacao-modal-close {
+    color: white !important;
+    opacity: 0.95;
+}
+
+.reavaliacao-modal-header .reavaliacao-modal-close:hover {
+    opacity: 1;
+    transform: scale(1.1);
+}
+
+/* Corpo do Modal */
 .neuro-theme h2, .neuro-theme h3, .neuro-theme h4 {
     font-family: var(--neuro-font-serif);
     color: var(--neuro-primary);
@@ -116,7 +145,7 @@
     box-shadow: 0 0 0 3px rgba(211, 84, 0, 0.1);
 }
 
-/* --- CABEÇALHO DE CONTEXTO HIERÁRQUICO --- */
+/* --- CABEÇALHO DE CONTEXTO HIERÁRQUICO (DENTRO DO WIZARD) --- */
 .neuro-context-header {
     background-color: #f8f9fa;
     border: 1px solid #e9ecef;
@@ -184,7 +213,7 @@
     color: var(--neuro-primary);
 }
 
-/* Estilos para inputs de Sub-Período (Sessão) - NOVO PRIORIDADE 1 */
+/* Estilos para inputs de Sub-Período (Sessão) */
 .session-sub-range {
     display: flex;
     align-items: center;
@@ -319,7 +348,7 @@
     color: #7f8c8d;
 }
 
-/* Container de Ações de Capítulo (Consolidação) - NOVO PRIORIDADE 2 */
+/* Container de Ações de Capítulo (Consolidação) */
 .chapter-actions-container {
     padding: 12px;
     background: linear-gradient(to right, #f8f9fa, #e9ecef);
@@ -446,9 +475,9 @@
     display: block;
 }
 
-/* Tag de Sub-Período (Ex: Pág 10-15) - NOVO PRIORIDADE 1 */
+/* Tag de Sub-Período (Ex: Pág 10-15) */
 .sub-period-tag {
-    font-size: 0.85em; /* Aumentado levemente para legibilidade */
+    font-size: 0.85em; 
     background: #fff3e0;
     color: var(--neuro-accent);
     padding: 2px 6px;
@@ -494,7 +523,7 @@
 @keyframes spin { 100% { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
 
-/* --- VISUALIZAÇÃO DE PROGRESSO E TIMELINE (v2.0.5) --- */
+/* --- VISUALIZAÇÃO DE PROGRESSO E TIMELINE --- */
 
 /* Wrapper de Progresso no Header do Logbook */
 #chapter-progress-wrapper {
@@ -509,21 +538,21 @@
 .progress-track {
     display: flex;
     height: 10px;
-    background: #e2e8f0; /* Cor do "vazio" (gap) */
+    background: #e2e8f0; 
     border-radius: 5px;
     overflow: hidden;
-    position: relative; /* Necessário para segmentos absolutos */
+    position: relative; 
     margin-top: 5px;
 }
 
 .progress-segment {
-    position: absolute; /* Permite visualizar lacunas (gaps) reais */
+    position: absolute; 
     height: 100%;
     background: var(--neuro-accent);
     opacity: 0.85;
     border-right: 1px solid rgba(255,255,255,0.4);
     transition: width 0.3s ease, left 0.3s ease;
-    mix-blend-mode: multiply; /* Melhoria UX: Permite ver sobreposições de leitura */
+    mix-blend-mode: multiply; 
     cursor: help;
 }
 
@@ -560,7 +589,7 @@
 .timeline-node::before {
     content: '';
     position: absolute;
-    left: -32px; /* Alinha com a borda vertical */
+    left: -32px; 
     top: 20px;
     width: 12px;
     height: 12px;
@@ -571,7 +600,7 @@
     z-index: 2;
 }
 
-/* --- MODO FOCO (EXPANDIDO) - v2.0.6 --- */
+/* --- MODO FOCO (EXPANDIDO) --- */
 .reavaliacao-modal-content.modal-expanded {
     width: 95vw !important;
     height: 95vh !important;
@@ -588,21 +617,24 @@
     max-height: none !important;
 }
 
+/* Botão de Expandir - Melhoria de Contraste */
 .btn-expand-modal {
     background: none;
     border: none;
-    color: rgba(255,255,255,0.7);
+    color: white !important; /* Força branco em fundos coloridos */
     cursor: pointer;
-    margin-right: 5px;
-    transition: all 0.2s ease; /* Melhoria: Transição suave para escala e cor */
-    padding: 0 5px;
+    margin-right: 15px;
+    transition: all 0.2s ease; 
+    padding: 5px;
     display: flex;
     align-items: center;
+    border-radius: 4px;
+    background-color: rgba(255,255,255,0.15); /* Fundo sutil para botão */
 }
 
 .btn-expand-modal:hover {
-    color: var(--neuro-accent) !important; /* Melhoria: Força destaque laranja */
-    transform: scale(1.1); /* Melhoria: Feedback tátil */
+    background-color: rgba(255,255,255,0.3);
+    transform: scale(1.05);
 }
 
 /* --- MEDIA QUERIES --- */
@@ -619,6 +651,6 @@
 
     /* Ajuste Mobile para Timeline */
     .timeline-node::before {
-        left: -32px; /* Mantém alinhamento */
+        left: -32px; 
     }
 }
