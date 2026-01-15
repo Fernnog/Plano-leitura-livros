@@ -621,6 +621,11 @@ export function verificarRevisoesPendentes(planos) {
                     ? `Tema: ${nota.theme}` 
                     : "Recupere a tese principal.");
 
+                // EXTRAÇÃO DO TÓPICO ESPECÍFICO (NOVA LÓGICA)
+                // Tenta pegar da sessão atual ou da última sessão arquivada
+                const sessionData = nota.currentSession || nota.sessions?.[nota.sessions.length - 1];
+                const topicoEspecifico = sessionData ? sessionData.sessionTopic : "Detalhe da Leitura";
+
                 revisoes.push({
                     planoIndex: planos.indexOf(plano),
                     planoTitulo: plano.titulo,
@@ -628,7 +633,8 @@ export function verificarRevisoesPendentes(planos) {
                     capitulo: nota.chapterTitle || `Pág. ${nota.pageStart}-${nota.pageEnd}`,
                     tipo: tipoRevisao,
                     prioridade: prioridade,
-                    desafio: desafioBase
+                    desafio: desafioBase,
+                    specificTopic: topicoEspecifico // Adicionado para exibição no SRS Engine
                 });
             }
         });

@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota, exportação e Diário de Bordo (Histórico).
-// ATUALIZADO v2.0.7: Suporte nativo ao Modo Foco e Limpeza de Código Morto.
+// ATUALIZADO v2.1.0: Refatoração Visual do Header (Degradê & Contraste) e Modo Foco.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -246,8 +246,6 @@ function migrateLegacyData(oldData) {
 
 // --- Gerenciamento do Modal Principal (REVISADO) ---
 
-// A função ensureModalExists foi REMOVIDA para respeitar a arquitetura do index.html
-
 export function openNoteModal(planoIndex, diaIndex = null) {
     const modal = document.getElementById('neuro-modal');
     if (!modal) {
@@ -256,7 +254,58 @@ export function openNoteModal(planoIndex, diaIndex = null) {
     }
 
     // Configura o fechamento inteligente (Auto-Save)
-    document.getElementById('close-neuro-modal').onclick = closeNoteModal;
+    const closeBtn = document.getElementById('close-neuro-modal');
+    if (closeBtn) closeBtn.onclick = closeNoteModal;
+
+    // --- INJEÇÃO DO MODO FOCO (Botão Expandir) ---
+    // Garante que o botão de expandir exista no header, similar ao Logbook
+    const headerContainer = document.querySelector('#neuro-modal .reavaliacao-modal-header');
+    if (headerContainer && !document.getElementById('toggle-focus-neuro')) {
+        // Cria container de controles se não existir (para agrupar expand e close)
+        let controlsDiv = headerContainer.querySelector('.neuro-controls-group');
+        if (!controlsDiv) {
+            controlsDiv = document.createElement('div');
+            controlsDiv.className = 'neuro-controls-group';
+            controlsDiv.style.display = 'flex';
+            controlsDiv.style.alignItems = 'center';
+            controlsDiv.style.gap = '10px';
+            
+            // Move o botão de fechar existente para dentro do grupo, se ele estiver solto no header
+            if (closeBtn && closeBtn.parentNode === headerContainer) {
+                headerContainer.removeChild(closeBtn);
+                controlsDiv.appendChild(closeBtn);
+            }
+            headerContainer.appendChild(controlsDiv);
+        }
+
+        const btnFocus = document.createElement('button');
+        btnFocus.id = 'toggle-focus-neuro';
+        btnFocus.className = 'btn-expand-modal';
+        btnFocus.title = 'Modo Foco (Expandir/Contrair)';
+        btnFocus.style.background = 'none';
+        btnFocus.style.border = 'none';
+        btnFocus.style.color = 'white'; // Força branco
+        btnFocus.style.cursor = 'pointer';
+        btnFocus.style.display = 'flex';
+        btnFocus.style.alignItems = 'center';
+        btnFocus.innerHTML = '<span class="material-symbols-outlined" style="font-size: 1.2em;">open_in_full</span>';
+
+        // Insere antes do botão de fechar
+        if (closeBtn) {
+            controlsDiv.insertBefore(btnFocus, closeBtn);
+        } else {
+            controlsDiv.appendChild(btnFocus);
+        }
+
+        // Event Listener para alternar classe
+        btnFocus.addEventListener('click', function() {
+            const modalContent = this.closest('.reavaliacao-modal-content');
+            modalContent.classList.toggle('modal-expanded');
+            const icon = this.querySelector('span');
+            icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
+        });
+    }
+    // --- FIM DA INJEÇÃO ---
 
     currentPlanoIndex = planoIndex;
     currentDiaIndex = diaIndex;
@@ -336,14 +385,51 @@ function closeNoteModal() {
 
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
-    // Atualiza apenas o Título H2, preservando os botões irmãos (Expandir/Fechar)
-    const headerTitle = document.querySelector('#neuro-modal-title');
     
-    if (headerTitle) {
-        headerTitle.innerHTML = editingSessionId 
-            ? `<span class="material-symbols-outlined" style="color:var(--neuro-accent);">history_edu</span> Edição de Histórico`
-            : `<span class="material-symbols-outlined">psychology</span> Neuro-Insights`;
+    // --- REFATORAÇÃO VISUAL DO HEADER (Degradê e Contraste) ---
+    const headerContainer = document.querySelector('#neuro-modal .reavaliacao-modal-header');
+    const headerTitle = document.querySelector('#neuro-modal-title');
+    const closeBtn = document.getElementById('close-neuro-modal');
+    const expandBtn = document.getElementById('toggle-focus-neuro');
+
+    if (headerContainer) {
+        // Define degradê baseado no contexto (Novo ou Edição)
+        // Novo: Azul Profundo | Edição: Laranja Alerta
+        const bgStyle = editingSessionId 
+            ? 'linear-gradient(135deg, #f39c12 0%, #d35400 100%)' 
+            : 'linear-gradient(135deg, #2c3e50 0%, #3498db 100%)';
+        
+        headerContainer.style.background = bgStyle;
+        headerContainer.style.color = 'white'; // Texto branco global no header
+        headerContainer.style.borderBottom = 'none'; // Remove bordas simples
+        
+        // Garante flexbox para alinhamento correto
+        if (headerContainer.style.display !== 'flex') {
+            headerContainer.style.display = 'flex';
+            headerContainer.style.justifyContent = 'space-between';
+            headerContainer.style.alignItems = 'center';
+        }
     }
+
+    if (headerTitle) {
+        headerTitle.style.color = 'white'; // Força título branco
+        headerTitle.innerHTML = editingSessionId 
+            ? `<span class="material-symbols-outlined" style="color:white; margin-right:8px;">history_edu</span> Edição de Histórico`
+            : `<span class="material-symbols-outlined" style="color:white; margin-right:8px;">psychology</span> Neuro-Insights`;
+    }
+
+    // Garante visibilidade dos botões de controle sobre o fundo colorido
+    if (closeBtn) {
+        closeBtn.style.color = 'white';
+        closeBtn.style.opacity = '0.9';
+        closeBtn.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
+    }
+    if (expandBtn) {
+        expandBtn.style.color = 'white';
+        expandBtn.style.opacity = '0.9';
+        expandBtn.style.textShadow = '0 1px 2px rgba(0,0,0,0.2)';
+    }
+    // --- FIM DA REFATORAÇÃO VISUAL ---
 
     const step = WIZARD_STEPS[currentStepIndex];
 
@@ -708,20 +794,35 @@ export function openLogbook(planoIndex) {
     
     renderLogbookUI(note);
     document.getElementById('logbook-modal').classList.add('visivel');
-    document.getElementById('close-logbook-modal').onclick = () => document.getElementById('logbook-modal').classList.remove('visivel');
+    
+    const closeBtn = document.getElementById('close-logbook-modal');
+    if (closeBtn) closeBtn.onclick = () => document.getElementById('logbook-modal').classList.remove('visivel');
     
     // INJETAR O BOTÃO MODO FOCO NO LOGBOOK SE NÃO EXISTIR
-    // (Lógica preservada para o Logbook)
     const logbookHeader = document.querySelector('#logbook-modal .reavaliacao-modal-header');
     if (logbookHeader && !document.getElementById('toggle-focus-logbook')) {
-        logbookHeader.style.display = 'flex';
-        logbookHeader.style.justifyContent = 'space-between';
-        logbookHeader.style.alignItems = 'center';
+        // Garante que o container tenha estilo flexível para alinhar
+        if (logbookHeader.style.display !== 'flex') {
+            logbookHeader.style.display = 'flex';
+            logbookHeader.style.justifyContent = 'space-between';
+            logbookHeader.style.alignItems = 'center';
+        }
 
-        const controlsDiv = document.createElement('div');
-        controlsDiv.style.display = 'flex';
-        controlsDiv.style.alignItems = 'center';
-        controlsDiv.style.gap = '12px';
+        let controlsDiv = logbookHeader.querySelector('.logbook-controls');
+        if (!controlsDiv) {
+            controlsDiv = document.createElement('div');
+            controlsDiv.className = 'logbook-controls';
+            controlsDiv.style.display = 'flex';
+            controlsDiv.style.alignItems = 'center';
+            controlsDiv.style.gap = '12px';
+            
+            // Move o botão de fechar existente para dentro do container
+            if (closeBtn && closeBtn.parentNode === logbookHeader) {
+                logbookHeader.removeChild(closeBtn);
+                controlsDiv.appendChild(closeBtn);
+            }
+            logbookHeader.appendChild(controlsDiv);
+        }
 
         const btnFocus = document.createElement('button');
         btnFocus.id = 'toggle-focus-logbook';
@@ -733,20 +834,18 @@ export function openLogbook(planoIndex) {
         btnFocus.style.cursor = 'pointer';
         btnFocus.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
         
-        const btnClose = document.getElementById('close-logbook-modal');
-        if (btnClose) {
-            logbookHeader.removeChild(btnClose);
+        if (controlsDiv.firstChild) {
+            controlsDiv.insertBefore(btnFocus, controlsDiv.firstChild);
+        } else {
             controlsDiv.appendChild(btnFocus);
-            controlsDiv.appendChild(btnClose);
-            logbookHeader.appendChild(controlsDiv);
-
-            btnFocus.addEventListener('click', function() {
-                const modalContent = this.closest('.reavaliacao-modal-content');
-                modalContent.classList.toggle('modal-expanded');
-                const icon = this.querySelector('span');
-                icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
-            });
         }
+
+        btnFocus.addEventListener('click', function() {
+            const modalContent = this.closest('.reavaliacao-modal-content');
+            modalContent.classList.toggle('modal-expanded');
+            const icon = this.querySelector('span');
+            icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
+        });
     }
 
     document.getElementById('btn-new-session-logbook').onclick = () => {
