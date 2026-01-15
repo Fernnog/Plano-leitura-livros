@@ -1,7 +1,7 @@
 // modules/neuro-notes.js
 // RESPONSABILIDADE ÚNICA: Gerenciar lógica de anotações cognitivas (Wizard M.E.T.A.),
 // persistência local/remota, exportação e Diário de Bordo (Histórico).
-// ATUALIZADO v2.0.7: Implementação nativa do Modo Foco (Expandir) no Wizard.
+// ATUALIZADO v2.0.7: Suporte nativo ao Modo Foco e Limpeza de Código Morto.
 
 import * as state from './state.js';
 import * as firestoreService from './firestore-service.js';
@@ -244,53 +244,20 @@ function migrateLegacyData(oldData) {
     };
 }
 
-// --- Gerenciamento do Modal Principal (ATUALIZADO PARA MODO FOCO) ---
+// --- Gerenciamento do Modal Principal (REVISADO) ---
 
-function ensureModalExists() {
-    if (document.getElementById('neuro-modal')) return;
-    
-    // Estrutura HTML completa com Header Flexbox e Botão de Expansão
-    const modalHTML = `
-    <div id="neuro-modal" class="reavaliacao-modal-overlay">
-        <div class="reavaliacao-modal-content neuro-theme" style="max-width: 800px; padding: 0; display: flex; flex-direction: column; max-height: 90vh;">
-            
-            <!-- HEADER CORRIGIDO COM FLEXBOX (Titulo Esq | Controles Dir) -->
-            <div class="reavaliacao-modal-header" style="background: linear-gradient(135deg, #1a252f 0%, #2c3e50 100%); padding: 15px 20px; border-radius: 8px 8px 0 0; color: white; flex-shrink: 0; display: flex; justify-content: space-between; align-items: center;">
-                <!-- Título -->
-                <h2 style="color: white; font-family: 'Playfair Display', serif; margin:0; display:flex; align-items:center; gap:10px;">
-                    <span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção
-                </h2>
-                
-                <!-- Botões de Controle (Foco + Fechar) -->
-                <div style="display: flex; align-items: center; gap: 12px;">
-                    <button id="toggle-focus-neuro" class="btn-expand-modal" title="Modo Foco (Expandir/Contrair)" style="background:none; border:none; color:rgba(255,255,255,0.8); cursor:pointer; display: flex; align-items: center;">
-                        <span class="material-symbols-outlined" style="font-size: 1.2em;">open_in_full</span>
-                    </button>
-                    <button id="close-neuro-modal" class="reavaliacao-modal-close" style="color: white; opacity: 0.8; background:none; border:none; font-size:24px; cursor:pointer; line-height: 1;">×</button>
-                </div>
-            </div>
-
-            <div id="neuro-modal-body" class="neuro-modal-body" style="padding: 20px; overflow-y: auto; flex-grow: 1;"></div>
-            <div class="recalculo-modal-actions" style="padding: 15px 20px; border-top: 1px solid #eee; background: #fafafa; border-radius: 0 0 8px 8px; margin-top:0; flex-shrink: 0;"></div>
-        </div>
-    </div>`;
-    
-    document.body.insertAdjacentHTML('beforeend', modalHTML);
-    document.getElementById('close-neuro-modal').addEventListener('click', closeNoteModal);
-
-    // LISTENER PARA O BOTÃO MODO FOCO (WIZARD)
-    document.getElementById('toggle-focus-neuro').addEventListener('click', function() {
-        const modalContent = this.closest('.reavaliacao-modal-content');
-        modalContent.classList.toggle('modal-expanded');
-        
-        // Alterna o ícone entre Expandir e Contrair
-        const icon = this.querySelector('span');
-        icon.textContent = modalContent.classList.contains('modal-expanded') ? 'close_fullscreen' : 'open_in_full';
-    });
-}
+// A função ensureModalExists foi REMOVIDA para respeitar a arquitetura do index.html
 
 export function openNoteModal(planoIndex, diaIndex = null) {
-    ensureModalExists();
+    const modal = document.getElementById('neuro-modal');
+    if (!modal) {
+        console.error("ERRO CRÍTICO: Modal #neuro-modal não encontrado no HTML.");
+        return;
+    }
+
+    // Configura o fechamento inteligente (Auto-Save)
+    document.getElementById('close-neuro-modal').onclick = closeNoteModal;
+
     currentPlanoIndex = planoIndex;
     currentDiaIndex = diaIndex;
     currentStepIndex = 0;
@@ -323,11 +290,16 @@ export function openNoteModal(planoIndex, diaIndex = null) {
     }
 
     renderModalUI();
-    document.getElementById('neuro-modal').classList.add('visivel');
+    modal.classList.add('visivel');
 }
 
 export function editSessionFromHistory(planoIndex, annotationId, sessionId) {
-    ensureModalExists();
+    const modal = document.getElementById('neuro-modal');
+    if (!modal) return;
+    
+    // Configura o fechamento inteligente (Auto-Save)
+    document.getElementById('close-neuro-modal').onclick = closeNoteModal;
+
     currentPlanoIndex = planoIndex;
     currentStepIndex = 0;
     isDirty = false;
@@ -346,7 +318,7 @@ export function editSessionFromHistory(planoIndex, annotationId, sessionId) {
     tempNoteData.currentSession = sessionToEdit;
 
     renderModalUI();
-    document.getElementById('neuro-modal').classList.add('visivel');
+    modal.classList.add('visivel');
 }
 
 function closeNoteModal() {
@@ -364,12 +336,14 @@ function closeNoteModal() {
 
 function renderModalUI() {
     const modalBody = document.getElementById('neuro-modal-body');
-    // Apenas atualiza o conteúdo H2 dentro do Header já estruturado
-    const headerTitle = document.querySelector('#neuro-modal h2');
+    // Atualiza apenas o Título H2, preservando os botões irmãos (Expandir/Fechar)
+    const headerTitle = document.querySelector('#neuro-modal-title');
     
-    headerTitle.innerHTML = editingSessionId 
-        ? `<span class="material-symbols-outlined" style="color:var(--neuro-accent);">history_edu</span> Edição de Histórico`
-        : `<span class="material-symbols-outlined">psychology_alt</span> Wizard Neuro-Retenção`;
+    if (headerTitle) {
+        headerTitle.innerHTML = editingSessionId 
+            ? `<span class="material-symbols-outlined" style="color:var(--neuro-accent);">history_edu</span> Edição de Histórico`
+            : `<span class="material-symbols-outlined">psychology</span> Neuro-Insights`;
+    }
 
     const step = WIZARD_STEPS[currentStepIndex];
 
@@ -737,21 +711,18 @@ export function openLogbook(planoIndex) {
     document.getElementById('close-logbook-modal').onclick = () => document.getElementById('logbook-modal').classList.remove('visivel');
     
     // INJETAR O BOTÃO MODO FOCO NO LOGBOOK SE NÃO EXISTIR
-    // (Como a estrutura do header do Logbook é estática no index.html, precisamos injetar aqui)
+    // (Lógica preservada para o Logbook)
     const logbookHeader = document.querySelector('#logbook-modal .reavaliacao-modal-header');
     if (logbookHeader && !document.getElementById('toggle-focus-logbook')) {
-        // Aplica estilo Flexbox para organizar
         logbookHeader.style.display = 'flex';
         logbookHeader.style.justifyContent = 'space-between';
         logbookHeader.style.alignItems = 'center';
 
-        // Cria o container da direita para os botões
         const controlsDiv = document.createElement('div');
         controlsDiv.style.display = 'flex';
         controlsDiv.style.alignItems = 'center';
         controlsDiv.style.gap = '12px';
 
-        // Cria botão Foco
         const btnFocus = document.createElement('button');
         btnFocus.id = 'toggle-focus-logbook';
         btnFocus.className = 'btn-expand-modal';
@@ -762,7 +733,6 @@ export function openLogbook(planoIndex) {
         btnFocus.style.cursor = 'pointer';
         btnFocus.innerHTML = '<span class="material-symbols-outlined">open_in_full</span>';
         
-        // Move o botão de fechar existente para dentro do controlsDiv
         const btnClose = document.getElementById('close-logbook-modal');
         if (btnClose) {
             logbookHeader.removeChild(btnClose);
@@ -770,7 +740,6 @@ export function openLogbook(planoIndex) {
             controlsDiv.appendChild(btnClose);
             logbookHeader.appendChild(controlsDiv);
 
-            // Listener Foco Logbook
             btnFocus.addEventListener('click', function() {
                 const modalContent = this.closest('.reavaliacao-modal-content');
                 modalContent.classList.toggle('modal-expanded');
