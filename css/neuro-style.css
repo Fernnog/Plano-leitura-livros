@@ -594,14 +594,15 @@
     color: rgba(255,255,255,0.7);
     cursor: pointer;
     margin-right: 5px;
-    transition: color 0.2s;
+    transition: all 0.2s ease; /* Melhoria: Transição suave para escala e cor */
     padding: 0 5px;
     display: flex;
     align-items: center;
 }
 
 .btn-expand-modal:hover {
-    color: #fff;
+    color: var(--neuro-accent) !important; /* Melhoria: Força destaque laranja */
+    transform: scale(1.1); /* Melhoria: Feedback tátil */
 }
 
 /* --- MEDIA QUERIES --- */
