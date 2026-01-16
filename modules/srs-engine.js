@@ -1,644 +1,233 @@
-// modules/plano-logic.js
-// RESPONSABILIDADE ÚNICA: Conter toda a lógica de negócio, cálculos e manipulação
-// de dados dos planos. Funções "puras" que não tocam no DOM.
+// modules/srs-engine.js
+// RESPONSABILIDADE ÚNICA: Gerenciar a UX e Lógica das Sessões de Revisão Espaçada (SRS).
+// ATUALIZADO v2.0.8: Correção de crash, lógica de D+1/D+7/D+14 e feedback visual.
+
+import * as state from './state.js';
+import * as firestoreService from './firestore-service.js';
+import * as ui from './ui.js';
+
+let currentSession = null;
 
 /**
- * Retorna a data de hoje normalizada (sem horas, minutos, segundos).
- * @returns {Date}
+ * Inicializa o módulo SRS injetando o modal necessário no DOM se ele não existir.
+ * Chamado pelo main.js no boot da aplicação.
  */
-function getHojeNormalizado() {
-    const hoje = new Date();
-    hoje.setHours(0, 0, 0, 0);
-    return hoje;
-}
+export function init() {
+    if (!document.getElementById('srs-modal')) {
+        const modalHTML = `
+        <div id="srs-modal" class="reavaliacao-modal-overlay">
+            <div class="reavaliacao-modal-content neuro-theme" style="max-width: 600px; border-top: 5px solid #8e44ad; position: relative; overflow: hidden;">
+                
+                <!-- Overlay de Sucesso (Celebração) -->
+                <div id="srs-celebration-overlay" style="position: absolute; top:0; left:0; width:100%; height:100%; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; opacity: 0; visibility: hidden; transition: all 0.3s ease;">
+                    <span class="material-symbols-outlined" style="font-size: 4em; color: #27ae60; margin-bottom: 10px;">check_circle</span>
+                    <h2 style="color: #27ae60; font-family: var(--neuro-font-serif);">Revisão Concluída!</h2>
+                    <p style="color: #666;">Sinapse reforçada.</p>
+                </div>
 
-/**
- * Determina o status de um plano (pausado, proximo, em_dia, atrasado, concluido, invalido).
- * @param {object} plano - O objeto do plano a ser analisado.
- * @returns {string} O status do plano.
- */
-export function determinarStatusPlano(plano) {
-    if (!plano || !plano.diasPlano || !(plano.dataInicio instanceof Date) || !(plano.dataFim instanceof Date) || isNaN(plano.dataInicio) || isNaN(plano.dataFim)) {
-        return 'invalido';
-    }
-    
-    if (plano.isPaused) {
-        return 'pausado';
-    }
+                <div class="reavaliacao-modal-header" style="border-bottom: none; padding-bottom: 0;">
+                    <h2 style="color: #8e44ad; font-size: 1.2em; display: flex; align-items: center; gap: 10px;">
+                        <span class="material-symbols-outlined">psychology_alt</span> 
+                        <span id="srs-type-display">Revisão Ativa</span>
+                    </h2>
+                    <button id="close-srs-modal" class="reavaliacao-modal-close">×</button>
+                </div>
+                
+                <div id="srs-card-container" style="padding: 20px 0;">
+                    <!-- CONTEÚDO DINÂMICO -->
+                    <div id="srs-front" style="text-align: center; padding: 20px;">
+                        <p style="font-size: 0.9em; color: #666; text-transform: uppercase; letter-spacing: 1px; font-weight: bold;">Desafio de Memória</p>
+                        <h3 id="srs-question" style="font-family: var(--neuro-font-serif); font-size: 1.5em; color: #2c3e50; margin: 25px 0; line-height: 1.4;"></h3>
+                        <div style="width: 50px; height: 4px; background: #8e44ad; margin: 0 auto 15px auto; border-radius: 2px;"></div>
+                        <p id="srs-context" style="color: #7f8c8d; font-size: 0.95em; font-style: italic;"></p>
+                    </div>
 
-    const hoje = getHojeNormalizado();
-    const dataInicioPlano = new Date(plano.dataInicio); dataInicioPlano.setHours(0,0,0,0);
+                    <div id="srs-back" style="display: none; background: #fdfbf7; padding: 25px; border-radius: 8px; border: 1px solid #e0e0e0; margin-top: 10px; border-left: 4px solid #8e44ad; animation: fadeIn 0.3s ease;">
+                        <p style="font-size: 0.8em; color: #999; text-transform: uppercase; margin-bottom: 10px; display: flex; align-items: center; gap: 5px;">
+                            <span class="material-symbols-outlined" style="font-size: 1.2em;">visibility</span> Resposta Original / Insight
+                        </p>
+                        <div id="srs-answer" style="font-family: var(--neuro-font-serif); font-size: 1.15em; color: #2c3e50; line-height: 1.6;"></div>
+                    </div>
+                </div>
 
-    const todosLidos = plano.diasPlano.length > 0 && plano.diasPlano.every(dia => dia.lido);
-    if (todosLidos) return 'concluido';
-
-    if (dataInicioPlano > hoje) return 'proximo';
-
-    const temDiaPassadoNaoLido = plano.diasPlano.some(dia => {
-        if (dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
-             const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0, 0, 0, 0);
-             return dataDiaNormalizada < hoje && !dia.lido;
-        }
-        return false;
-     });
-     if (temDiaPassadoNaoLido) return 'atrasado';
-
-    return 'em_dia';
-}
-
-/**
- * Verifica quantos dias de leitura estão atrasados em um plano.
- * @param {object} plano - O objeto do plano.
- * @returns {number} O número de dias atrasados.
- */
-export function verificarAtraso(plano) {
-    const hoje = getHojeNormalizado();
-    if (!plano || !plano.diasPlano || plano.diasPlano.length === 0) return 0;
-
-    return plano.diasPlano.reduce((count, dia) => {
-         if (dia && dia.data && dia.data instanceof Date && !isNaN(dia.data.getTime())) {
-            const dataDiaNormalizada = new Date(dia.data); dataDiaNormalizada.setHours(0, 0, 0, 0);
-            if (dataDiaNormalizada < hoje && !dia.lido) {
-                return count + 1;
-            }
-        }
-        return count;
-    }, 0);
-}
-
-/**
- * Verifica se um dia de leitura deve ser exibido no modo de "Foco Progressivo".
- * Regra: Exibir se não foi lido OU se possui Neuro-Anotações relevantes.
- * @param {object} dia - O objeto do dia de leitura.
- * @returns {boolean} True se deve ser visível, False se deve ser ocultado (histórico).
- */
-export function verificarVisibilidadeDia(dia) {
-    if (!dia) return false;
-    
-    // Se não foi lido, sempre mostra (tarefa pendente)
-    if (!dia.lido) return true;
-
-    // Se foi lido, verifica se tem anotações relevantes (Neuro-Notes)
-    if (dia.neuroNote) {
-        const temInsights = Array.isArray(dia.neuroNote.insights) && dia.neuroNote.insights.length > 0;
-        const temMeta = Array.isArray(dia.neuroNote.meta) && dia.neuroNote.meta.length > 0;
-        const temTriggers = Array.isArray(dia.neuroNote.triggers) && dia.neuroNote.triggers.length > 0;
+                <div class="recalculo-modal-actions" style="justify-content: center; padding-top: 20px; border-top: 1px solid #eee;">
+                    <button id="btn-srs-reveal" class="button-confirm" style="background-color: #8e44ad; width: 100%; padding: 12px; font-size: 1.1em; box-shadow: 0 4px 6px rgba(142, 68, 173, 0.2);">Mostrar Resposta</button>
+                    
+                    <div id="srs-grading-buttons" style="display: none; gap: 10px; width: 100%;">
+                        <button class="btn-grade" data-grade="forgot" style="flex: 1; background: #fff; color: #e74c3c; border: 1px solid #e74c3c; padding: 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Esqueci</button>
+                        <button class="btn-grade" data-grade="hard" style="flex: 1; background: #fff; color: #f39c12; border: 1px solid #f39c12; padding: 10px; border-radius: 6px; cursor: pointer; transition: all 0.2s;">Difícil</button>
+                        <button class="btn-grade" data-grade="good" style="flex: 1; background: #27ae60; color: white; border: none; padding: 12px; border-radius: 6px; cursor: pointer; font-weight: bold; box-shadow: 0 4px 6px rgba(39, 174, 96, 0.2); transition: all 0.2s;">Lembrei!</button>
+                    </div>
+                </div>
+            </div>
+        </div>`;
         
-        if (temInsights || temMeta || temTriggers) return true;
+        document.body.insertAdjacentHTML('beforeend', modalHTML);
+        
+        // Setup listeners básicos
+        document.getElementById('close-srs-modal').addEventListener('click', closeSession);
+        document.getElementById('btn-srs-reveal').addEventListener('click', revealAnswer);
+        
+        document.querySelectorAll('.btn-grade').forEach(btn => {
+            btn.addEventListener('click', (e) => finishSession(e.target.dataset.grade));
+            // Efeito hover simples via JS para garantir feedback
+            btn.addEventListener('mouseenter', () => btn.style.transform = 'translateY(-2px)');
+            btn.addEventListener('mouseleave', () => btn.style.transform = 'translateY(0)');
+        });
     }
-
-    // Se foi lido e não tem notas relevantes, deve ser ocultado (ir para histórico)
-    return false;
+    console.log("[SRS Engine] v2.0.8 - Inicializado e Modal Injetado.");
 }
 
 /**
- * Encontra o índice do primeiro dia de leitura não concluído no plano.
- * @param {object} plano - O objeto do plano.
- * @returns {number} O índice do próximo dia a ser lido, ou -1 se todos estiverem lidos.
+ * Inicia uma sessão de revisão.
+ * @param {number} planoIndex - Índice do plano no state
+ * @param {string} notaId - ID da anotação (neuroAnnotation)
+ * @param {string} tipoRevisao - String identificadora (ex: 'D+1 (Estabilização)')
  */
-export function encontrarProximoDiaDeLeituraIndex(plano) {
-    if (!plano || !plano.diasPlano) return -1;
-    return plano.diasPlano.findIndex(dia => !dia.lido);
-}
+export function startSession(planoIndex, notaId, tipoRevisao) {
+    const plano = state.getPlanoByIndex(planoIndex);
+    if (!plano) return;
 
-/**
- * Recalcula e atualiza a propriedade `paginasLidas` de um plano.
- * Agora considera leituras parciais registradas em `ultimaPaginaLida`.
- * @param {object} plano - O objeto do plano a ser modificado.
- */
-export function atualizarPaginasLidas(plano) {
-    if (!plano || !plano.diasPlano) {
-        if(plano) plano.paginasLidas = 0;
-        return;
+    const nota = plano.neuroAnnotations.find(n => n.id === notaId);
+    if (!nota) return;
+
+    // Configura estado da sessão atual
+    currentSession = {
+        planoIndex,
+        notaId,
+        tipo: tipoRevisao,
+        dataStart: Date.now()
     };
 
-    plano.paginasLidas = plano.diasPlano.reduce((sum, dia) => {
-        if (!dia) return sum;
+    // Prepara UI
+    const modal = document.getElementById('srs-modal');
+    const questionEl = document.getElementById('srs-question');
+    const contextEl = document.getElementById('srs-context');
+    const answerEl = document.getElementById('srs-answer');
+    const typeDisplay = document.getElementById('srs-type-display');
+    const overlay = document.getElementById('srs-celebration-overlay');
 
-        if (dia.lido) {
-            return sum + (typeof dia.paginas === 'number' ? dia.paginas : 0);
-        }
+    // Reseta Overlay
+    overlay.style.opacity = '0';
+    overlay.style.visibility = 'hidden';
 
-        if (dia.ultimaPaginaLida && dia.ultimaPaginaLida >= dia.paginaInicioDia) {
-            const paginasParciais = (dia.ultimaPaginaLida - dia.paginaInicioDia) + 1;
-            return sum + paginasParciais;
-        }
+    typeDisplay.textContent = tipoRevisao;
 
-        return sum;
-    }, 0);
+    // Lógica de Conteúdo Baseada no Tipo de Revisão
+    let questionText = "";
+    let answerText = "";
+
+    // Tenta pegar dados da sessão atual (se houver) ou da raiz da nota
+    // Prioridade: Dados de sessão específica (v2) > Dados raiz (Legado)
+    const sessionData = nota.currentSession || (nota.sessions && nota.sessions.length > 0 ? nota.sessions[nota.sessions.length - 1] : null);
+
+    // Recuperação de Dados
+    const theme = nota.theme || "";
+    const thesis = (sessionData?.insights?.find(i => i.type === 'thesis')?.text) || 
+                   (nota.insights?.find(i => i.type === 'thesis')?.text) || 
+                   "Tese não registrada.";
+                   
+    const feynman = (sessionData?.meta?.find(m => m.type === 'translate')?.text) ||
+                    (nota.meta?.find(m => m.type === 'translate')?.text);
+
+    // Define Desafio com base na Curva de Esquecimento
+    if (tipoRevisao.includes('D+1')) {
+        questionText = theme ? `Qual é a Tese Central sobre "${theme}"?` : "Qual é a IDEIA CENTRAL (Tese) deste trecho?";
+        answerText = `<strong>A Tese do Autor:</strong><br>${thesis}`;
+    } else if (tipoRevisao.includes('D+7')) {
+        questionText = "Explique este conceito com suas próprias palavras (Técnica Feynman) sem olhar a resposta.";
+        answerText = `<strong>Sua Síntese (Feynman):</strong><br>${feynman || "<em>Não registrada, use a Tese abaixo como base:</em><br>" + thesis}`;
+    } else if (tipoRevisao.includes('D+14')) {
+        questionText = "Consolidação Rápida: Você consegue dar uma 'aula relâmpago' de 1 minuto sobre este tópico?";
+        answerText = `<strong>Pontos Chave:</strong><br>${thesis}<br><br><em>Verifique se cobriu a essência.</em>`;
+    } else {
+        // Fallback genérico
+        questionText = "Recuperação Livre: O que você lembra sobre isso?";
+        answerText = `<strong>Tese:</strong> ${thesis}`;
+    }
+
+    questionEl.textContent = questionText;
+    const sessionDate = sessionData?.date ? new Date(sessionData.date).toLocaleDateString() : 'Data N/D';
+    contextEl.textContent = `${plano.titulo} • ${nota.chapterTitle || 'Leitura'} (${sessionDate})`;
+    answerEl.innerHTML = answerText;
+
+    // Reseta estado visual dos botões
+    document.getElementById('srs-front').style.display = 'block';
+    document.getElementById('srs-back').style.display = 'none';
+    document.getElementById('btn-srs-reveal').style.display = 'block';
+    document.getElementById('srs-grading-buttons').style.display = 'none';
+
+    modal.classList.add('visivel');
 }
 
-/**
- * Gera um array de dias de leitura com base em datas de início/fim e periodicidade.
- */
-export function gerarDiasPlanoPorDatas(dataInicio, dataFim, periodicidade, diasSemana) {
-    const dias = [];
-    if (!(dataInicio instanceof Date) || !(dataFim instanceof Date) || isNaN(dataInicio) || isNaN(dataFim) || dataFim < dataInicio) {
-        throw new Error("Datas inválidas fornecidas para gerar os dias do plano.");
-    }
-    let dataAtual = new Date(dataInicio); dataAtual.setHours(0, 0, 0, 0);
-    const dataFimNormalizada = new Date(dataFim); dataFimNormalizada.setHours(0, 0, 0, 0);
-
-    let safetyCounter = 0;
-    while (dataAtual <= dataFimNormalizada && safetyCounter < 5000) {
-        const diaSemanaAtual = dataAtual.getDay();
-        if (periodicidade === 'diario' || (periodicidade === 'semanal' && diasSemana.includes(diaSemanaAtual))) {
-            dias.push({ data: new Date(dataAtual), paginaInicioDia: 0, paginaFimDia: 0, paginas: 0, lido: false });
-        }
-        dataAtual.setDate(dataAtual.getDate() + 1);
-        safetyCounter++;
-    }
-    if (safetyCounter >= 5000) {
-         throw new Error("O intervalo de datas é muito grande. Não foi possível gerar o plano.");
-    }
-    return dias;
-}
-
-/**
- * Gera um array de dias de leitura com base na data de início, número de dias e periodicidade.
- */
-export function gerarDiasPlanoPorDias(dataInicio, numeroDias, periodicidade, diasSemana) {
-    const dias = [];
-    if (!(dataInicio instanceof Date) || isNaN(dataInicio) || typeof numeroDias !== 'number' || numeroDias <= 0) {
-        throw new Error("Dados inválidos fornecidos para gerar os dias do plano.");
-    }
-    let dataAtual = new Date(dataInicio); dataAtual.setHours(0, 0, 0, 0);
-    let diasAdicionados = 0;
-    let safetyCounter = 0;
-    const MAX_ITERATIONS = numeroDias * 10 + 366;
-
-    while (diasAdicionados < numeroDias && safetyCounter < MAX_ITERATIONS) {
-        const diaSemanaAtual = dataAtual.getDay();
-        if (periodicidade === 'diario' || (periodicidade === 'semanal' && diasSemana.includes(diaSemanaAtual))) {
-            dias.push({ data: new Date(dataAtual), paginaInicioDia: 0, paginaFimDia: 0, paginas: 0, lido: false });
-            diasAdicionados++;
-        }
-         dataAtual.setDate(dataAtual.getDate() + 1);
-         safetyCounter++;
-    }
-     if (diasAdicionados < numeroDias) {
-         throw new Error(`Não foi possível gerar os ${numeroDias} dias solicitados.`);
-     }
-    return dias;
-}
-
-/**
- * Gera um array de dias de leitura com base na meta de páginas por dia.
- */
-export function gerarDiasPlanoPorPaginas(dataInicio, paginasPorDia, paginaInicioLivro, paginaFimLivro, periodicidade, diasSemana) {
-    if (!paginasPorDia || paginasPorDia <= 0) {
-        throw new Error("A meta de páginas por dia deve ser um número positivo.");
-    }
-    const totalPaginas = (paginaFimLivro - paginaInicioLivro) + 1;
-    if (totalPaginas <= 0) {
-        throw new Error("O intervalo de páginas do livro é inválido.");
-    }
-
-    const diasLeituraNecessarios = Math.ceil(totalPaginas / paginasPorDia);
-
-    // Reutiliza a lógica já existente para gerar os dias
-    return gerarDiasPlanoPorDias(dataInicio, diasLeituraNecessarios, periodicidade, diasSemana);
-}
-
-/**
- * Distribui as páginas de um plano entre seus dias de leitura. Modifica o objeto plano.
- */
-export function distribuirPaginasPlano(plano) {
-    if (!plano || !plano.diasPlano || plano.diasPlano.length === 0 || typeof plano.paginaInicio !== 'number' || typeof plano.paginaFim !== 'number' || plano.paginaFim < plano.paginaInicio) {
-        if (plano) {
-            plano.totalPaginas = (plano.paginaFim - plano.paginaInicio + 1) || 0;
-            plano.paginasLidas = 0;
-        }
-        return;
-    }
-
-    const totalPaginasLivro = plano.paginaFim - plano.paginaInicio + 1;
-    const diasDeLeituraValidos = plano.diasPlano.filter(dia => dia && dia.data instanceof Date && !isNaN(dia.data));
-    const numeroDeDiasValidos = diasDeLeituraValidos.length;
-
-    if (numeroDeDiasValidos === 0) return;
-
-    plano.totalPaginas = totalPaginasLivro;
-    const paginasPorDiaBase = Math.floor(totalPaginasLivro / numeroDeDiasValidos);
-    const paginasRestantes = totalPaginasLivro % numeroDeDiasValidos;
-    let paginaAtual = plano.paginaInicio;
-
-    diasDeLeituraValidos.forEach((dia, index) => {
-        let paginasNesteDia = paginasPorDiaBase + (index < paginasRestantes ? 1 : 0);
-        dia.paginaInicioDia = paginaAtual;
-        dia.paginaFimDia = Math.min(plano.paginaFim, paginaAtual + paginasNesteDia - 1);
-        dia.paginas = Math.max(0, dia.paginaFimDia - dia.paginaInicioDia + 1);
-        paginaAtual = dia.paginaFimDia + 1;
-    });
-
-    atualizarPaginasLidas(plano);
-}
-
-
-/**
- * Recalcula um plano atrasado com base em uma nova data de fim.
- */
-export function recalcularPlanoComNovaData(planoOriginal, novaDataFim) {
-    if (!planoOriginal || !(novaDataFim instanceof Date) || isNaN(novaDataFim)) {
-        throw new Error("Dados inválidos para o recálculo do plano.");
-    }
-    const hoje = getHojeNormalizado();
-    if (novaDataFim <= hoje) {
-        throw new Error("A nova data de fim deve ser posterior à data de hoje.");
-    }
+function revealAnswer() {
+    document.getElementById('srs-back').style.display = 'block';
+    document.getElementById('btn-srs-reveal').style.display = 'none';
+    document.getElementById('srs-grading-buttons').style.display = 'flex';
     
-    const planoRecalculado = JSON.parse(JSON.stringify(planoOriginal));
-    
-    // GARANTIA DE INTEGRIDADE: Preserva anotações globais
-    planoRecalculado.neuroAnnotations = planoOriginal.neuroAnnotations || [];
-    
-    planoRecalculado.dataInicio = new Date(planoRecalculado.dataInicio);
-    planoRecalculado.diasPlano.forEach(d => { if(d.data) d.data = new Date(d.data); });
-    
-    const paginasLidas = planoRecalculado.paginasLidas || 0;
-    const paginaInicioRecalculo = (planoRecalculado.paginaInicio || 1) + paginasLidas;
-    const paginasRestantes = Math.max(0, (planoRecalculado.totalPaginas || 0) - paginasLidas);
-
-    if (paginasRestantes <= 0) {
-        throw new Error("Não há páginas restantes para ler. O recálculo não é necessário.");
-    }
-
-    let dataInicioRecalculo = hoje;
-    const diasSemanaPlano = planoRecalculado.diasSemana || [];
-    const periodicidadePlano = planoRecalculado.periodicidade || 'diario';
-    
-    const isDiaValido = (data) => {
-        const diaSem = data.getDay();
-        return periodicidadePlano === 'diario' || (periodicidadePlano === 'semanal' && diasSemanaPlano.includes(diaSem));
-    };
-
-    while (!isDiaValido(dataInicioRecalculo)) {
-        dataInicioRecalculo.setDate(dataInicioRecalculo.getDate() + 1);
-    }
-    
-    if (novaDataFim < dataInicioRecalculo) {
-        throw new Error(`A nova data de fim não pode ser anterior ao próximo dia de leitura válido.`);
-    }
-
-    const novosDiasGerados = gerarDiasPlanoPorDatas(dataInicioRecalculo, novaDataFim, periodicidadePlano, diasSemanaPlano);
-
-    if (novosDiasGerados.length === 0) {
-        throw new Error("Não há dias de leitura válidos no novo período selecionado.");
-    }
-
-    const diasLidosPreservados = planoRecalculado.diasPlano.filter(dia =>
-        dia.lido && dia.data && new Date(dia.data) < dataInicioRecalculo
-    );
-    
-    const novoPlanoDeDias = [...diasLidosPreservados, ...novosDiasGerados];
-
-    const planoParaDistribuicao = {
-        paginaInicio: paginaInicioRecalculo,
-        paginaFim: planoRecalculado.paginaFim,
-        diasPlano: novosDiasGerados,
-    };
-    distribuirPaginasPlano(planoParaDistribuicao);
-
-    planoRecalculado.diasPlano = novoPlanoDeDias.sort((a,b) => new Date(a.data) - new Date(b.data));
-    planoRecalculado.dataFim = novaDataFim;
-    atualizarPaginasLidas(planoRecalculado);
-    
-    return planoRecalculado;
+    // Auto-scroll suave para a resposta
+    document.getElementById('srs-back').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
 }
 
-/**
- * Analisa a carga de leitura semanal.
- */
-export function analisarCargaSemanal(planos, totalPlanos) {
-    const diasDaSemana = [
-        { nome: 'Domingo', diaIdx: 0, planos: [], totalPaginas: 0 },
-        { nome: 'Segunda', diaIdx: 1, planos: [], totalPaginas: 0 },
-        { nome: 'Terça',   diaIdx: 2, planos: [], totalPaginas: 0 },
-        { nome: 'Quarta',  diaIdx: 3, planos: [], totalPaginas: 0 },
-        { nome: 'Quinta',  diaIdx: 4, planos: [], totalPaginas: 0 },
-        { nome: 'Sexta',   diaIdx: 5, planos: [], totalPaginas: 0 },
-        { nome: 'Sábado',  diaIdx: 6, planos: [], totalPaginas: 0 }
-    ];
-
-    if (!planos || planos.length === 0) {
-        return diasDaSemana;
-    }
-
-    const planosAtivos = planos.filter(p => !p.isPaused);
-
-    planosAtivos.forEach((plano, index) => {
-        const status = determinarStatusPlano(plano);
-        if (status === 'concluido' || status === 'invalido') {
-            return;
-        }
-
-        const diasDeLeituraRestantes = plano.diasPlano?.filter(d => d.data && !d.lido).length || 0;
-        if (diasDeLeituraRestantes === 0) {
-            return; 
-        }
-        
-        const paginasRestantes = (plano.totalPaginas || 0) - (plano.paginasLidas || 0);
-        const mediaPaginasDia = Math.round(paginasRestantes / diasDeLeituraRestantes);
-        
-        const diasSemanaPlano = plano.diasSemana || [];
-        const originalIndex = planos.findIndex(p => p.id === plano.id);
-        const numeroDoPlano = totalPlanos - originalIndex;
-        
-        const infoPlano = { numero: numeroDoPlano, media: mediaPaginasDia, planoIndex: originalIndex };
-
-        if (plano.periodicidade === 'diario') {
-            diasDaSemana.forEach(dia => {
-                dia.planos.push(infoPlano);
-                dia.totalPaginas += mediaPaginasDia;
-            });
-        } else if (plano.periodicidade === 'semanal' && diasSemanaPlano.length > 0) {
-            diasSemanaPlano.forEach(diaIdx => {
-                const dia = diasDaSemana.find(d => d.diaIdx === diaIdx);
-                if (dia) {
-                    dia.planos.push(infoPlano);
-                    dia.totalPaginas += mediaPaginasDia;
-                }
-            });
-        }
-    });
-
-    return diasDaSemana;
+function closeSession() {
+    document.getElementById('srs-modal').classList.remove('visivel');
+    currentSession = null;
 }
 
-function gerarDiasDoPlano(formData) {
-    if (formData.definicaoPeriodo === 'datas') {
-        return gerarDiasPlanoPorDatas(formData.dataInicio, formData.dataFim, formData.periodicidade, formData.diasSemana);
-    } else if (formData.definicaoPeriodo === 'dias') {
-        return gerarDiasPlanoPorDias(formData.dataInicio, formData.numeroDias, formData.periodicidade, formData.diasSemana);
-    } else { // 'paginas'
-        return gerarDiasPlanoPorPaginas(formData.dataInicio, formData.paginasPorDia, formData.paginaInicio, formData.paginaFim, formData.periodicidade, formData.diasSemana);
+function showCelebration() {
+    const overlay = document.getElementById('srs-celebration-overlay');
+    if (overlay) {
+        overlay.style.visibility = 'visible';
+        overlay.style.opacity = '1';
     }
 }
 
-export function construirObjetoPlano(formData, planoEditado) {
-    const diasPlano = gerarDiasDoPlano(formData);
-    if (!diasPlano || diasPlano.length === 0) {
-        throw new Error("Não foi possível gerar dias de leitura com as configurações fornecidas.");
+async function finishSession(grade) {
+    if (!currentSession) return;
+
+    // UX: Feedback imediato de sucesso
+    if (grade === 'good' || grade === 'hard') {
+        showCelebration();
     }
 
-    const id = planoEditado ? planoEditado.id : crypto.randomUUID();
-    const dataFim = formData.definicaoPeriodo === 'datas' ? formData.dataFim : (diasPlano[diasPlano.length - 1]?.data || new Date());
+    const { planoIndex, notaId, tipo } = currentSession;
+    const plano = state.getPlanoByIndex(planoIndex);
+    const nota = plano.neuroAnnotations.find(n => n.id === notaId);
 
-    return {
-        id: id,
-        titulo: formData.titulo,
-        linkDrive: formData.linkDrive,
-        paginaInicio: formData.paginaInicio,
-        paginaFim: formData.paginaFim,
-        dataInicio: formData.dataInicio,
-        dataFim: dataFim,
-        periodicidade: formData.periodicidade,
-        diasSemana: formData.diasSemana,
-        diasPlano: diasPlano,
-        paginasLidas: 0,
-        totalPaginas: formData.paginaFim - formData.paginaInicio + 1,
-        isPaused: planoEditado ? planoEditado.isPaused : false,
-        dataPausa: planoEditado ? planoEditado.dataPausa : null,
-        neuroAnnotations: planoEditado ? (planoEditado.neuroAnnotations || []) : [] 
-    };
-}
+    if (nota) {
+        if (!nota.reviewsDone) nota.reviewsDone = {};
 
-export function recalcularPlanoPorPaginasDia(planoOriginal, paginasPorDia) {
-    if (!planoOriginal || !paginasPorDia || paginasPorDia <= 0) {
-        throw new Error("Dados inválidos para o recálculo do plano.");
-    }
+        // Marca a revisão como feita
+        if (tipo.includes('D+1')) nota.reviewsDone.d1 = true;
+        if (tipo.includes('D+7')) nota.reviewsDone.d7 = true;
+        if (tipo.includes('D+14')) nota.reviewsDone.d14 = true;
 
-    const hoje = getHojeNormalizado();
-    const paginasLidas = planoOriginal.paginasLidas || 0;
-    const paginasRestantes = Math.max(0, (planoOriginal.totalPaginas || 0) - paginasLidas);
-
-    if (paginasRestantes <= 0) {
-        throw new Error("Não há páginas restantes para ler. O recálculo não é necessário.");
-    }
-
-    const diasLeituraNecessarios = Math.ceil(paginasRestantes / paginasPorDia);
-
-    let dataInicioRecalculo = hoje;
-    const diasSemanaPlano = planoOriginal.diasSemana || [];
-    const periodicidadePlano = planoOriginal.periodicidade || 'diario';
-    
-    const isDiaValido = (data) => {
-        const diaSem = data.getDay();
-        return periodicidadePlano === 'diario' || (periodicidadePlano === 'semanal' && diasSemanaPlano.includes(diaSem));
-    };
-    while (!isDiaValido(dataInicioRecalculo)) {
-        dataInicioRecalculo.setDate(dataInicioRecalculo.getDate() + 1);
-    }
-
-    const novosDiasGerados = gerarDiasPlanoPorDias(dataInicioRecalculo, diasLeituraNecessarios, periodicidadePlano, diasSemanaPlano);
-
-    if (novosDiasGerados.length === 0) {
-        throw new Error("Não foi possível gerar um novo cronograma.");
-    }
-
-    const novaDataFim = novosDiasGerados[novosDiasGerados.length - 1].data;
-
-    return recalcularPlanoComNovaData(planoOriginal, novaDataFim);
-}
-
-export function retomarPlano(plano) {
-    if (!plano.isPaused || !plano.dataPausa) return plano;
-
-    const dataRetomada = getHojeNormalizado();
-    const dataPausa = new Date(plano.dataPausa);
-    dataPausa.setHours(0, 0, 0, 0);
-
-    const tempoPausaMs = dataRetomada.getTime() - dataPausa.getTime();
-
-    if (tempoPausaMs > 0) {
-        const umDiaEmMs = 24 * 60 * 60 * 1000;
-        const diasDePausa = Math.ceil(tempoPausaMs / umDiaEmMs);
-        
-        plano.diasPlano.forEach(dia => {
-            if (dia.data && !dia.lido) {
-                const dataDia = new Date(dia.data);
-                dataDia.setHours(0, 0, 0, 0);
-                if (dataDia.getTime() >= dataPausa.getTime()) {
-                     const novaData = new Date(dia.data);
-                     novaData.setDate(novaData.getDate() + diasDePausa);
-                     dia.data = novaData;
-                }
-            }
+        // Histórico de revisão (Logbook)
+        if (!nota.reviewLog) nota.reviewLog = [];
+        nota.reviewLog.push({
+            date: new Date().toISOString(),
+            type: tipo,
+            grade: grade,
+            sessionDuration: Math.round((Date.now() - currentSession.dataStart) / 1000)
         });
 
-        if (plano.dataFim) {
-            const novaDataFim = new Date(plano.dataFim);
-            novaDataFim.setDate(novaDataFim.getDate() + diasDePausa);
-            plano.dataFim = novaDataFim;
-        }
-    }
-
-    plano.isPaused = false;
-    plano.dataPausa = null;
-
-    return plano;
-}
-
-export function gerarConteudoICS(planos, horaInicio, horaFim) {
-    const [startHour, startMinute] = horaInicio.split(':');
-    const [endHour, endMinute] = horaFim.split(':');
-
-    const formatICSDate = (date, hour, minute) => {
-        const d = new Date(date);
-        d.setUTCHours(parseInt(hour, 10), parseInt(minute, 10), 0, 0);
-        return d.toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
-    };
-
-    let icsContent = [
-        'BEGIN:VCALENDAR',
-        'VERSION:2.0',
-        'PRODID:-//GerenciadorDePlanosDeLeitura//NONSGML v1.0//EN',
-    ];
-
-    const planosAtivos = planos.filter(p => {
-        const status = determinarStatusPlano(p);
-        return status !== 'concluido' && status !== 'pausado' && status !== 'invalido';
-    });
-
-    planosAtivos.forEach(plano => {
-        plano.diasPlano.forEach(dia => {
-            if (!dia.lido && dia.data) {
-                const uid = `plano-${plano.id}-dia-${dia.data.toISOString().split('T')[0]}@plano-leitura.app`;
-                const dtstart = formatICSDate(dia.data, startHour, startMinute);
-                const dtend = formatICSDate(dia.data, endHour, endMinute);
-                const summary = `Leitura: ${plano.titulo}`;
-                const description = `Ler páginas ${dia.paginaInicioDia} a ${dia.paginaFimDia}.`;
-                const dtstamp = new Date().toISOString().replace(/[-:.]/g, '').slice(0, 15) + 'Z';
-
-                icsContent.push(
-                    'BEGIN:VEVENT',
-                    `UID:${uid}`,
-                    `DTSTAMP:${dtstamp}`,
-                    `DTSTART:${dtstart}`,
-                    `DTEND:${dtend}`,
-                    `SUMMARY:${summary}`,
-                    `DESCRIPTION:${description}`,
-                    'END:VEVENT'
-                );
-            }
-        });
-    });
-
-    icsContent.push('END:VCALENDAR');
-    return icsContent.join('\r\n');
-}
-
-export function calcularDataFimEstimada(dadosFormulario) {
-    const { dataInicio, paginasPorDia, paginaInicio, paginaFim, periodicidade, diasSemana } = dadosFormulario;
-
-    if (!dataInicio || isNaN(dataInicio) || !paginasPorDia || paginasPorDia <= 0 || !paginaInicio || !paginaFim || paginaFim < paginaInicio) {
-        return null;
-    }
-
-    const totalPaginas = (paginaFim - paginaInicio) + 1;
-    const diasLeituraNecessarios = Math.ceil(totalPaginas / paginasPorDia);
-
-    let dataAtual = new Date(dataInicio);
-    let diasAdicionados = 0;
-    let dataFimEstimada = null;
-    let safetyCounter = 0;
-    const MAX_ITERATIONS = diasLeituraNecessarios * 10 + 366;
-
-    while (diasAdicionados < diasLeituraNecessarios && safetyCounter < MAX_ITERATIONS) {
-        const diaSemanaAtual = dataAtual.getDay();
-        if (periodicidade === 'diario' || (periodicidade === 'semanal' && diasSemana.includes(diaSemanaAtual))) {
-            diasAdicionados++;
-            if (diasAdicionados === diasLeituraNecessarios) {
-                dataFimEstimada = new Date(dataAtual);
-            }
-        }
-        dataAtual.setDate(dataAtual.getDate() + 1);
-        safetyCounter++;
-    }
-
-    return dataFimEstimada;
-}
-
-/**
- * Analisa anotações Neuro para revisões SRS (D+1, D+7, D+14).
- * ATUALIZADO v2.1: Implementa lógica estrita baseada no relatório de neurociência.
- */
-export function verificarRevisoesPendentes(planos) {
-    const revisoes = [];
-    const hoje = new Date(); // Usa data completa para precisão
-    hoje.setHours(0, 0, 0, 0);
-
-    planos.forEach(plano => {
-        if (!plano.neuroAnnotations || plano.isPaused) return;
-
-        plano.neuroAnnotations.forEach(nota => {
-            // Garante a obtenção da data base correta (prioridade para updatedAt, fallback para createdAt/timestamp/session)
-            const dataBaseStr = nota.updatedAt || nota.createdAt || nota.timestamp || (nota.currentSession ? nota.currentSession.date : null);
+        // Persistência no Firebase
+        try {
+            state.updatePlano(planoIndex, plano);
+            await firestoreService.salvarPlanos(state.getCurrentUser(), state.getPlanos());
             
-            if (!dataBaseStr) return;
-
-            const dataNota = new Date(dataBaseStr);
-            dataNota.setHours(0, 0, 0, 0);
-
-            // Diferença em dias corridos
-            const diffTime = hoje.getTime() - dataNota.getTime();
-            const diffDays = Math.floor(diffTime / (1000 * 3600 * 24));
-
-            // Inicializa flags de revisão se não existirem
-            if (!nota.reviewsDone) nota.reviewsDone = { d1: false, d7: false, d14: false };
-
-            let tipoRevisao = null;
-            let prioridade = 0;
-            let desafio = "";
-
-            // PROTOCOLO NEUROCIÊNCIA (D+1, D+7, D+14)
-
-            // D+1 (Janela de Estabilização: dia 1 a 6 se não feito)
-            // Foco: Ideia Central / Mini-teste
-            if (diffDays >= 1 && diffDays < 7 && !nota.reviewsDone.d1) {
-                tipoRevisao = 'D+1 (Estabilização)';
-                prioridade = 1;
-                desafio = "Foque na Ideia Central. Responda 3 das 5 perguntas do mini-teste ou recupere a tese.";
-            } 
-            // D+7 (Janela de Conexão: dia 7 a 13)
-            // Foco: Ensinar de cabeça (Feynman) + Conexão nova
-            else if (diffDays >= 7 && diffDays < 14 && nota.reviewsDone.d1 && !nota.reviewsDone.d7) {
-                tipoRevisao = 'D+7 (Conexão)';
-                prioridade = 2;
-                desafio = "Ensine de cabeça (Feynman) e crie uma nova conexão prática.";
-            } 
-            // D+14 (Janela de Consolidação: dia 14 até 29 - Exclui D+30 por enquanto)
-            // Foco: Consolidação rápida
-            else if (diffDays >= 14 && diffDays < 30 && nota.reviewsDone.d7 && !nota.reviewsDone.d14) {
-                tipoRevisao = 'D+14 (Consolidação)';
-                prioridade = 3;
-                desafio = "Explique o capítulo em 90-120 segundos sem consulta.";
-            }
-
-            if (tipoRevisao) {
-                // Se não houver desafio específico, usa o tema central como fallback
-                const desafioBase = desafio || (nota.theme 
-                    ? `Tema: ${nota.theme}` 
-                    : "Recupere a tese principal.");
-
-                // EXTRAÇÃO DO TÓPICO ESPECÍFICO (NOVA LÓGICA)
-                // Tenta pegar da sessão atual ou da última sessão arquivada
-                const sessionData = nota.currentSession || nota.sessions?.[nota.sessions.length - 1];
-                const topicoEspecifico = sessionData ? sessionData.sessionTopic : "Detalhe da Leitura";
-
-                revisoes.push({
-                    planoIndex: planos.indexOf(plano),
-                    planoTitulo: plano.titulo,
-                    notaId: nota.id,
-                    capitulo: nota.chapterTitle || `Pág. ${nota.pageStart}-${nota.pageEnd}`,
-                    tipo: tipoRevisao,
-                    prioridade: prioridade,
-                    desafio: desafioBase,
-                    specificTopic: topicoEspecifico // Adicionado para exibição no SRS Engine
-                });
-            }
-        });
-    });
-
-    return revisoes.sort((a, b) => a.prioridade - b.prioridade);
+            // Pequeno delay para o usuário ver a celebração antes de fechar
+            setTimeout(() => {
+                closeSession();
+                ui.renderApp(state.getPlanos(), state.getCurrentUser());
+            }, 1200);
+            
+        } catch (error) {
+            console.error("Erro ao salvar revisão SRS:", error);
+            alert("Erro ao salvar progresso. Verifique sua conexão.");
+            closeSession();
+        }
+    } else {
+        closeSession();
+    }
 }
